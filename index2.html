@@ -1,0 +1,2534 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>3D Tiles VR Viewer</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/",
+      "3d-tiles-renderer": "https://esm.sh/3d-tiles-renderer@0.4.21?external=three",
+      "3d-tiles-renderer/plugins": "https://esm.sh/3d-tiles-renderer@0.4.21/plugins?external=three"
+    }
+  }
+  </script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      /* iOS Safariのダブルタップズーム/ピンチズームを抑制 */
+      touch-action: manipulation;
+      -ms-touch-action: manipulation;
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body { background: #0a0c10; font-family: sans-serif; overflow: hidden; }
+    canvas { display: block; touch-action: none; }
+
+    button.three-vr {
+      position: fixed !important;
+      bottom: 24px !important; left: 50% !important;
+      transform: translateX(-50%) !important;
+      width: 300px !important;
+      padding: 14px 40px !important;
+      background: rgba(0,200,255,0.15) !important;
+      border: 2px solid #00c8ff !important;
+      color: #00c8ff !important;
+      font-size: 16px !important; font-weight: bold !important;
+      letter-spacing: 2px !important; border-radius: 4px !important;
+      cursor: pointer !important; opacity: 1 !important;
+    }
+
+    #credit {
+      position: fixed; bottom: 8px; left: 8px;
+      color: rgba(200,221,232,0.5);
+      font-family: sans-serif; font-size: 10px;
+      z-index: 100;
+    }
+    #credit a { color: inherit; text-decoration: underline; }
+
+    /* ── スマホ用タッチUI ─────────────────────── */
+    /* デフォルトは非表示。ID付き要素の display を確実に上書きするため !important */
+    .touch-ui { display: none !important; }
+    body.touch #swipe-area.touch-ui    { display: block !important; }
+    body.touch #joystick-base.touch-ui { display: block !important; }
+    body.touch #vert-buttons.touch-ui  { display: flex  !important; }
+    body.touch #vr-help { display: none; }
+
+    /* ── UIパネル類のピンチ拡大を完全阻止 ──
+       スライダー類は縦並びで縦スクロール想定なので pan-y、
+       #dataset-switch はボタン横並びで横スクロール想定なので pan-x。
+       いずれも 2軸スクロール(=ピンチ)は禁止される。
+       canvas は別途 touch-action: none を設定済み。
+       注: VRボタン(button.three-vr) はピンチ阻止の対象外とし、
+           ブラウザ標準の挙動に任せる。 */
+    #controls, #vr-help, #credit, #dbg-panel {
+      touch-action: pan-y;
+    }
+    #dataset-switch {
+      touch-action: pan-x;
+    }
+
+    /* 全画面の見えないスワイプエリア（視点回転）
+       他のUI（スティック・ボタン・パネル）より下のレイヤーに置き、
+       それらの要素が pointer を拾えば優先、それ以外は全て視点回転に流す */
+    #swipe-area {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      touch-action: none;
+    }
+
+    /* 左下：仮想スティック */
+    #joystick-base {
+      position: fixed;
+      left: 24px; bottom: 24px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.35);
+      border: 2px solid rgba(0,200,255,0.4);
+      z-index: 90;
+      touch-action: none;
+      backdrop-filter: blur(6px);
+    }
+    #joystick-knob {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 56px; height: 56px;
+      margin-left: -28px; margin-top: -28px;
+      border-radius: 50%;
+      background: rgba(0,200,255,0.5);
+      border: 2px solid #00c8ff;
+      pointer-events: none;
+    }
+
+    /* 右下：上昇/下降ボタン */
+    #vert-buttons {
+      position: fixed;
+      right: 24px; bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 90;
+    }
+    .vert-btn {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.35);
+      border: 2px solid rgba(0,200,255,0.4);
+      color: #00c8ff;
+      font-size: 28px; font-weight: bold;
+      display: flex; align-items: center; justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      backdrop-filter: blur(6px);
+    }
+    .vert-btn.active {
+      background: rgba(0,200,255,0.3);
+    }
+
+    /* タッチUI使用時、VRボタンは上に避ける */
+    body.touch button.three-vr {
+      bottom: 160px !important;
+    }
+
+    /* ── #controls 折りたたみ機構（スマホ用）─────────────── */
+    /* ヘッダーは常時 display:none（PC時は出さない） */
+    #controls-header {
+      display: none;
+    }
+
+    /* スマホ時: ヘッダーを表示し、本体は閉じた状態を既定にする。
+       top は JS で #dataset-switch.bottom + 4px に動的設定する。
+       (ここの値は JS 実行前の一瞬の見え方のための初期値) */
+    body.touch #controls {
+      top: 48px;
+      right: 4px;
+      padding: 0;
+      font-size: 11px;
+      width: auto;
+      max-width: calc(100vw - 8px);
+      background: rgba(0,0,0,0.4);
+    }
+    body.touch #controls-header {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 6px 8px;
+      user-select: none;
+      -webkit-user-select: none;
+      font-size: 11px;
+      color: #00c8ff;
+    }
+    /* ミニPOINT SIZEスライダー（折りたたみ時も操作可） */
+    body.touch #size-mini {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 1px;
+      font-weight: bold;
+    }
+    body.touch #size-mini .lbl {
+      font-size: 10px;
+      opacity: 0.85;
+    }
+    body.touch #size-mini #size-mini-slider {
+      width: 80px;
+      accent-color: #00c8ff;
+      vertical-align: middle;
+    }
+    body.touch #size-mini #size-mini-val {
+      font-family: monospace;
+      font-size: 10px;
+      min-width: 18px;
+      text-align: right;
+    }
+    /* 本体開閉トグル（タップ領域） */
+    body.touch #controls-toggle {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      cursor: pointer;
+      font-weight: bold;
+      border-left: 1px solid rgba(0,200,255,0.25);
+    }
+    body.touch #controls-toggle .lbl {
+      font-size: 13px;
+    }
+    body.touch #controls-toggle .chev {
+      font-size: 9px;
+      transition: transform 0.2s ease;
+    }
+    body.touch #controls.collapsed #controls-toggle .chev {
+      transform: rotate(-90deg);
+    }
+    body.touch #controls-body {
+      padding: 0 12px 10px 12px;
+      max-height: calc(100vh - 220px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    body.touch #controls.collapsed #controls-body {
+      display: none;
+    }
+    /* 折りたたみ展開時は、本体内の重複POINT SIZE項目を非表示
+       (常時表示のミニUIで操作するため) */
+    body.touch #controls-body #size-row {
+      display: none;
+    }
+    /* スマホ時はスライダー幅も画面に合わせて縮める */
+    body.touch #controls-body input[type="range"] {
+      width: 140px;
+      max-width: calc(100vw - 64px);
+    }
+    body.touch #controls-body #prefetch-btn {
+      width: 140px;
+      max-width: calc(100vw - 64px);
+    }
+
+    /* データセット切替UI */
+    #dataset-switch {
+      position: fixed; top: 16px; left: 16px;
+      max-width: calc(100vw - 32px);
+      background: rgba(0,0,0,0.8);
+      border: 1px solid rgba(0,200,255,0.3);
+      border-radius: 4px;
+      padding: 8px 10px;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+      font-family: sans-serif;
+
+      /* 横スクロール */
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,200,255,0.4) transparent;
+    }
+    #dataset-switch::-webkit-scrollbar { height: 4px; }
+    #dataset-switch::-webkit-scrollbar-track { background: transparent; }
+    #dataset-switch::-webkit-scrollbar-thumb {
+      background: rgba(0,200,255,0.4);
+      border-radius: 2px;
+    }
+    .dataset-btn {
+      flex: 0 0 auto;  /* 縮まない */
+      padding: 8px 14px;
+      background: transparent;
+      border: 1px solid rgba(0,200,255,0.4);
+      color: #00c8ff;
+      font-size: 13px; font-weight: bold;
+      letter-spacing: 1px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .dataset-btn:hover { background: rgba(0,200,255,0.1); }
+    .dataset-btn.active {
+      background: rgba(0,200,255,0.3);
+      border-color: #00c8ff;
+    }
+    .dataset-btn.loading {
+      background: rgba(255,180,0,0.2);
+      border-color: rgba(255,180,0,0.6);
+      color: #ffb400;
+      cursor: wait;
+    }
+    @keyframes dataset-pulse {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.5; }
+    }
+    .dataset-btn.loading {
+      animation: dataset-pulse 1s ease-in-out infinite;
+    }
+
+    /* CSV読込失敗時の警告メッセージ */
+    .dataset-error {
+      padding: 4px 8px;
+      color: #ff6b6b;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    /* ロード中はデータセットボタン全体を操作不可に */
+    #dataset-switch.is-loading .dataset-btn:not(.loading) {
+      opacity: 0.4;
+      pointer-events: none;
+      filter: saturate(0.3);
+    }
+    .dataset-btn[disabled],
+    #prefetch-btn[disabled] {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* ── コントロールパネル内 各設定項目の共通スタイル ── */
+    .ctrl-group {
+      margin-bottom: 12px;
+    }
+    .ctrl-group:first-of-type {
+      margin-top: 0;
+    }
+    .ctrl-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+      font-weight: bold;
+    }
+    /* ⓘ 情報アイコンボタン */
+    .ctrl-info {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: 1px solid rgba(0,200,255,0.4);
+      border-radius: 50%;
+      background: transparent;
+      color: rgba(0,200,255,0.75);
+      font-size: 11px;
+      font-family: inherit;
+      font-weight: bold;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      flex-shrink: 0;
+    }
+    .ctrl-info:hover,
+    .ctrl-info[aria-expanded="true"] {
+      background: rgba(0,200,255,0.2);
+      color: #fff;
+      border-color: #00c8ff;
+    }
+    /* 説明文ブロック (デフォルトhidden、aria-expanded=true で表示) */
+    .ctrl-info-body {
+      margin-top: 6px;
+      padding: 8px 10px;
+      background: rgba(0,200,255,0.07);
+      border-left: 2px solid rgba(0,200,255,0.5);
+      border-radius: 3px;
+      font-size: 10.5px;
+      font-weight: normal;
+      letter-spacing: 0.2px;
+      color: rgba(220,235,245,0.92);
+      line-height: 1.55;
+    }
+    .ctrl-info-body[hidden] {
+      display: none;
+    }
+    /* スマホでは説明文サイズと余白を少しコンパクトに */
+    body.touch .ctrl-info-body {
+      font-size: 10px;
+      padding: 6px 8px;
+      line-height: 1.45;
+    }
+
+    /* ── ロード進捗オーバーレイ ── */
+    #load-progress {
+      position: fixed;
+      left: 50%;
+      bottom: 88px;
+      transform: translateX(-50%);
+      min-width: 240px;
+      max-width: calc(100vw - 32px);
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.78);
+      border: 1px solid rgba(0,200,255,0.4);
+      border-radius: 6px;
+      color: #c8e0ec;
+      font-family: monospace;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      z-index: 110;
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.25s ease;
+      opacity: 0;
+    }
+    /* 状態別の表示制御 */
+    #load-progress[data-state="loading"],
+    #load-progress[data-state="rendering"] {
+      opacity: 1;
+    }
+    #load-progress[data-state="ready"] {
+      opacity: 1;
+      /* "Ready" は2秒見せて消す。JS側でidleに切替えてフェードアウト */
+    }
+    #load-progress[data-state="idle"] {
+      opacity: 0;
+    }
+    #load-progress .lp-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    #load-progress .lp-stage {
+      font-weight: bold;
+      color: #00c8ff;
+      letter-spacing: 1px;
+    }
+    #load-progress[data-state="ready"] .lp-stage {
+      color: #5fff8a;
+    }
+    #load-progress .lp-detail {
+      font-size: 10px;
+      color: rgba(200,221,232,0.75);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #load-progress .lp-bar {
+      height: 3px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    #load-progress .lp-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #00c8ff, #5fff8a);
+      transition: width 0.25s ease;
+    }
+    #load-progress[data-state="loading"] .lp-bar-fill {
+      /* tileset.json取得中は不確定進捗(アニメ) */
+      width: 30%;
+      animation: lp-indeterminate 1.2s ease-in-out infinite;
+    }
+    @keyframes lp-indeterminate {
+      0%   { margin-left: -30%; }
+      100% { margin-left: 100%; }
+    }
+    /* スマホ時はサイズ縮小 */
+    body.touch #load-progress {
+      bottom: 200px;       /* スマホのジョイスティック・上下ボタンを避ける */
+      min-width: 200px;
+      padding: 8px 10px;
+      font-size: 10px;
+    }
+
+    /* スマホ時：データセットUIが他UIと重ならないようサイズ調整。
+       上端ぎりぎり(top:4px)に寄せて表示エリアを最大化、
+       横方向は元のレイアウトを維持して横スクロールしやすさを保つ。 */
+    body.touch #dataset-switch {
+      top: 4px;
+      left: 16px;
+      max-width: calc(100vw - 32px);
+      font-size: 11px;
+      padding: 6px 8px;
+    }
+    body.touch .dataset-btn {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="vr-help" style="
+  position: fixed; bottom: 90px; left: 16px;
+  background: rgba(0,0,0,0.8);
+  border: 1px solid rgba(0,200,255,0.3);
+  border-radius: 4px;
+  padding: 12px 16px;
+  color: #00c8ff;
+  font-family: sans-serif;
+  font-size: 11px;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  line-height: 1.7;
+  min-width: 220px;
+">
+  <div style="margin-bottom:6px; letter-spacing:1px; font-weight:bold;">VR CONTROLS</div>
+  <div style="color:#c8dde8;">
+    <b style="color:#ff6b35;">L Stick</b> 向いてる方向に移動<br>
+    <b style="color:#ff6b35;">R Stick ←→</b> 視点を回す<br>
+    <b style="color:#ff6b35;">A Button</b> 下降<br>
+    <b style="color:#ff6b35;">B Button</b> 上昇<br>
+    <b style="color:#ff6b35;">X Button</b> 点を小さく<br>
+    <b style="color:#ff6b35;">Y Button</b> 点を大きく
+  </div>
+  <div style="margin:10px 0 6px; letter-spacing:1px; font-weight:bold;">PC CONTROLS</div>
+  <div style="color:#c8dde8;">
+    <b style="color:#ff6b35;">W A S D</b> 前後左右の移動<br>
+    <b style="color:#ff6b35;">← →</b> 視点を回す<br>
+    <b style="color:#ff6b35;">↑ ↓</b> 上昇・下降
+  </div>
+</div>
+
+<div id="controls" style="
+  position: fixed; top: 80px; right: 16px;
+  background: rgba(0,0,0,0.8);
+  border: 1px solid rgba(0,200,255,0.3);
+  border-radius: 4px;
+  padding: 12px 16px;
+  color: #00c8ff;
+  font-family: sans-serif;
+  font-size: 12px;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+">
+  <!-- ヘッダー（スマホ時のみ表示）-->
+  <!-- 左: POINT SIZE のミニスライダー(タップ拡張時もそのまま操作可) -->
+  <!-- 右: 本体の開閉トグル -->
+  <div id="controls-header">
+    <div id="size-mini">
+      <span class="lbl">SIZE</span>
+      <input id="size-mini-slider" type="range" min="1" max="80" step="1" value="5">
+      <span id="size-mini-val">5</span>
+    </div>
+    <div id="controls-toggle">
+      <span class="lbl">⚙</span>
+      <span class="chev">▼</span>
+    </div>
+  </div>
+
+  <!-- 本体 -->
+  <div id="controls-body">
+
+  <!-- POINT SIZE -->
+  <div id="size-row" class="ctrl-group">
+    <div class="ctrl-label">
+      <span>POINT SIZE</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-size">ⓘ</button>
+    </div>
+    <input id="size-slider" type="range" min="1" max="80" step="1" value="5"
+      style="width:160px; accent-color:#00c8ff;">
+    <div style="font-family:monospace; margin-top:4px;">
+      <span id="size-val">5</span>
+    </div>
+    <div id="info-size" class="ctrl-info-body" hidden>
+      1点を1辺 [値×1mm] の立方体として描画するサイズ。
+      小さいほど精細だが、点同士の隙間が目立ちやすい。
+      大きいほど隙間が埋まり遠景が見やすくなるが、塊感が強くなる。
+    </div>
+  </div>
+
+  <!-- POINT DENSITY -->
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>POINT DENSITY</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-density">ⓘ</button>
+    </div>
+    <input id="density-slider" type="range" min="10" max="100" step="5" value="100"
+      style="width:160px; accent-color:#00c8ff;">
+    <div style="font-family:monospace; margin-top:4px;">
+      <span id="density-val">100</span>%
+      <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
+        (描画する点の割合)
+      </span>
+    </div>
+    <div id="info-density" class="ctrl-info-body" hidden>
+      各タイルの点群のうち何%を描画するかを指定する間引き設定。
+      100%で全点、50%で半分、10%なら1/10だけ描画。
+      タイル自体はそのままなのでメモリ・ダウンロード量は変わらないが、
+      描画コスト(特にGPU負荷)が直線的に下がる。
+      VRでカクつく / ハイエンドPCでも重いデータで滑らかさが欲しい時に下げる。
+      LODと違いタイル境界の粗さが目立たず、均一に薄くなるのが特徴。
+    </div>
+  </div>
+
+  <!-- WORLD SCALE -->
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>WORLD SCALE</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-scale">ⓘ</button>
+    </div>
+    <input id="scale-slider" type="range" min="0.5" max="3.0" step="0.1" value="1.0"
+      style="width:160px; accent-color:#00c8ff;">
+    <div style="font-family:monospace; margin-top:4px;">
+      <span id="scale-val">1.0</span>×
+      <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
+        (1.0=実寸 / VR用に拡大)
+      </span>
+    </div>
+    <div id="info-scale" class="ctrl-info-body" hidden>
+      世界の大きさを変える倍率。1.0 が実寸(メートル単位そのまま)。
+      VRで「小さく感じる」場合は 1.5〜2.0倍に上げると体感が改善する。
+      視点(カメラ)位置を中心に拡縮するので、目の前のものが視野から外れない。
+    </div>
+  </div>
+
+  <!-- LOD ERROR TARGET -->
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>LOD ERROR TARGET</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-lod">ⓘ</button>
+    </div>
+    <input id="lod-slider" type="range" min="8" max="80" step="1" value="20"
+      style="width:160px; accent-color:#00c8ff;">
+    <div style="font-family:monospace; margin-top:4px;">
+      <span id="lod-val">20</span>
+      <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
+        (低=高詳細/重い)
+      </span>
+    </div>
+    <div id="info-lod" class="ctrl-info-body" hidden>
+      表示詳細度のしきい値(画面上の許容誤差ピクセル)。
+      低いほど高精細なタイルが読み込まれるが、ダウンロード量と描画負荷が増える。
+      VRでカクつく時は値を上げ、PCで綺麗に見たい時は下げる。
+      目安: VR=20前後 / ハイエンドPC=10前後 / 低速モバイル=40前後。
+    </div>
+  </div>
+
+  <!-- CACHE TILES -->
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>CACHE TILES</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-cache-tiles">ⓘ</button>
+    </div>
+    <input id="cache-tiles-slider" type="range" min="300" max="8000" step="100" value="2000"
+      style="width:160px; accent-color:#00c8ff;">
+    <div style="font-family:monospace; margin-top:4px;">
+      <span id="cache-tiles-val">2000</span>
+      <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
+        tiles (上限)
+      </span>
+    </div>
+    <div id="info-cache-tiles" class="ctrl-info-body" hidden>
+      メモリ上に保持しておくタイル数の上限。
+      多いほど一度訪れた場所に戻った時の再ダウンロードが減って快適になるが、
+      RAM消費が増える。VRで街を歩き回って戻るような体験なら大きめが有利。
+      CACHE MEMORY と合わせて、どちらかの上限に達したら古いタイルから破棄される。
+    </div>
+  </div>
+
+  <!-- CACHE MEMORY -->
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>CACHE MEMORY</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-cache-mb">ⓘ</button>
+    </div>
+    <input id="cache-bytes-slider" type="range" min="256" max="4096" step="128" value="1536"
+      style="width:160px; accent-color:#00c8ff;">
+    <div style="font-family:monospace; margin-top:4px;">
+      <span id="cache-bytes-val">1536</span>
+      <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
+        MB (上限)
+      </span>
+    </div>
+    <div id="info-cache-mb" class="ctrl-info-body" hidden>
+      タイルキャッシュに割り当てるメモリ上限(MB)。
+      ハイエンドPCで重いデータを扱う場合は 2GB〜3GB程度まで上げると体感が向上。
+      モバイル/Quest等では 512MB前後が安全圏(超えるとブラウザに強制終了されることがある)。
+    </div>
+  </div>
+
+  <!-- PREFETCH -->
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>PREFETCH</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-prefetch">ⓘ</button>
+    </div>
+    <button id="prefetch-btn" style="
+      width: 160px;
+      padding: 8px;
+      background: transparent;
+      border: 1px solid rgba(0,200,255,0.6);
+      color: #00c8ff;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      border-radius: 3px;
+      cursor: pointer;
+    ">START PREFETCH</button>
+    <div style="font-family:monospace; margin-top:4px; font-size:10px;">
+      <span id="prefetch-status">idle</span>
+    </div>
+    <div id="info-prefetch" class="ctrl-info-body" hidden>
+      現在のデータセットの全タイルを先読みしてブラウザのキャッシュに乗せる機能。
+      VR突入前など、視点移動でカクつかせたくない場合に有効。
+      タイル数が多いと相応の通信量と時間がかかる(実行前に確認ダイアログが出る)。
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- データセット切替（ボタンはJSで動的生成） -->
+<div id="dataset-switch"></div>
+
+<!-- ロード進捗オーバーレイ -->
+<!-- 状態: Loading (tileset.json取得中) → Rendering (タイル本体ロード中) → Ready (描画完了) -->
+<div id="load-progress" data-state="idle">
+  <div class="lp-row">
+    <span class="lp-stage" id="lp-stage">―</span>
+    <span class="lp-detail" id="lp-detail"></span>
+  </div>
+  <div class="lp-bar"><div class="lp-bar-fill" id="lp-bar-fill"></div></div>
+</div>
+
+<!-- データ提供元クレジット表記。データセットのライセンスに応じて文言を調整してください -->
+<div id="credit">
+  3D Tiles データ: 産業技術総合研究所 (AIST) / gsvrg.ipri.aist.go.jp
+</div>
+
+<!-- スマホ用タッチUI -->
+<div id="swipe-area" class="touch-ui"></div>
+
+<div id="joystick-base" class="touch-ui">
+  <div id="joystick-knob"></div>
+</div>
+
+<div id="vert-buttons" class="touch-ui">
+  <div class="vert-btn" id="btn-up">▲</div>
+  <div class="vert-btn" id="btn-down">▼</div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
+import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js';
+import { TilesRenderer } from '3d-tiles-renderer';
+import { GLTFExtensionsPlugin } from '3d-tiles-renderer/plugins';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+
+console.log('Three.js r' + THREE.REVISION + ' / 3D Tiles VR Viewer');
+
+// データセット定義
+// 外部CSV (datasets.csv) から読み込む。読み込み失敗時はエラー表示を出し、データセットボタンは生成しない。
+// CSV列: id, label, xOffset, yOffset, zOffset, yawOffset
+//   id        : タイルセットURLのパス
+//   label     : ボタン表示名
+//   xOffset   : カメラ初期X座標(m)
+//   yOffset   : カメラ初期Y座標(m)
+//   zOffset   : カメラ初期Z座標(m)
+//   yawOffset : カメラ初期Y軸まわり回転(度)
+const TILESET_BASE = 'https://gsvrg.ipri.aist.go.jp/3ddb_demo/3dtiles';
+const DATASETS_CSV_URL = './datasets.csv';
+const DEFAULT_DATASET = '1886';
+
+// CSV読込後にここに入る。読込前/失敗時は空配列のまま。
+let DATASETS = [];
+const tilesetUrl = (id) => `${TILESET_BASE}/${id}/tileset.json`;
+const getDataset = (id) => DATASETS.find(d => d.id === id);
+
+// --- CSVパーサ（カンマ区切り、引用符なしの想定。ヘッダ行は1行目）---
+function parseDatasetsCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0 && !l.startsWith('#'));
+  if (lines.length < 2) return [];
+  const header = lines[0].split(',').map(s => s.trim());
+  const idx = (name) => header.indexOf(name);
+  const iId = idx('id'), iLabel = idx('label');
+  const iX = idx('xOffset'), iY = idx('yOffset'), iZ = idx('zOffset'), iYaw = idx('yawOffset');
+  if (iId < 0) {
+    console.warn('CSV: id列が見つかりません');
+    return [];
+  }
+  const num = (v) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  return lines.slice(1).map(line => {
+    const cols = line.split(',').map(s => s.trim());
+    return {
+      id:        cols[iId],
+      label:     iLabel  >= 0 ? cols[iLabel] : '',
+      xOffset:   iX      >= 0 ? num(cols[iX])   : 0,
+      yOffset:   iY      >= 0 ? num(cols[iY])   : 0,
+      zOffset:   iZ      >= 0 ? num(cols[iZ])   : 0,
+      yawOffset: iYaw    >= 0 ? num(cols[iYaw]) : 0,
+    };
+  }).filter(d => d.id);
+}
+
+// CSV読込結果のうち、ロード失敗/空の原因を保持する(UI表示用)
+// null: 成功 / 文字列: 失敗の理由
+let datasetsLoadError = null;
+
+async function loadDatasetsCSV() {
+  try {
+    const res = await fetch(DATASETS_CSV_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    const parsed = parseDatasetsCSV(text);
+    if (parsed.length > 0) {
+      DATASETS = parsed;
+      datasetsLoadError = null;
+      console.log(`データセットCSV読込完了: ${parsed.length}件`);
+    } else {
+      DATASETS = [];
+      datasetsLoadError = 'CSV解析結果が空です(ヘッダ・データ行を確認してください)';
+      console.warn(datasetsLoadError);
+    }
+  } catch (e) {
+    DATASETS = [];
+    datasetsLoadError = `datasets.csv 読込失敗: ${e.message}`;
+    console.warn(datasetsLoadError);
+  }
+}
+
+// ── Three.js ─────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0c10);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1e7);
+
+// VR時のカメラリグ（dolly）：カメラをこの中に入れて移動・回転させる
+const dolly = new THREE.Group();
+dolly.position.set(0, 2, 10);
+dolly.add(camera);
+scene.add(dolly);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.xr.enabled = true;
+// 'local-floor' だと床を原点とし、HMDの実物理身長分カメラが浮き上がる(=
+//  PC/スマホで設定した dolly.y より VR の見え高さが高くなる)。
+// 'local' は HMDの初期位置を原点とするため、dolly.position.y がそのまま目線高さになり、
+// PC/スマホ表示とVR表示の高さが揃う。
+renderer.xr.setReferenceSpaceType('local');
+document.body.appendChild(renderer.domElement);
+
+// PCキーボード入力状態
+const keys = {
+  forward: false, back: false, left: false, right: false,
+  yawLeft: false, yawRight: false, up: false, down: false
+};
+window.addEventListener('keydown', (e) => {
+  switch (e.code) {
+    case 'KeyW':       keys.forward  = true; break;
+    case 'KeyS':       keys.back     = true; break;
+    case 'KeyA':       keys.left     = true; break;
+    case 'KeyD':       keys.right    = true; break;
+    case 'ArrowLeft':  keys.yawLeft  = true; break;
+    case 'ArrowRight': keys.yawRight = true; break;
+    case 'ArrowUp':    keys.up       = true; break;
+    case 'ArrowDown':  keys.down     = true; break;
+  }
+});
+window.addEventListener('keyup', (e) => {
+  switch (e.code) {
+    case 'KeyW':       keys.forward  = false; break;
+    case 'KeyS':       keys.back     = false; break;
+    case 'KeyA':       keys.left     = false; break;
+    case 'KeyD':       keys.right    = false; break;
+    case 'ArrowLeft':  keys.yawLeft  = false; break;
+    case 'ArrowRight': keys.yawRight = false; break;
+    case 'ArrowUp':    keys.up       = false; break;
+    case 'ArrowDown':  keys.down     = false; break;
+  }
+});
+
+function handlePCInput(dt) {
+  const yaw = dolly.rotation.y;
+  const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+  const right   = new THREE.Vector3( Math.cos(yaw), 0, -Math.sin(yaw));
+
+  if (keys.forward) targetVel.addScaledVector(forward,  MOVE_SPEED);
+  if (keys.back)    targetVel.addScaledVector(forward, -MOVE_SPEED);
+  if (keys.right)   targetVel.addScaledVector(right,    MOVE_SPEED);
+  if (keys.left)    targetVel.addScaledVector(right,   -MOVE_SPEED);
+
+  if (keys.yawLeft)  targetYawVel += TURN_SPEED;
+  if (keys.yawRight) targetYawVel -= TURN_SPEED;
+  if (keys.up)       targetVel.y += VERT_SPEED;
+  if (keys.down)     targetVel.y -= VERT_SPEED;
+}
+
+// ── タッチUI ──────────────────────────────────
+// タッチデバイス判定
+//   ・粗いポインタ(=指)
+//   ・touch APIが存在
+//   ・画面が縦長か、短辺が900px以下(=スマホ/タブレットのみ)
+//   ・VR専用ブラウザ(Meta Quest など)は除外
+//      → Quest のブラウザは pointer:coarse かつ ontouchstart=true になるため、
+//        UA に OculusBrowser/Quest を含む場合は明示的に弾く
+const ua = navigator.userAgent || '';
+const isVRBrowser = /OculusBrowser|Quest|Pico|Vive/i.test(ua);
+const isSmallScreen = Math.min(window.innerWidth, window.innerHeight) <= 900;
+const isTouchDevice =
+  !isVRBrowser &&
+  isSmallScreen &&
+  window.matchMedia('(pointer: coarse)').matches &&
+  ('ontouchstart' in window);
+
+// ── スマホでのページ拡大操作を全面禁止 ──
+// (ダブルタップズーム / ピンチズーム / iOSのgesture系)
+if (isTouchDevice) {
+  // iOS Safari の独自ジェスチャ
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => {
+    document.addEventListener(t, (e) => e.preventDefault(), { passive: false });
+  });
+  // 2本指タッチによるピンチ防止 (canvas 以外で発生したものを抑止)
+  document.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+  // 300ms以内の連続タップ(ダブルタップ)による拡大を保険として無効化
+  let _lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - _lastTouchEnd < 350) e.preventDefault();
+    _lastTouchEnd = now;
+  }, { passive: false });
+
+  // UIパネル類の上でのピンチを確実に阻止
+  // (CSSの touch-action と、document レベルの touchmove だけでは
+  //  iOS/Android の一部環境で漏れることがあるため、直接 listener を付ける)
+  const stopPinch = (e) => {
+    if (e.touches && e.touches.length > 1) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+  const attachStopPinch = (el) => {
+    if (!el) return;
+    el.addEventListener('touchstart', stopPinch, { passive: false });
+    el.addEventListener('touchmove',  stopPinch, { passive: false });
+  };
+  // DOM構築済みのものは即時 attach。後から作られる #dbg-panel は MutationObserver で拾う。
+  // 注: VRボタン(button.three-vr) はピンチ阻止対象から除外。
+  //     CSSの touch-action 指定もしておらず、ブラウザ標準動作に任せる。
+  ['controls', 'vr-help', 'dataset-switch', 'credit', 'dbg-panel'].forEach(id => {
+    attachStopPinch(document.getElementById(id));
+  });
+  new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      for (const node of m.addedNodes) {
+        if (node.nodeType !== 1) continue; // Element以外
+        if (node.id === 'dbg-panel') attachStopPinch(node);
+      }
+    }
+  }).observe(document.body, { childList: true });
+}
+
+if (isTouchDevice) {
+  document.body.classList.add('touch');
+  // スマホでは #controls をデフォルトで折りたたみ、トグルボタンで開閉
+  const controlsEl = document.getElementById('controls');
+  const controlsToggle = document.getElementById('controls-toggle');
+  if (controlsEl && controlsToggle) {
+    controlsEl.classList.add('collapsed');
+    controlsToggle.addEventListener('click', () => {
+      controlsEl.classList.toggle('collapsed');
+    });
+  }
+
+  // ── #controls の top を #dataset-switch.bottom + 4px に動的設定 ──
+  // データセットボタンの増減・画面回転・リサイズに自動追従。
+  const datasetSwitchEl = document.getElementById('dataset-switch');
+  function positionControlsBelowDatasetSwitch() {
+    if (!controlsEl || !datasetSwitchEl) return;
+    const rect = datasetSwitchEl.getBoundingClientRect();
+    // bottom はビューポート上端からのオフセット。そのまま top に使える。
+    controlsEl.style.top = `${rect.bottom + 4}px`;
+  }
+  // 初回(ボタン未生成時)・リサイズ・データセットボタン生成後 すべてに対応
+  positionControlsBelowDatasetSwitch();
+  window.addEventListener('resize', positionControlsBelowDatasetSwitch);
+  if (datasetSwitchEl && 'ResizeObserver' in window) {
+    new ResizeObserver(positionControlsBelowDatasetSwitch).observe(datasetSwitchEl);
+  }
+
+  // ミニPOINT SIZEスライダーと本体POINT SIZEスライダーを双方向同期
+  // (スケールは整数 1〜50 で揃えてある。値表示はそのまま整数)
+  // スマホ時の初期値(30)の適用は、本体スライダーのハンドラ登録後に行うため
+  // 本ファイル下部の sizeSlider.addEventListener 直後で処理する。
+  const miniSlider = document.getElementById('size-mini-slider');
+  const miniVal    = document.getElementById('size-mini-val');
+  const mainSlider = document.getElementById('size-slider');
+  if (miniSlider && mainSlider) {
+    // ミニ → 本体
+    miniSlider.addEventListener('input', () => {
+      mainSlider.value = miniSlider.value;
+      miniVal.textContent = miniSlider.value;
+      // 本体スライダーの input イベントを発火させて、既存の点サイズ反映ロジックを動かす
+      mainSlider.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    // 本体 → ミニ (展開して本体を動かしたとき向け)
+    mainSlider.addEventListener('input', () => {
+      if (document.activeElement !== miniSlider) {
+        miniSlider.value = mainSlider.value;
+        miniVal.textContent = mainSlider.value;
+      }
+    });
+  }
+}
+
+// 仮想スティック状態：正規化された -1〜1
+const touchStick = { x: 0, y: 0 };
+// スワイプ視点回転：1フレームあたりのデルタ（処理後リセット）。横方向のみ使用。
+const swipeDelta = { x: 0 };
+// 上下ボタン状態
+const touchVert = { up: false, down: false };
+
+// --- 左下：仮想スティック ---
+{
+  const base = document.getElementById('joystick-base');
+  const knob = document.getElementById('joystick-knob');
+  const RADIUS = 60; // baseの半径(px)
+  let stickPointerId = null;
+  let baseCx = 0, baseCy = 0;
+
+  base.addEventListener('pointerdown', (e) => {
+    if (stickPointerId !== null) return;
+    stickPointerId = e.pointerId;
+    base.setPointerCapture(e.pointerId);
+    const rect = base.getBoundingClientRect();
+    baseCx = rect.left + rect.width / 2;
+    baseCy = rect.top + rect.height / 2;
+    updateStick(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+  base.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== stickPointerId) return;
+    updateStick(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+  const endStick = (e) => {
+    if (e.pointerId !== stickPointerId) return;
+    stickPointerId = null;
+    touchStick.x = 0;
+    touchStick.y = 0;
+    knob.style.transform = 'translate(0px, 0px)';
+  };
+  base.addEventListener('pointerup', endStick);
+  base.addEventListener('pointercancel', endStick);
+  base.addEventListener('pointerleave', endStick);
+
+  function updateStick(cx, cy) {
+    let dx = cx - baseCx;
+    let dy = cy - baseCy;
+    const dist = Math.hypot(dx, dy);
+    if (dist > RADIUS) {
+      dx = dx / dist * RADIUS;
+      dy = dy / dist * RADIUS;
+    }
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    touchStick.x = dx / RADIUS;
+    touchStick.y = dy / RADIUS;
+  }
+}
+
+// --- 右半分：スワイプで視点回転 ---
+{
+  const area = document.getElementById('swipe-area');
+  let swipePointerId = null;
+  let lastX = 0;
+
+  area.addEventListener('pointerdown', (e) => {
+    if (swipePointerId !== null) return;
+    swipePointerId = e.pointerId;
+    area.setPointerCapture(e.pointerId);
+    lastX = e.clientX;
+    e.preventDefault();
+  });
+  area.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== swipePointerId) return;
+    swipeDelta.x += e.clientX - lastX;
+    lastX = e.clientX;
+    e.preventDefault();
+  });
+  const endSwipe = (e) => {
+    if (e.pointerId !== swipePointerId) return;
+    swipePointerId = null;
+  };
+  area.addEventListener('pointerup', endSwipe);
+  area.addEventListener('pointercancel', endSwipe);
+}
+
+// --- 右下：上昇/下降ボタン ---
+{
+  const setupBtn = (el, onChange) => {
+    let pid = null;
+    el.addEventListener('pointerdown', (e) => {
+      pid = e.pointerId;
+      el.setPointerCapture(e.pointerId);
+      el.classList.add('active');
+      onChange(true);
+      e.preventDefault();
+    });
+    const end = (e) => {
+      if (e.pointerId !== pid) return;
+      pid = null;
+      el.classList.remove('active');
+      onChange(false);
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    el.addEventListener('pointerleave', end);
+  };
+  setupBtn(document.getElementById('btn-up'),   (on) => { touchVert.up = on; });
+  setupBtn(document.getElementById('btn-down'), (on) => { touchVert.down = on; });
+}
+
+// タッチ入力をtargetVel/targetYawVelへ反映
+const SWIPE_YAW_SENS = 0.005;   // 1pxあたりのヨー(rad)
+function handleTouchInput(dt) {
+  // 左スティック：水平移動
+  const yaw = dolly.rotation.y;
+  const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+  const right   = new THREE.Vector3( Math.cos(yaw), 0, -Math.sin(yaw));
+
+  // touchStick.y: 上=-1, 下=+1 → 前進=-y方向
+  targetVel.addScaledVector(forward, -touchStick.y * MOVE_SPEED);
+  targetVel.addScaledVector(right,    touchStick.x * MOVE_SPEED);
+
+  // 右スワイプ：横方向のみヨー回転に使う（縦は無視 = 視点上下は使わない）
+  // dtで割って「速度」として扱い、targetYawVelに加算
+  if (dt > 0) {
+    targetYawVel -= (swipeDelta.x * SWIPE_YAW_SENS) / dt;
+  }
+  swipeDelta.x = 0;
+
+  // 上昇/下降ボタン
+  if (touchVert.up)   targetVel.y += VERT_SPEED;
+  if (touchVert.down) targetVel.y -= VERT_SPEED;
+}
+
+scene.add(new THREE.AmbientLight(0xffffff, 2.5));
+const dir = new THREE.DirectionalLight(0xffffff, 1);
+dir.position.set(1, 3, 2);
+scene.add(dir);
+
+const grid = new THREE.GridHelper(1000, 100, 0x114455, 0x002233);
+grid.material.opacity = 0.3;
+grid.material.transparent = true;
+scene.add(grid);
+
+// VRボタン
+const vrBtn = VRButton.createButton(renderer);
+vrBtn.className = 'three-vr';
+document.body.appendChild(vrBtn);
+
+// コントローラー（モデル表示用）。入力自体は session.inputSources から取得するため
+// getController() の戻り値は保持不要。
+const ctrlFactory = new XRControllerModelFactory();
+for (let i = 0; i < 2; i++) {
+  const grip = renderer.xr.getControllerGrip(i);
+  grip.add(ctrlFactory.createControllerModel(grip));
+  dolly.add(grip);
+}
+
+// ── 設定の現在のtilesへの反映 ──
+// errorTarget と downloadQueue.maxJobs を、現在のスライダー値に基づき適用する。
+// (旧バージョンにあった「VR中だけ別設定」「優先モード」は、schedulingCallbackの
+//  差し替え対応で不要になったため削除済み)
+// DOWNLOAD_MAX_JOBS はネットワークプロファイルにより動的に変わるため let。
+let DOWNLOAD_MAX_JOBS = 16;
+function applyActiveTilesSettings() {
+  if (!tiles) return;
+  tiles.errorTarget = lodErrorTarget;
+  if (tiles.downloadQueue) tiles.downloadQueue.maxJobs = DOWNLOAD_MAX_JOBS;
+}
+
+// ── PriorityQueue の schedulingCallback を XRセッションに合わせて差し替え ──
+//
+// 3D Tiles Renderer の downloadQueue / parseQueue は、次フレームでのジョブ実行を
+// schedulingCallback(func) → 既定では requestAnimationFrame(func) で予約する。
+//
+// しかし WebXR セッション中はグローバルの requestAnimationFrame が呼ばれない
+// (もしくは大幅に遅延する) ため、ジョブが永遠にスケジュールされず、
+// downloading キューが詰まる現象が発生する。
+// 公式ドキュメントでも「WebXR では schedulingCallback を上書きすべき」と明記されている。
+//
+// 対応: セッション開始時に xrSession.requestAnimationFrame ベースのコールバックに
+// 差し替え、セッション終了時に元に戻す。
+const _origSchedulingCallbacks = new WeakMap(); // queue -> 元のコールバック
+
+function applySchedulingCallbacks(xrSession) {
+  if (!tiles) return;
+  const queues = [tiles.downloadQueue, tiles.parseQueue, tiles.processNodeQueue].filter(Boolean);
+  for (const q of queues) {
+    if (!q || typeof q.schedulingCallback !== 'function') continue;
+    // 既に差し替え済みの場合は元のものを保存しない (二重差し替え防止)
+    if (!_origSchedulingCallbacks.has(q)) {
+      _origSchedulingCallbacks.set(q, q.schedulingCallback);
+    }
+    if (xrSession) {
+      // XRセッション中: xrSession.requestAnimationFrame を使う
+      q.schedulingCallback = (cb) => {
+        xrSession.requestAnimationFrame(() => cb());
+      };
+    } else {
+      // 通常: 元のコールバック(=requestAnimationFrame)に戻す
+      const orig = _origSchedulingCallbacks.get(q);
+      if (orig) q.schedulingCallback = orig;
+    }
+  }
+}
+
+// VR入退場でschedulingCallbackを切り替え
+renderer.xr.addEventListener('sessionstart', () => {
+  console.log('VR session start: applying XR scheduling callbacks');
+  applySchedulingCallbacks(renderer.xr.getSession());
+});
+renderer.xr.addEventListener('sessionend', () => {
+  console.log('VR session end: restoring default scheduling callbacks');
+  applySchedulingCallbacks(null);
+});
+
+// 移動・回転パラメータ
+const MOVE_SPEED  = 3.0;
+const TURN_SPEED  = Math.PI * 0.2;
+const VERT_SPEED  = 2.0;
+const DEADZONE    = 0.15;
+
+const clock = new THREE.Clock();
+
+// スムージング用の速度ベクトル
+const velocity = new THREE.Vector3();
+const targetVel = new THREE.Vector3();
+let yawVel = 0;
+let targetYawVel = 0;
+const SMOOTH = 8.0;
+
+// XR入力ソースを毎フレーム読む関数
+function handleVRInput(dt) {
+  const session = renderer.xr.getSession();
+  if (!session) return;
+
+  // ── 最終的な向き = dolly の回転 × HMD の向き ──
+  // renderer.xr.getCamera() の matrixWorld には WebXR セッションの
+  // 参照空間における頭の姿勢が入る。実装によっては dolly の rotation が
+  // ここに反映されないことがあるため、両者を明示的に合成する。
+  //
+  // 1) HMD のローカル向き（参照空間内での向き）を取得
+  // 2) dolly の rotation を適用してワールド向きに変換
+  const xrCam = renderer.xr.getCamera();
+  // xrCam.quaternion は HMDのローカル向き
+  const hmdQuat = xrCam.quaternion.clone();
+  // dolly の rotation を quaternion 化
+  const dollyQuat = new THREE.Quaternion().setFromEuler(dolly.rotation);
+  // ワールド向き quaternion = dollyQuat * hmdQuat
+  const worldQuat = dollyQuat.multiply(hmdQuat);
+
+  // -Z方向を向くベクトル(=カメラの前方)に最終回転を適用
+  const hmdForward = new THREE.Vector3(0, 0, -1).applyQuaternion(worldQuat);
+  hmdForward.y = 0;
+  if (hmdForward.lengthSq() < 1e-6) {
+    hmdForward.set(0, 0, -1);
+  }
+  hmdForward.normalize();
+  // 右方向 = forward を Y軸まわりに -90度回転
+  const hmdRight = new THREE.Vector3(hmdForward.z, 0, -hmdForward.x);
+
+  for (const source of session.inputSources) {
+    if (!source.gamepad) continue;
+    const gp = source.gamepad;
+    const axes = gp.axes;
+    const buttons = gp.buttons;
+    const hand = source.handedness;
+
+    const stickX = Math.abs(axes[2]) > DEADZONE ? axes[2] : 0;
+    const stickY = Math.abs(axes[3]) > DEADZONE ? axes[3] : 0;
+
+    if (hand === 'left') {
+      // HMD（頭）の向きを基準に前後左右の移動
+      // stickY: 上倒し=-1 → 前進、下倒し=+1 → 後退
+      // stickX: 右倒し=+1 → 左移動、左倒し=-1 → 右移動（実機検証で反転が自然）
+      targetVel.addScaledVector(hmdForward, -stickY * MOVE_SPEED);
+      targetVel.addScaledVector(hmdRight,   -stickX * MOVE_SPEED);
+
+      // 左手 X=buttons[4]:点を小さく, Y=buttons[5]:点を大きく
+      const sizeStep = pointSize * 0.05;
+      if (buttons[4] && buttons[4].pressed) {
+        pointSize = Math.max(0.001, pointSize - sizeStep);
+        applyPointSize();
+        updateSizeSlider();
+      }
+      if (buttons[5] && buttons[5].pressed) {
+        pointSize = Math.min(0.05, pointSize + sizeStep);
+        applyPointSize();
+        updateSizeSlider();
+      }
+    }
+
+    if (hand === 'right') {
+      // 右スティック左右：ヨー回転（上下は使わない）
+      // VRでは PC のキー操作より速めに回したいので 1.5倍にする
+      targetYawVel -= stickX * TURN_SPEED * 1.5;
+
+      // 右手 A=buttons[4]:下降, B=buttons[5]:上昇
+      if (buttons[4] && buttons[4].pressed) targetVel.y -= VERT_SPEED;
+      if (buttons[5] && buttons[5].pressed) targetVel.y += VERT_SPEED;
+    }
+  }
+}
+
+// ── 3D Tiles ─────────────────────────────────────
+
+// DRACOLoader（PNTS/B3DMのDraco展開用）共通インスタンス
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+dracoLoader.setDecoderConfig({ type: 'js' });
+
+// 点群の点サイズ管理（タイルセット切替後も維持）
+let pointSize = 0.005;
+const pointMaterials = new Set();
+
+// ── 点群密度(間引き)管理 ─────────────────────────
+// pointObjects は描画される THREE.Points インスタンスを追跡するセット。
+// load-model時に追加、loadTileset の dispose時に clear する。
+// pointDensity スライダーで値が変わったら、各 Points の geometry.setDrawRange(0, N)
+// で描画頂点数を絞る。値=1.0 で全点描画、0.5 で半分、0.1 で1/10。
+const pointObjects = new Set();
+let pointDensity = 1.0;  // 0.1〜1.0
+
+function applyPointDensity(points) {
+  // 単一のPointsまたは全Pointsに setDrawRange を適用するヘルパー。
+  // 引数なしなら全Points対象。
+  const apply = (p) => {
+    if (!p || !p.geometry) return;
+    const attr = p.geometry.getAttribute('position');
+    if (!attr) return;
+    const total = attr.count;
+    const count = Math.max(1, Math.floor(total * pointDensity));
+    p.geometry.setDrawRange(0, count);
+  };
+  if (points) {
+    apply(points);
+  } else {
+    pointObjects.forEach(apply);
+  }
+}
+
+// ── 立方体点群シェーダ ──────────────────────────────
+// 各点をスクリーン空間の正方形スプライトとして描画し、
+// gl_PointCoord をワールド固定の絶対軸（+X右、+Y上、+Z前）に紐づけて陰影計算する。
+// → 立方体の見え方はワールド空間で完全に固定され、
+//    カメラの位置・向きが変わっても面の向き・明るさは一切変化しない。
+// 追加ジオメトリなし・ビルボード処理なし。
+const CUBE_VERT = /* glsl */`
+  uniform float uSize;
+  varying vec3 vColor;
+
+  void main() {
+    vColor = color;
+    vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+    float depth = -mvPos.z;
+    float sz = uSize * (300.0 / depth);
+    gl_PointSize = clamp(sz, 1.0, 64.0);
+    gl_Position = projectionMatrix * mvPos;
+  }
+`;
+
+const CUBE_FRAG = /* glsl */`
+  varying vec3 vColor;
+
+  // ワールド固定の光源方向（上やや斜め）
+  const vec3 LIGHT_DIR_WS = normalize(vec3(0.4, 1.0, 0.3));
+
+  // ワールド絶対軸（変化しない）
+  const vec3 WS_RIGHT = vec3(1.0, 0.0, 0.0); // +X
+  const vec3 WS_UP    = vec3(0.0, 1.0, 0.0); // +Y
+
+  void main() {
+    vec2 uv = gl_PointCoord * 2.0 - 1.0; // -1〜1（y下向き正）
+
+    // スプライトの3領域を「ワールド絶対軸の3面」に対応させる
+    //   上半分(uv.y<-0.15): +Y面 (上面)
+    //   左下(uv.x<0):       -X面 (左面)
+    //   右下:                +X面 (右面)
+    // この対応は固定なので、カメラがどう動いても変わらない
+    vec3 nWS;
+    if (uv.y < -0.15) {
+      nWS = WS_UP;
+    } else if (uv.x < 0.0) {
+      nWS = -WS_RIGHT;
+    } else {
+      nWS = WS_RIGHT;
+    }
+
+    float diff = max(dot(nWS, LIGHT_DIR_WS), 0.0);
+    float brightness = 0.35 + 0.75 * diff;
+
+    float ex = abs(uv.x);
+    float ey = abs(uv.y + 0.15);
+    float edge = step(0.90, max(ex, ey));
+    brightness *= mix(1.0, 0.55, edge);
+
+    gl_FragColor = vec4(vColor * brightness, 1.0);
+  }
+`;
+
+// uniform（点サイズのみ）
+const cubeUniforms = {
+  uSize: { value: 0.005 },
+};
+
+function makeCubeMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: cubeUniforms,
+    vertexShader:   CUBE_VERT,
+    fragmentShader: CUBE_FRAG,
+    vertexColors: true,
+    depthWrite: true,
+  });
+}
+
+function applyPointSize() {
+  cubeUniforms.uSize.value = pointSize;
+  // 念のためフォールバック（PointsMaterialが残っていた場合用）
+  pointMaterials.forEach(m => {
+    if (m.isPointsMaterial) {
+      m.size = pointSize;
+      m.needsUpdate = true;
+    }
+  });
+}
+
+let tiles = null;             // 現在アクティブなTilesRenderer
+let currentDataset = null;    // 現在表示中のデータセットID
+let loadingDataset = null;    // ロード進行中のデータセットID
+let cameraInitialized = false;
+let _tilesCameraRegistered = false; // tiles.setCamera を1度だけ呼ぶためのフラグ
+
+// LOD制御：errorTarget が小さいほど高詳細(=LODが効きにくい)、大きいほど積極的に間引く
+// 初期値20。スライダーで15〜30の範囲で調整可能。
+let lodErrorTarget = 20;
+
+// LRUキャッシュ上限：訪問した領域のディテールを保持する量
+// タイル数ベース / バイト数(MB)ベース、両方を上限として併用
+// ※ ここの値はプロファイル自動判定で上書きされる(applyProfile)。
+//   スライダーのHTML既定値とも整合させて、プロファイル未動作時のフォールバック値とする。
+let cacheMaxTiles = 2000;    // タイル数の上限
+let cacheMaxBytesMB = 1536;  // バイト数の上限(MB)
+
+function applyCacheSettings(t) {
+  if (!t || !t.lruCache) return;
+  const cache = t.lruCache;
+  // タイル数ベース（minSizeは上限の60%を目安に、滑らかなアンロード挙動にする）
+  cache.minSize = Math.floor(cacheMaxTiles * 0.6);
+  cache.maxSize = cacheMaxTiles;
+  // バイト数ベース（利用可能なバージョンのみ。古いとプロパティが存在しないので保険）
+  if ('maxBytesSize' in cache) {
+    cache.minBytesSize = Math.floor(cacheMaxBytesMB * 0.6) * 1024 * 1024;
+    cache.maxBytesSize = cacheMaxBytesMB * 1024 * 1024;
+  }
+  // 1フレームあたりのアンロード比率を抑え、急なディテール消失を緩和
+  if ('unloadPercent' in cache) {
+    cache.unloadPercent = 0.05;
+  }
+}
+
+// ── プリフェッチ機構 ─────────────────────────────────────
+// 目的: VRセッション中はQuestブラウザ等でfetchがスロットルされる。
+// 事前にタイル本体をHTTPキャッシュに乗せておけば、VR中に tiles.update() が
+// 要求したときにネットワーク往復ではなくキャッシュから即時取得される。
+//
+// 仕組み:
+//   1. tileset.json を再帰的にウォークし、すべての content.uri を収集
+//   2. 子tileset.json は別途取得し、その中身も再帰的に展開
+//   3. 収集したURLを順次 fetch() するだけ。レスポンスは破棄してOK。
+//      ブラウザのHTTPキャッシュに乗れば目的達成。
+
+const prefetchState = {
+  running: false,
+  cancel: false,
+  total: 0,
+  done: 0,
+  failed: 0,
+  currentTilesetId: null,  // どのデータセット用にプリフェッチしたか
+};
+
+// URL解決: 基準URLからの相対/絶対パスを絶対URLに
+function resolveUri(baseUrl, uri) {
+  try {
+    return new URL(uri, baseUrl).href;
+  } catch (e) {
+    return uri;
+  }
+}
+
+// tileset.jsonをfetchして、その中のすべての content.uri (子tileset含む)を再帰的に収集
+async function collectTileUris(tilesetUrl, collected, depth = 0, maxDepth = 20) {
+  if (prefetchState.cancel) return;
+  if (depth > maxDepth) return;
+  let json;
+  try {
+    const res = await fetch(tilesetUrl);
+    if (!res.ok) {
+      console.warn(`prefetch: tileset.json取得失敗 ${tilesetUrl} (${res.status})`);
+      return;
+    }
+    json = await res.json();
+  } catch (e) {
+    console.warn(`prefetch: tileset.json取得エラー ${tilesetUrl}`, e);
+    return;
+  }
+  if (!json || !json.root) return;
+  // 再帰的にツリーをウォーク
+  await walkTileNode(json.root, tilesetUrl, collected, depth, maxDepth);
+}
+
+async function walkTileNode(node, baseUrl, collected, depth, maxDepth) {
+  if (prefetchState.cancel) return;
+  if (!node) return;
+
+  // このタイル自身のコンテンツ
+  const content = node.content;
+  if (content) {
+    const uri = content.uri || content.url; // 新仕様/旧仕様
+    if (uri) {
+      const absUrl = resolveUri(baseUrl, uri);
+      // .json で終わるものは子tilesetとして再帰
+      if (absUrl.toLowerCase().split('?')[0].endsWith('.json')) {
+        await collectTileUris(absUrl, collected, depth + 1, maxDepth);
+      } else {
+        collected.add(absUrl);
+      }
+    }
+  }
+  // 複数コンテンツ対応 (3D Tiles 1.1)
+  if (Array.isArray(node.contents)) {
+    for (const c of node.contents) {
+      const uri = c.uri || c.url;
+      if (!uri) continue;
+      const absUrl = resolveUri(baseUrl, uri);
+      if (absUrl.toLowerCase().split('?')[0].endsWith('.json')) {
+        await collectTileUris(absUrl, collected, depth + 1, maxDepth);
+      } else {
+        collected.add(absUrl);
+      }
+    }
+  }
+  // 子タイル
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) {
+      await walkTileNode(child, baseUrl, collected, depth, maxDepth);
+    }
+  }
+}
+
+// 配列を並列フェッチ。レスポンスは破棄(HTTPキャッシュに乗ればOK)
+async function prefetchAll(urls, concurrency = 6) {
+  const urlArr = Array.from(urls);
+  let idx = 0;
+  prefetchState.total = urlArr.length;
+  prefetchState.done = 0;
+  prefetchState.failed = 0;
+  updatePrefetchUI();
+
+  async function worker() {
+    while (!prefetchState.cancel) {
+      const i = idx++;
+      if (i >= urlArr.length) break;
+      const url = urlArr[i];
+      try {
+        const res = await fetch(url, { cache: 'force-cache' });
+        // body を読み切ってブラウザキャッシュに確実に格納
+        if (res.ok) {
+          await res.arrayBuffer();
+          prefetchState.done++;
+        } else {
+          prefetchState.failed++;
+        }
+      } catch (e) {
+        prefetchState.failed++;
+      }
+      // UIの更新頻度を抑える
+      if ((prefetchState.done + prefetchState.failed) % 5 === 0) {
+        updatePrefetchUI();
+      }
+    }
+  }
+
+  const workers = [];
+  for (let w = 0; w < concurrency; w++) workers.push(worker());
+  await Promise.all(workers);
+  updatePrefetchUI();
+}
+
+// プリフェッチ実行前の確認ダイアログを出すタイル数の閾値。
+// これより少ない場合は確認を省略する(軽いデータなら煩わしくない)。
+const PREFETCH_CONFIRM_THRESHOLD = 100;
+
+async function startPrefetch() {
+  if (prefetchState.running) return;
+  if (!currentDataset) {
+    console.warn('prefetch: タイルセット未ロード');
+    return;
+  }
+  prefetchState.running = true;
+  prefetchState.cancel = false;
+  prefetchState.currentTilesetId = currentDataset;
+  console.log(`prefetch開始: ${currentDataset}`);
+
+  const rootUrl = tilesetUrl(currentDataset);
+  const collected = new Set();
+
+  prefetchSetStatus('collecting...');
+  // ボタン表示も「収集中」状態に
+  updatePrefetchUI();
+  await collectTileUris(rootUrl, collected);
+  if (prefetchState.cancel) {
+    prefetchSetStatus('cancelled');
+    prefetchState.running = false;
+    updatePrefetchUI();
+    return;
+  }
+
+  // ── 確認ダイアログ ──
+  // 推定サイズはタイル仕様上正確には取れないので「タイル数」と
+  // 「目安サイズ(1タイル≒平均0.5MB と仮定)」を伝える。
+  // 軽いデータ(閾値未満)では確認を省略する。
+  if (collected.size >= PREFETCH_CONFIRM_THRESHOLD) {
+    const tileCount = collected.size;
+    const estMB = Math.round(tileCount * 0.5); // 平均0.5MB仮定の概算
+    const msg =
+      `PREFETCH 確認\n\n` +
+      `タイル数: 約 ${tileCount} 件\n` +
+      `推定サイズ: 約 ${estMB} MB(平均0.5MB/タイル想定の概算)\n\n` +
+      `多量のデータをダウンロードし、ブラウザのHTTPキャッシュに乗せます。\n` +
+      `モバイル回線では通信量が大きくなる場合があります。\n\n` +
+      `実行しますか?`;
+    // window.confirm はモーダルブロッキング。
+    // 注: iOS Safari等ではユーザ操作起因の同期confirm以外がブロックされる可能性あり。
+    const ok = window.confirm(msg);
+    if (!ok) {
+      prefetchSetStatus('cancelled');
+      prefetchState.running = false;
+      updatePrefetchUI();
+      return;
+    }
+  }
+  // 念のため、ダイアログ中にユーザが他データに切替た等でキャンセル要求が来ていないか再確認
+  if (prefetchState.cancel) {
+    prefetchSetStatus('cancelled');
+    prefetchState.running = false;
+    updatePrefetchUI();
+    return;
+  }
+
+  console.log(`prefetch: ${collected.size} URLs を取得対象に`);
+  prefetchSetStatus(`0 / ${collected.size}`);
+
+  // VR中でなければ並列数を多めに、VR中はスロットルに合わせて控えめに
+  const concurrency = renderer.xr.isPresenting ? 4 : 8;
+  await prefetchAll(collected, concurrency);
+
+  prefetchState.running = false;
+  if (prefetchState.cancel) {
+    prefetchSetStatus('cancelled');
+  } else {
+    prefetchSetStatus(`done: ${prefetchState.done} / ${prefetchState.total}` +
+      (prefetchState.failed > 0 ? ` (fail: ${prefetchState.failed})` : ''));
+  }
+  // ボタン表示を「START PREFETCH」に戻す
+  updatePrefetchUI();
+  console.log('prefetch完了', prefetchState);
+}
+
+function cancelPrefetch() {
+  if (!prefetchState.running) return;
+  prefetchState.cancel = true;
+  console.log('prefetch: キャンセル要求');
+}
+
+const prefetchStatusEl = () => document.getElementById('prefetch-status');
+const prefetchBtnEl = () => document.getElementById('prefetch-btn');
+
+function prefetchSetStatus(text) {
+  const el = prefetchStatusEl();
+  if (el) el.textContent = text;
+}
+
+function updatePrefetchUI() {
+  const el = prefetchStatusEl();
+  const btn = prefetchBtnEl();
+  if (!el || !btn) return;
+  if (prefetchState.running) {
+    el.textContent = `${prefetchState.done} / ${prefetchState.total}` +
+      (prefetchState.failed > 0 ? ` (fail: ${prefetchState.failed})` : '');
+    btn.textContent = 'CANCEL';
+    btn.style.background = 'rgba(255,80,80,0.15)';
+    btn.style.borderColor = 'rgba(255,80,80,0.7)';
+    btn.style.color = '#ff6b6b';
+  } else {
+    btn.textContent = 'START PREFETCH';
+    btn.style.background = 'transparent';
+    btn.style.borderColor = 'rgba(0,200,255,0.6)';
+    btn.style.color = '#00c8ff';
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// ロード進捗管理
+// ────────────────────────────────────────────────────────────
+// 状態遷移:
+//   idle      … 何も読込んでいない / 完了後の非表示状態
+//   loading   … tileset.json 取得中(load-tile-set イベント発火まで)
+//   rendering … タイル本体の取得・parse・描画中
+//   ready     … 十分な数のタイルが可視になった (2秒表示してidleへ)
+//
+// "ready" 判定:
+//   ・downloadQueue / parseQueue が空
+//   ・displayActiveTiles > 0 (1つでも描画されている)
+//   ・上記の状態が READY_HOLD_FRAMES フレーム連続で成立
+const READY_HOLD_FRAMES = 30; // 約0.5秒の安定期間
+const READY_LINGER_MS  = 1800; // "Ready" 表示を見せる時間
+const progressState = {
+  stage: 'idle',        // 'idle' | 'loading' | 'rendering' | 'ready'
+  readyStableFrames: 0, // 連続して ready条件を満たしたフレーム数
+  readyTimer: null,     // ready→idle に戻すタイマーID
+  bytesAtSwitch: 0,     // データセット切替時点の lruCache.byteSize 値(基準)
+};
+const progressEl = () => document.getElementById('load-progress');
+const progressStageEl  = () => document.getElementById('lp-stage');
+const progressDetailEl = () => document.getElementById('lp-detail');
+const progressBarFillEl = () => document.getElementById('lp-bar-fill');
+
+function setProgressStage(stage) {
+  if (progressState.stage === stage) return;
+  progressState.stage = stage;
+  const el = progressEl();
+  if (!el) return;
+  el.setAttribute('data-state', stage);
+  const stageLabel = {
+    idle:      '',
+    loading:   'LOADING',
+    rendering: 'RENDERING',
+    ready:     'READY',
+  }[stage] || '';
+  if (progressStageEl()) progressStageEl().textContent = stageLabel;
+  if (stage === 'ready') {
+    // 2秒後に idle に戻してフェードアウト
+    clearTimeout(progressState.readyTimer);
+    progressState.readyTimer = setTimeout(() => setProgressStage('idle'), READY_LINGER_MS);
+  } else if (stage !== 'idle') {
+    // ready以外への遷移ではタイマーを取り消す(rendering→readyの遷移途中など)
+    clearTimeout(progressState.readyTimer);
+    progressState.readyTimer = null;
+  }
+}
+
+// 受信バイト量を MB / KB / GB 単位の見やすい文字列に
+function formatBytes(b) {
+  if (!Number.isFinite(b) || b <= 0) return '0 KB';
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+  if (b < 1024 * 1024 * 1024) return `${(b / 1024 / 1024).toFixed(1)} MB`;
+  return `${(b / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+// 毎フレーム呼ぶ進捗UI更新。rendering⇄ready の判定もここで行う。
+function updateLoadProgress() {
+  const stage = progressState.stage;
+  if (stage === 'idle' || stage === 'loading') {
+    // idle: 何もしない / loading: tileset.json 取得中は不確定アニメーション(CSS側)
+    return;
+  }
+  if (!tiles) return;
+
+  // タイル数の取得 (バージョン差異吸収)
+  const dlQueue = tiles.downloadQueue?.items?.length ?? tiles.downloadQueue?.callbacks?.size ?? 0;
+  const parseQ  = tiles.parseQueue?.items?.length    ?? tiles.parseQueue?.callbacks?.size    ?? 0;
+  const visible = tiles.visibleTiles?.size ?? 0;
+  const active  = tiles.activeTiles?.size  ?? 0;
+  // 受信バイト量 (LRUキャッシュの byteSize は load後加算、evict時減少)
+  const cacheBytes = tiles.lruCache?.byteSize ?? 0;
+  // 切替直後を基準にした「今回のロードで増えたバイト量」
+  const sessionBytes = Math.max(0, cacheBytes - progressState.bytesAtSwitch);
+
+  // 詳細表示
+  const detail = `tiles: ${active} active / ${visible} visible · queue: ${dlQueue + parseQ} · ${formatBytes(sessionBytes)}`;
+  const dEl = progressDetailEl();
+  if (dEl) dEl.textContent = detail;
+
+  // 進捗バー: rendering中はキュー残量を視覚化
+  //   完了率 = 描画済み / (描画済み + 残りキュー)  だが、最大値が動くので
+  //   かわりに「(active) / (active + dl + parse)」で近似
+  const total = active + dlQueue + parseQ;
+  const ratio = total > 0 ? (active / total) : 0;
+  const fill = progressBarFillEl();
+  if (fill && stage === 'rendering') {
+    fill.style.width = `${Math.max(5, Math.min(100, ratio * 100))}%`;
+    fill.style.animation = 'none'; // 確定進捗に切替え
+  }
+
+  // rendering → ready 判定
+  if (stage === 'rendering') {
+    const isQueueIdle = (dlQueue === 0 && parseQ === 0);
+    const hasContent  = active > 0;
+    if (isQueueIdle && hasContent) {
+      progressState.readyStableFrames++;
+      if (progressState.readyStableFrames >= READY_HOLD_FRAMES) {
+        if (fill) fill.style.width = '100%';
+        setProgressStage('ready');
+      }
+    } else {
+      progressState.readyStableFrames = 0;
+    }
+  }
+}
+
+
+function loadTileset(id) {
+  if (id === currentDataset || id === loadingDataset) return;
+
+  // 進行中のプリフェッチがあればキャンセル(別データセット切替時)
+  if (prefetchState.running) {
+    cancelPrefetch();
+  }
+  // ステータスもリセット
+  prefetchSetStatus('idle');
+
+  // ── ロード進捗 reset & "loading" 状態に遷移 ──
+  setProgressStage('loading');
+  progressState.readyStableFrames = 0;
+  progressState.bytesAtSwitch = 0; // 古い tiles はこの後 dispose するのでリセット
+  if (progressDetailEl()) progressDetailEl().textContent = '';
+  if (progressBarFillEl()) {
+    progressBarFillEl().style.width = '';     // CSS既定(不確定アニメ)に戻す
+    progressBarFillEl().style.animation = ''; // CSS既定(不確定アニメ)に戻す
+  }
+
+  // 既存のtilesを破棄
+  if (tiles) {
+    scene.remove(tiles.group);
+    // 各マテリアルを明示的に dispose(自作シェーダのテクスチャ等を確実に解放)
+    pointMaterials.forEach(mat => {
+      if (mat && typeof mat.dispose === 'function') mat.dispose();
+    });
+    pointMaterials.clear();
+    // 点群オブジェクト追跡セットもクリア
+    // (geometry/material の dispose は TilesRenderer 側で処理される)
+    pointObjects.clear();
+    // 3D Tiles Renderer 本体 dispose
+    // (lruCacheの全タイル content.scene の dispose は内部で行われる)
+    tiles.dispose();
+    tiles = null;
+    _tilesCameraRegistered = false;
+    _vrEyeCamerasRegistered = false;
+    _vrEyeCams.length = 0;
+  }
+
+  loadingDataset = id;
+  // データセット切替時はカメラ位置・向きをそのデータセットの初期位置にリセット
+  // (load-tile-set ハンドラ内の "cameraInitialized==false" 経路を再度通すため)
+  cameraInitialized = false;
+  updateDatasetButtons();
+
+  console.log(`タイルセット読込中: ${id}`);
+  tiles = new TilesRenderer(tilesetUrl(id));
+  tiles.registerPlugin(new GLTFExtensionsPlugin({ dracoLoader }));
+
+  // LOD設定 & ダウンロード並列数 を反映
+  // (VR状態/優先モードの組み合わせで動的に決まる)
+  applyActiveTilesSettings();
+  // パース並列数(これは状況によらず固定で良い)
+  if (tiles.parseQueue) tiles.parseQueue.maxJobs = 4;
+  // キャッシュ上限を反映（スライダーで可変）
+  applyCacheSettings(tiles);
+  // 既にVRセッション中の場合、新しいtilesにもXR用 schedulingCallback を適用
+  if (renderer.xr.isPresenting) {
+    applySchedulingCallbacks(renderer.xr.getSession());
+  }
+
+  tiles.addEventListener('load-model', ({ scene: tileScene }) => {
+    tileScene.traverse(obj => {
+      if (obj.isPoints) {
+        // 既存マテリアルを立方体シェーダに差し替え
+        const prev = obj.material;
+        const mat = makeCubeMaterial();
+        obj.material = mat;
+        pointMaterials.add(mat);
+        if (prev && prev.dispose) prev.dispose();
+        // 追跡セットに登録し、現在のPOINT DENSITY設定を即時反映
+        pointObjects.add(obj);
+        applyPointDensity(obj);
+      }
+    });
+  });
+
+  // dispose-model: タイルがLRUからevictされた時に呼ばれる。
+  // 追跡セットからも除去してメモリリークを防ぐ。
+  tiles.addEventListener('dispose-model', ({ scene: tileScene }) => {
+    if (!tileScene) return;
+    tileScene.traverse(obj => {
+      if (obj.isPoints) {
+        pointObjects.delete(obj);
+      }
+    });
+  });
+
+  tiles.addEventListener('load-tile-set', () => {
+    const sphere = new THREE.Sphere();
+    tiles.getBoundingSphere(sphere);
+    if (sphere.radius > 0) {
+      const r = sphere.radius;
+      const center = sphere.center.clone();
+
+      // ── データの方向補正（ECEF → +Y up）──
+      const upVec = center.clone().normalize();
+      const targetUp = new THREE.Vector3(0, 1, 0);
+      const rotQuat = new THREE.Quaternion().setFromUnitVectors(upVec, targetUp);
+
+      tiles.group.quaternion.copy(rotQuat);
+
+      const rotatedCenter = center.clone().applyQuaternion(rotQuat);
+      // タイル群の境界球中心をワールド原点に揃える(タイルの配置自体は固定)
+      tiles.group.position.copy(rotatedCenter).multiplyScalar(-1);
+      // WORLD SCALE 適用前の base position を覚えておく
+      // (applyWorldScale で dolly を中心にスケール変換するための基準点)
+      tilesBasePosition.copy(tiles.group.position);
+
+      // ── CSVの値はカメラ初期位置(x,y,z)と yaw(度) を表す ──
+      // デバッグモードで通常移動した時に表示されるxyz/yawと、
+      // CSVに書く値が完全に一致する設計。
+      const ds = getDataset(id);
+      const camX   = ds ? ds.xOffset   : 0;
+      const camY   = ds ? ds.yOffset   : 1.6;
+      const camZ   = ds ? ds.zOffset   : (r * 0.4);
+      const camYaw = ds ? ds.yawOffset : 0;
+
+      // 切替時/初回とも、対象データセットのCSV値に従ってカメラを配置
+      if (!cameraInitialized) {
+        dolly.position.set(camX, camY, camZ);
+        // dollyの向きはY軸まわり(yaw)のみを設定。pitch/rollはゼロ。
+        dolly.rotation.set(0, THREE.MathUtils.degToRad(camYaw), 0);
+        cameraInitialized = true;
+      }
+
+      camera.position.set(0, 0, 0);
+      camera.far = Math.max(r * 20, 1e6);
+      camera.updateProjectionMatrix();
+
+      grid.scale.setScalar(Math.max(1, r / 50));
+
+      // 現在のWORLD SCALE設定をタイル群に適用
+      // (データセット切替時にも前回のスケール値が維持される)
+      applyWorldScale();
+
+      console.log(`タイル ${id} 読込完了 (r=${r.toFixed(1)}m, cam=[${camX},${camY},${camZ}], yaw=${camYaw}°)`);
+    }
+
+    currentDataset = id;
+    loadingDataset = null;
+    updateDatasetButtons();
+
+    // ── loading → rendering 状態遷移 ──
+    // tileset.json は取得済、ここからタイル本体のロード&描画フェーズ。
+    // lruCache.byteSize の現在値を基準として保存し、増分を「今回のロード受信量」とする。
+    progressState.bytesAtSwitch = tiles.lruCache?.byteSize ?? 0;
+    progressState.readyStableFrames = 0;
+    setProgressStage('rendering');
+  });
+
+  tiles.addEventListener('load-error', (e) => {
+    console.error(`Tile load error (${id}):`, e);
+    if (loadingDataset === id) {
+      loadingDataset = null;
+      updateDatasetButtons();
+      // 進捗オーバーレイも閉じる
+      setProgressStage('idle');
+    }
+  });
+
+  scene.add(tiles.group);
+}
+
+// ── データセット切替UIの構築 ────────────────────
+const datasetSwitch = document.getElementById('dataset-switch');
+
+function buildDatasetButtons() {
+  datasetSwitch.innerHTML = '';
+  if (datasetsLoadError) {
+    // CSV読込失敗時: エラーメッセージを #dataset-switch 内に赤系で表示
+    const errEl = document.createElement('div');
+    errEl.className = 'dataset-error';
+    errEl.textContent = `⚠ ${datasetsLoadError}`;
+    datasetSwitch.appendChild(errEl);
+    return;
+  }
+  DATASETS.forEach(({ id, label }) => {
+    const btn = document.createElement('button');
+    btn.className = 'dataset-btn';
+    btn.dataset.id = id;
+    btn.textContent = label ? `${id}: ${label}` : id;
+    btn.addEventListener('click', () => loadTileset(id));
+    datasetSwitch.appendChild(btn);
+  });
+}
+
+function updateDatasetButtons() {
+  const loading = loadingDataset != null;
+  // コンテナにロード状態クラス(CSSで他ボタンを薄くする)
+  datasetSwitch.classList.toggle('is-loading', loading);
+
+  datasetSwitch.querySelectorAll('.dataset-btn').forEach(btn => {
+    const id = btn.dataset.id;
+    btn.classList.toggle('active', id === currentDataset);
+    btn.classList.toggle('loading', id === loadingDataset);
+    // ロード中: ロード対象以外の全ボタンを disabled に
+    btn.disabled = loading && id !== loadingDataset;
+  });
+
+  // プリフェッチボタンもロード中は無効(別データセットへの切替と相互排他)
+  const pbtn = document.getElementById('prefetch-btn');
+  if (pbtn) {
+    // 既にプリフェッチ実行中の "CANCEL" 状態だけは押せるようにする
+    const isPrefetchRunning = prefetchState.running;
+    pbtn.disabled = loading && !isPrefetchRunning;
+  }
+}
+
+// CSVを読み込んでからUIを構築 & 初期ロード
+(async () => {
+  await loadDatasetsCSV();
+  buildDatasetButtons();
+  // デフォルトデータが定義に含まれていればそれを、なければ先頭を使う
+  const startId = DATASETS.find(d => d.id === DEFAULT_DATASET)
+    ? DEFAULT_DATASET
+    : (DATASETS[0] && DATASETS[0].id);
+  if (startId) loadTileset(startId);
+})();
+
+// ── デバッグモード: URLに ?debug=1 を付けると現在カメラ位置/向きを表示 ──
+// 通常の WASD / 矢印キー で視点移動/回転すると、リアルタイムに更新される。
+// 表示される x, y, z, yaw はそのまま datasets.csv に貼り付け可能。
+const DEBUG_MODE = new URLSearchParams(location.search).has('debug');
+if (DEBUG_MODE) {
+  const dbg = document.createElement('div');
+  dbg.id = 'dbg-panel';
+  dbg.style.cssText = `
+    position:fixed; top:80px; left:16px;
+    background:rgba(0,0,0,0.85); color:#0f0;
+    font-family:monospace; font-size:11px;
+    padding:8px 12px; border:1px solid #0f0;
+    border-radius:4px; z-index:200; line-height:1.5;
+    min-width:280px;
+  `;
+  dbg.innerHTML = `
+    <div><b>DEBUG MODE</b> (?debug=1)</div>
+    <div>現在: <span id="dbg-id">-</span></div>
+    <div>x=<span id="dbg-x">0</span> y=<span id="dbg-y">0</span> z=<span id="dbg-z">0</span> yaw=<span id="dbg-yaw">0</span>°</div>
+    <div style="margin-top:6px; color:#9f9;">
+      WASD/矢印キーで視点を動かし、希望の見え方になったら下記値を CSV に貼り付けてください
+    </div>
+    <div style="margin-top:4px;">
+      <span style="color:#9f9;">CSV行:</span>
+      <span id="dbg-csv" style="color:#fff; user-select:all;">-</span>
+    </div>
+    <div style="margin-top:4px; color:#9f9;">R: CSVのデフォルト値にリセット &nbsp; C: CSV行をコピー</div>
+  `;
+  document.body.appendChild(dbg);
+  const dbgId   = document.getElementById('dbg-id');
+  const dbgX    = document.getElementById('dbg-x');
+  const dbgY    = document.getElementById('dbg-y');
+  const dbgZ    = document.getElementById('dbg-z');
+  const dbgYaw  = document.getElementById('dbg-yaw');
+  const dbgCsv  = document.getElementById('dbg-csv');
+
+  // dolly の現在のx/y/z と yaw(度) を取得
+  // yaw は -180〜+180 に正規化(CSV値とそのまま比較しやすいように)
+  function normalizeDeg(d) {
+    let v = ((d + 180) % 360 + 360) % 360 - 180;
+    return v;
+  }
+  function currentCam() {
+    const id = currentDataset ?? loadingDataset;
+    const x = dolly.position.x;
+    const y = dolly.position.y;
+    const z = dolly.position.z;
+    const yawDeg = normalizeDeg(THREE.MathUtils.radToDeg(dolly.rotation.y));
+    return { id, x, y, z, yawDeg };
+  }
+
+  function refreshDebug() {
+    const o = currentCam();
+    dbgId.textContent  = o.id ?? '-';
+    dbgX.textContent   = o.x.toFixed(2);
+    dbgY.textContent   = o.y.toFixed(2);
+    dbgZ.textContent   = o.z.toFixed(2);
+    dbgYaw.textContent = o.yawDeg.toFixed(1);
+    const ds = o.id != null ? getDataset(o.id) : null;
+    const label = ds ? ds.label : '';
+    dbgCsv.textContent = o.id != null
+      ? `${o.id},${label},${o.x.toFixed(2)},${o.y.toFixed(2)},${o.z.toFixed(2)},${o.yawDeg.toFixed(1)}`
+      : '-';
+  }
+  // 毎フレーム更新したいので、軽い間隔(60ms)で polling
+  setInterval(refreshDebug, 60);
+
+  // R = CSVのデフォルト値にカメラをリセット、C = CSV行をクリップボードにコピー
+  window.addEventListener('keydown', (e) => {
+    // 通常のWASD/矢印キー操作は阻害しない(Alt/Ctrl/Metaは無視、Shiftだけは許容)
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.code === 'KeyR') {
+      // CSVの初期値にカメラを戻す
+      const id = currentDataset ?? loadingDataset;
+      const ds = id != null ? getDataset(id) : null;
+      if (ds) {
+        dolly.position.set(ds.xOffset, ds.yOffset, ds.zOffset);
+        dolly.rotation.set(0, THREE.MathUtils.degToRad(ds.yawOffset), 0);
+        refreshDebug();
+      }
+    } else if (e.code === 'KeyC') {
+      const o = currentCam();
+      if (o.id != null) {
+        const ds = getDataset(o.id);
+        const label = ds ? ds.label : '';
+        const line = `${o.id},${label},${o.x.toFixed(2)},${o.y.toFixed(2)},${o.z.toFixed(2)},${o.yawDeg.toFixed(1)}`;
+        navigator.clipboard?.writeText(line);
+        console.log('CSV行をコピー:', line);
+      }
+    }
+  });
+}
+
+// スライダーで点サイズを動的に変更
+// POINT SIZE スライダー
+//   UI表示は整数 1〜50 で統一(PC/スマホ共通スケール)。
+//   内部 pointSize(メートル単位) は UI値 × 0.001 で変換。
+const sizeSlider = document.getElementById('size-slider');
+const sizeVal = document.getElementById('size-val');
+const POINT_SIZE_FACTOR = 0.001;
+sizeSlider.addEventListener('input', () => {
+  const ui = parseInt(sizeSlider.value, 10);
+  pointSize = ui * POINT_SIZE_FACTOR;
+  sizeVal.textContent = String(ui);
+  applyPointSize();
+});
+function updateSizeSlider() {
+  const ui = Math.round(pointSize / POINT_SIZE_FACTOR);
+  sizeSlider.value = String(ui);
+  sizeVal.textContent = String(ui);
+  // ミニスライダーがあれば同期(スマホ時のみ存在)
+  const miniSlider = document.getElementById('size-mini-slider');
+  const miniVal    = document.getElementById('size-mini-val');
+  if (miniSlider && miniVal) {
+    miniSlider.value = String(ui);
+    miniVal.textContent = String(ui);
+  }
+}
+
+// スマホ時の初期値: 20 (PC は HTML 既定値の 5 のまま)
+// スマホ表示は遠景でも見やすいよう、ややや大きめの2cm立方体を採用。
+if (isTouchDevice) {
+  sizeSlider.value = '20';
+  sizeSlider.dispatchEvent(new Event('input', { bubbles: true }));
+  // ミニスライダー表示も更新(updateSizeSliderと同等の処理)
+  const miniSlider = document.getElementById('size-mini-slider');
+  const miniVal    = document.getElementById('size-mini-val');
+  if (miniSlider && miniVal) {
+    miniSlider.value = '20';
+    miniVal.textContent = '20';
+  }
+}
+
+// ── POINT DENSITY スライダー ──
+// 各タイルの点群を何% 描画するかを制御 (間引き)。
+// 内部値 pointDensity (0.1〜1.0) に変換し、全 Points の setDrawRange に反映。
+const densitySlider = document.getElementById('density-slider');
+const densityVal    = document.getElementById('density-val');
+densitySlider.addEventListener('input', () => {
+  const pct = parseInt(densitySlider.value, 10);
+  pointDensity = Math.max(0.01, pct / 100); // 0.10〜1.00 (UI下限10%だが念のためクランプ)
+  densityVal.textContent = String(pct);
+  applyPointDensity();
+});
+
+// ── WORLD SCALE スライダー ──
+// tiles.group のスケールを変えることで、見た目の世界の大きさを変える。
+// 1.0=実寸(=ECEFのメートル単位そのまま)。
+// 数値を上げるとVRなどで「世界が大きく感じる」ようになる(=自分が縮んだ視点)。
+//
+// 重要: 単純に scale.setScalar() だけだと、原点を中心に拡大されて
+// 目の前にあったタイルが遠ざかってしまう。
+// そこで「カメラ(dolly)位置を中心とした相似変換」になるよう
+// position も同時に補正する:
+//   new_pos = dolly.position + scale * (base_pos - dolly.position)
+// base_pos は scale=1.0 時のタイル群位置 (load-tile-set で保存)。
+let worldScale = 1.0;
+const tilesBasePosition = new THREE.Vector3();
+const _scaleTmp = new THREE.Vector3();
+function applyWorldScale() {
+  if (!tiles || !tiles.group) return;
+  tiles.group.scale.setScalar(worldScale);
+  // dolly中心の相似変換: new = dolly + s * (base - dolly)
+  _scaleTmp.copy(tilesBasePosition).sub(dolly.position).multiplyScalar(worldScale).add(dolly.position);
+  tiles.group.position.copy(_scaleTmp);
+  // matrixWorld を即時更新して、tiles.update() の LOD評価に反映させる
+  tiles.group.updateMatrixWorld(true);
+}
+const scaleSlider = document.getElementById('scale-slider');
+const scaleVal    = document.getElementById('scale-val');
+scaleSlider.addEventListener('input', () => {
+  worldScale = parseFloat(scaleSlider.value);
+  scaleVal.textContent = worldScale.toFixed(1);
+  applyWorldScale();
+});
+
+// LOD errorTarget スライダー
+const lodSlider = document.getElementById('lod-slider');
+const lodVal = document.getElementById('lod-val');
+lodSlider.addEventListener('input', () => {
+  lodErrorTarget = parseInt(lodSlider.value, 10);
+  lodVal.textContent = String(lodErrorTarget);
+  // VR状態/優先モードを加味して反映
+  applyActiveTilesSettings();
+});
+
+// キャッシュ上限スライダー（タイル数）
+const cacheTilesSlider = document.getElementById('cache-tiles-slider');
+const cacheTilesVal = document.getElementById('cache-tiles-val');
+cacheTilesSlider.addEventListener('input', () => {
+  cacheMaxTiles = parseInt(cacheTilesSlider.value, 10);
+  cacheTilesVal.textContent = cacheMaxTiles;
+  applyCacheSettings(tiles);
+});
+
+// キャッシュ上限スライダー（バイト数MB）
+const cacheBytesSlider = document.getElementById('cache-bytes-slider');
+const cacheBytesVal = document.getElementById('cache-bytes-val');
+cacheBytesSlider.addEventListener('input', () => {
+  cacheMaxBytesMB = parseInt(cacheBytesSlider.value, 10);
+  cacheBytesVal.textContent = cacheMaxBytesMB;
+  applyCacheSettings(tiles);
+});
+
+// プリフェッチボタン
+const prefetchBtn = document.getElementById('prefetch-btn');
+prefetchBtn.addEventListener('click', () => {
+  if (prefetchState.running) {
+    cancelPrefetch();
+  } else {
+    startPrefetch();
+  }
+});
+
+// ────────────────────────────────────────────────────────────
+// ネットワーク/端末プロファイル(自動チューニング)
+// ────────────────────────────────────────────────────────────
+// 目的: 重いデータ + 遅い回線 + 低スペック端末 でも破綻しないよう、
+//      LOD ERROR TARGET / DOWNLOAD_MAX_JOBS / CACHE TILES / CACHE MB の
+//      初期値を自動で適切なプロファイルに振り分ける。
+//
+// 利用情報:
+//   ・navigator.connection.effectiveType / downlink / saveData
+//   ・navigator.hardwareConcurrency (論理CPUコア数)
+//   ・navigator.deviceMemory       (RAM GB)
+//   ・isTouchDevice                (スマホかどうか)
+//
+// プロファイル定義:
+//   low   … 低速モバイル / saveDataオン / 低スペック
+//   mid   … 3G〜中位スマホ / 4コア以下
+//   high  … 4G〜PC(現状のデフォルト相当)
+//   ultra … 高速回線 & ハイエンドPC(ゲーミング)
+//
+// 各プロファイルの値は、対応するスライダーの範囲内に収まるよう設定すること。
+//   LOD          range  8 〜 80
+//   DOWNLOAD JOBS        (スライダーなし、内部のみ)
+//   CACHE TILES  range  300 〜 8000
+//   CACHE MB     range  256 〜 4096
+const PROFILES = {
+  low:   { lod: 40, jobs:  4, tiles:  600, mb:  384, label: 'Low'   },
+  mid:   { lod: 30, jobs:  8, tiles: 1000, mb:  768, label: 'Mid'   },
+  high:  { lod: 20, jobs: 16, tiles: 2000, mb: 1536, label: 'High'  },
+  ultra: { lod: 12, jobs: 24, tiles: 4000, mb: 3072, label: 'Ultra' },
+};
+
+function detectAutoProfile() {
+  // URLで強制指定があれば最優先
+  const forced = new URLSearchParams(location.search).get('profile');
+  if (forced && PROFILES[forced]) {
+    return { key: forced, reason: 'URL ?profile=' + forced };
+  }
+
+  const conn  = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const cores = navigator.hardwareConcurrency || 0;
+  const mem   = navigator.deviceMemory || 0; // GB (Safari未対応)
+  const eType = conn && conn.effectiveType;  // '4g' | '3g' | '2g' | 'slow-2g'
+  const dl    = conn && conn.downlink;       // Mbps
+  const save  = conn && conn.saveData;
+
+  // 1. データセーバー / 極端な低速回線 → Low
+  if (save || eType === 'slow-2g' || eType === '2g') {
+    return { key: 'low', reason: 'slow connection or save-data' };
+  }
+  // 2. 3G or タッチデバイスでコア4以下 → Mid
+  if (eType === '3g' || (isTouchDevice && cores > 0 && cores <= 4)) {
+    return { key: 'mid', reason: '3G or low-core touch device' };
+  }
+  // 3. ハイエンド条件: 4G+ で downlink >= 20Mbps かつ コア >= 8 かつ memory >= 8GB
+  if ((eType === '4g' || !eType) && dl && dl >= 20 && cores >= 8 && (!mem || mem >= 8)) {
+    return { key: 'ultra', reason: 'fast network + high-end device' };
+  }
+  // 4. デフォルト → High
+  return {
+    key: 'high',
+    reason: conn ? `${eType || '4g'} connection` : 'navigator.connection unavailable',
+  };
+}
+
+// プロファイルが手動で上書きされたかのフラグ。
+// 一度でもユーザがスライダーを動かしたら true になり、以後自動再判定しない。
+let profileManuallyOverridden = false;
+
+function applyProfile(key) {
+  const p = PROFILES[key];
+  if (!p) return;
+  // 各スライダーの value を書き換え、input イベントを発火させて既存ハンドラを動かす
+  // (内部変数 lodErrorTarget / cacheMaxTiles / cacheMaxBytesMB も同時に反映される)
+  lodSlider.value = String(p.lod);
+  lodSlider.dispatchEvent(new Event('input', { bubbles: true }));
+  cacheTilesSlider.value = String(p.tiles);
+  cacheTilesSlider.dispatchEvent(new Event('input', { bubbles: true }));
+  cacheBytesSlider.value = String(p.mb);
+  cacheBytesSlider.dispatchEvent(new Event('input', { bubbles: true }));
+  // downloadMaxJobs はスライダーがないので直接書き換え
+  DOWNLOAD_MAX_JOBS = p.jobs;
+  if (tiles) applyActiveTilesSettings();
+}
+
+// プロファイルを判定して適用 & UI表示
+const autoProfile = detectAutoProfile();
+applyProfile(autoProfile.key);
+console.log(`Auto profile: ${autoProfile.key} (${autoProfile.reason})`);
+
+// コントロールパネル本体の先頭に "Auto: ..." バッジを差し込む
+(function injectProfileBadge() {
+  const body = document.getElementById('controls-body');
+  if (!body) return;
+  const badge = document.createElement('div');
+  badge.id = 'profile-badge';
+  badge.style.cssText = `
+    margin: 0 0 10px 0;
+    padding: 4px 8px;
+    border: 1px solid rgba(0,200,255,0.3);
+    border-radius: 3px;
+    font-size: 10px;
+    color: #7fc8e0;
+    letter-spacing: 0.5px;
+    background: rgba(0,200,255,0.06);
+  `;
+  const label = PROFILES[autoProfile.key].label;
+  badge.innerHTML = `Auto: <b style="color:#00c8ff">${label}</b>` +
+    ` <span style="opacity:0.6">(${autoProfile.reason})</span>`;
+  body.insertBefore(badge, body.firstChild);
+  // ユーザがスライダーを動かしたら "manual" に切替表示
+  const watch = (slider) => {
+    slider.addEventListener('input', () => {
+      if (!profileManuallyOverridden) {
+        profileManuallyOverridden = true;
+        badge.innerHTML = `Manual <span style="opacity:0.6">(auto was ${label})</span>`;
+        badge.style.borderColor = 'rgba(255,200,80,0.4)';
+        badge.style.background  = 'rgba(255,200,80,0.06)';
+      }
+    }, { once: false });
+  };
+  [lodSlider, cacheTilesSlider, cacheBytesSlider].forEach(watch);
+})();
+
+// ── ⓘ 情報アイコン: クリックで対応する説明文を開閉 ──
+// イベントデリゲーションで .ctrl-info ボタン全部を一括処理。
+// aria-controls 属性で指定された要素を hidden トグルし、
+// aria-expanded を同期させる。
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.ctrl-info');
+  if (!btn) return;
+  const targetId = btn.getAttribute('aria-controls');
+  if (!targetId) return;
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  const willShow = target.hasAttribute('hidden');
+  if (willShow) {
+    target.removeAttribute('hidden');
+    btn.setAttribute('aria-expanded', 'true');
+  } else {
+    target.setAttribute('hidden', '');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  // スマホ折りたたみコントロールパネルが開いている時にⓘを押すと内容が伸びるので、
+  // 必要なら #controls の top を再計算(positionControlsBelowDatasetSwitchが
+  // 存在する場合のみ。PCでは未定義なので関数存在チェック)。
+  // ※ 現状のスマホ実装では top は固定 (#dataset-switch の真下) で、
+  //   高さ変化は max-height + overflow-y: auto の縦スクロールで吸収される。
+});
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// tilesに登録した「VR用左右目カメラ」の追跡
+let _vrEyeCamerasRegistered = false;
+const _vrEyeCams = []; // 登録中のサブカメラ参照
+
+// VRカメラ姿勢分解用の再利用バッファ
+const _vrPos   = new THREE.Vector3();
+const _vrQuat  = new THREE.Quaternion();
+const _vrScale = new THREE.Vector3(1, 1, 1);
+
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.1);
+
+  targetVel.set(0, 0, 0);
+  targetYawVel = 0;
+
+  if (renderer.xr.isPresenting) {
+    handleVRInput(dt);
+  } else if (isTouchDevice) {
+    handleTouchInput(dt);
+  } else {
+    handlePCInput(dt);
+  }
+
+  const t = 1 - Math.exp(-SMOOTH * dt);
+  velocity.lerp(targetVel, t);
+  yawVel += (targetYawVel - yawVel) * t;
+
+  dolly.position.addScaledVector(velocity, dt);
+  dolly.rotation.y += yawVel * dt;
+
+  dolly.rotation.x = 0;
+  dolly.rotation.z = 0;
+
+  // dollyを動かしたあと、シーン全体のワールド行列を更新
+  scene.updateMatrixWorld(true);
+
+  if (tiles) {
+    // ── カメラ登録は常に PC用 camera ひとつだけ ──
+    // VR時はサブカメラを直接登録するのではなく、
+    // この `camera` に XRカメラのワールド姿勢を手動コピーする。
+    if (_vrEyeCamerasRegistered) {
+      // 過去の登録が残っていれば解除
+      for (const eye of _vrEyeCams) {
+        try { tiles.deleteCamera(eye); } catch (e) {}
+      }
+      _vrEyeCams.length = 0;
+      _vrEyeCamerasRegistered = false;
+    }
+    if (!_tilesCameraRegistered) {
+      tiles.setCamera(camera);
+      _tilesCameraRegistered = true;
+    }
+
+    if (renderer.xr.isPresenting) {
+      // ── VR時：XRカメラのワールド姿勢を camera に毎フレーム反映 ──
+      //
+      // 問題: camera は dolly の子なので、scene.updateMatrixWorld() の中で
+      //   camera.matrixWorld = dolly.matrixWorld * camera.matrix
+      // が必ず再計算され、手動で書いた matrixWorld が後段で上書きされうる。
+      // また 3D Tiles Renderer 内部は camera.matrixWorldInverse を独自に
+      // 再計算する箇所があるため、camera.position が古い(=VR入場時の初期値)
+      // ままだと、LOD評価がそこから動かない。
+      //
+      // 解決: camera.matrixAutoUpdate を切り、ワールド姿勢を直接
+      //   matrix と matrixWorld の両方に入れる。
+      //   こうすると以後の updateMatrixWorld(force=false) でも上書きされない。
+      const xrCam = renderer.xr.getCamera();
+
+      // ワールド姿勢を取り出す
+      xrCam.matrixWorld.decompose(_vrPos, _vrQuat, _vrScale);
+
+      // camera のローカル行列も含めて、すべてワールド姿勢に固定する
+      // (dolly の影響を二重に受けないよう、camera を world-space カメラとして扱う)
+      camera.matrixAutoUpdate = false;
+      camera.matrixWorldAutoUpdate = false;
+      camera.position.copy(_vrPos);
+      camera.quaternion.copy(_vrQuat);
+      camera.scale.copy(_vrScale);
+      camera.matrix.compose(_vrPos, _vrQuat, _vrScale);
+      camera.matrixWorld.copy(camera.matrix);
+      camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+
+      // XR baseLayer (フレームバッファサイズ取得用)
+      const baseLayer = renderer.xr.getSession()?.renderState?.baseLayer;
+
+      // 投影行列：両目を包含する FOV を持つ xrCam.projectionMatrix を使う
+      camera.projectionMatrix.copy(xrCam.projectionMatrix);
+      camera.projectionMatrixInverse.copy(xrCam.projectionMatrix).invert();
+
+      // 解像度：XR フレームバッファサイズ
+      // baseLayer.framebufferWidth は「両目合計」の幅。
+      // これをそのまま渡すとSSE評価で「同じ実空間誤差でもピクセル換算で小さい」と
+      // 判定され、高詳細タイルがロードされにくくなる(=粗いLODで満足してしまう)。
+      // 片目分の幅で評価させることで、非VR時と同程度のロード厳格さにする。
+      if (baseLayer) {
+        tiles.setResolution(
+          camera,
+          baseLayer.framebufferWidth / 2,
+          baseLayer.framebufferHeight
+        );
+      } else {
+        tiles.setResolutionFromRenderer(camera, renderer);
+      }
+    } else {
+      // ── 非VR時 ──
+      // VRから抜けた直後は matrixAutoUpdate=false になっているので元に戻す。
+      // 戻したあと、通常のシーン階層から matrixWorld を再計算させる。
+      if (camera.matrixAutoUpdate === false) {
+        camera.matrixAutoUpdate = true;
+        camera.matrixWorldAutoUpdate = true;
+        camera.updateMatrix();
+        camera.updateMatrixWorld(true);
+      }
+      tiles.setResolutionFromRenderer(camera, renderer);
+    }
+
+    // tiles.update() の直前に、cameraの行列が最新であることを保証する
+    // (VR時はworldを直接書いた値、非VR時は階層から計算された値)
+    tiles.update();
+  }
+
+  // ロード進捗UIの更新(rendering⇄ready 判定もここで行う)
+  updateLoadProgress();
+
+  // 描画
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>

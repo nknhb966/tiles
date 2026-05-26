@@ -303,168 +303,6 @@
       white-space: nowrap;
     }
 
-    /* ロード中はデータセットボタン全体を操作不可に */
-    #dataset-switch.is-loading .dataset-btn:not(.loading) {
-      opacity: 0.4;
-      pointer-events: none;
-      filter: saturate(0.3);
-    }
-    .dataset-btn[disabled],
-    #prefetch-btn[disabled] {
-      opacity: 0.45;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
-
-    /* ── コントロールパネル内 各設定項目の共通スタイル ── */
-    .ctrl-group {
-      margin-bottom: 12px;
-    }
-    .ctrl-group:first-of-type {
-      margin-top: 0;
-    }
-    .ctrl-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 8px;
-      letter-spacing: 1px;
-      font-weight: bold;
-    }
-    /* ⓘ 情報アイコンボタン */
-    .ctrl-info {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 18px;
-      height: 18px;
-      padding: 0;
-      border: 1px solid rgba(0,200,255,0.4);
-      border-radius: 50%;
-      background: transparent;
-      color: rgba(0,200,255,0.75);
-      font-size: 11px;
-      font-family: inherit;
-      font-weight: bold;
-      line-height: 1;
-      cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-      flex-shrink: 0;
-    }
-    .ctrl-info:hover,
-    .ctrl-info[aria-expanded="true"] {
-      background: rgba(0,200,255,0.2);
-      color: #fff;
-      border-color: #00c8ff;
-    }
-    /* 説明文ブロック (デフォルトhidden、aria-expanded=true で表示) */
-    .ctrl-info-body {
-      margin-top: 6px;
-      padding: 8px 10px;
-      background: rgba(0,200,255,0.07);
-      border-left: 2px solid rgba(0,200,255,0.5);
-      border-radius: 3px;
-      font-size: 10.5px;
-      font-weight: normal;
-      letter-spacing: 0.2px;
-      color: rgba(220,235,245,0.92);
-      line-height: 1.55;
-    }
-    .ctrl-info-body[hidden] {
-      display: none;
-    }
-    /* スマホでは説明文サイズと余白を少しコンパクトに */
-    body.touch .ctrl-info-body {
-      font-size: 10px;
-      padding: 6px 8px;
-      line-height: 1.45;
-    }
-
-    /* ── ロード進捗オーバーレイ ── */
-    #load-progress {
-      position: fixed;
-      left: 50%;
-      bottom: 88px;
-      transform: translateX(-50%);
-      min-width: 240px;
-      max-width: calc(100vw - 32px);
-      padding: 10px 14px;
-      background: rgba(0,0,0,0.78);
-      border: 1px solid rgba(0,200,255,0.4);
-      border-radius: 6px;
-      color: #c8e0ec;
-      font-family: monospace;
-      font-size: 11px;
-      letter-spacing: 0.5px;
-      z-index: 110;
-      backdrop-filter: blur(8px);
-      pointer-events: none;
-      transition: opacity 0.4s ease, transform 0.25s ease;
-      opacity: 0;
-    }
-    /* 状態別の表示制御 */
-    #load-progress[data-state="loading"],
-    #load-progress[data-state="rendering"] {
-      opacity: 1;
-    }
-    #load-progress[data-state="ready"] {
-      opacity: 1;
-      /* "Ready" は2秒見せて消す。JS側でidleに切替えてフェードアウト */
-    }
-    #load-progress[data-state="idle"] {
-      opacity: 0;
-    }
-    #load-progress .lp-row {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 6px;
-    }
-    #load-progress .lp-stage {
-      font-weight: bold;
-      color: #00c8ff;
-      letter-spacing: 1px;
-    }
-    #load-progress[data-state="ready"] .lp-stage {
-      color: #5fff8a;
-    }
-    #load-progress .lp-detail {
-      font-size: 10px;
-      color: rgba(200,221,232,0.75);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    #load-progress .lp-bar {
-      height: 3px;
-      background: rgba(255,255,255,0.08);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    #load-progress .lp-bar-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #00c8ff, #5fff8a);
-      transition: width 0.25s ease;
-    }
-    #load-progress[data-state="loading"] .lp-bar-fill {
-      /* tileset.json取得中は不確定進捗(アニメ) */
-      width: 30%;
-      animation: lp-indeterminate 1.2s ease-in-out infinite;
-    }
-    @keyframes lp-indeterminate {
-      0%   { margin-left: -30%; }
-      100% { margin-left: 100%; }
-    }
-    /* スマホ時はサイズ縮小 */
-    body.touch #load-progress {
-      bottom: 200px;       /* スマホのジョイスティック・上下ボタンを避ける */
-      min-width: 200px;
-      padding: 8px 10px;
-      font-size: 10px;
-    }
-
     /* スマホ時：データセットUIが他UIと重ならないようサイズ調整。
        上端ぎりぎり(top:4px)に寄せて表示エリアを最大化、
        横方向は元のレイアウトを維持して横スクロールしやすさを保つ。 */
@@ -532,7 +370,7 @@
   <div id="controls-header">
     <div id="size-mini">
       <span class="lbl">SIZE</span>
-      <input id="size-mini-slider" type="range" min="1" max="80" step="1" value="5">
+      <input id="size-mini-slider" type="range" min="1" max="50" step="1" value="5">
       <span id="size-mini-val">5</span>
     </div>
     <div id="controls-toggle">
@@ -543,178 +381,77 @@
 
   <!-- 本体 -->
   <div id="controls-body">
-
-  <!-- POINT SIZE -->
-  <div id="size-row" class="ctrl-group">
-    <div class="ctrl-label">
-      <span>POINT SIZE</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-size">ⓘ</button>
-    </div>
-    <input id="size-slider" type="range" min="1" max="80" step="1" value="5"
-      style="width:160px; accent-color:#00c8ff;">
-    <div style="font-family:monospace; margin-top:4px;">
-      <span id="size-val">5</span>
-    </div>
-    <div id="info-size" class="ctrl-info-body" hidden>
-      1点を1辺 [値×1mm] の立方体として描画するサイズ。
-      小さいほど精細だが、点同士の隙間が目立ちやすい。
-      大きいほど隙間が埋まり遠景が見やすくなるが、塊感が強くなる。
-    </div>
+  <div id="size-row">
+  <div style="margin-bottom:8px; letter-spacing:1px; font-weight:bold;">POINT SIZE</div>
+  <input id="size-slider" type="range" min="1" max="50" step="1" value="5"
+    style="width:160px; accent-color:#00c8ff;">
+  <div style="font-family:monospace; margin-top:4px;">
+    <span id="size-val">5</span>
+  </div>
   </div>
 
-  <!-- POINT DENSITY -->
-  <div class="ctrl-group">
-    <div class="ctrl-label">
-      <span>POINT DENSITY</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-density">ⓘ</button>
-    </div>
-    <input id="density-slider" type="range" min="10" max="100" step="5" value="100"
-      style="width:160px; accent-color:#00c8ff;">
-    <div style="font-family:monospace; margin-top:4px;">
-      <span id="density-val">100</span>%
-      <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
-        (描画する点の割合)
-      </span>
-    </div>
-    <div id="info-density" class="ctrl-info-body" hidden>
-      各タイルの点群のうち何%を描画するかを指定する間引き設定。
-      100%で全点、50%で半分、10%なら1/10だけ描画。
-      タイル自体はそのままなのでメモリ・ダウンロード量は変わらないが、
-      描画コスト(特にGPU負荷)が直線的に下がる。
-      VRでカクつく / ハイエンドPCでも重いデータで滑らかさが欲しい時に下げる。
-      LODと違いタイル境界の粗さが目立たず、均一に薄くなるのが特徴。
-    </div>
+  <div style="margin:12px 0 8px; letter-spacing:1px; font-weight:bold;">WORLD SCALE</div>
+  <input id="scale-slider" type="range" min="0.5" max="3.0" step="0.1" value="1.0"
+    style="width:160px; accent-color:#00c8ff;">
+  <div style="font-family:monospace; margin-top:4px;">
+    <span id="scale-val">1.0</span>×
+    <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
+      (1.0=実寸 / VR用に拡大)
+    </span>
   </div>
 
-  <!-- WORLD SCALE -->
-  <div class="ctrl-group">
-    <div class="ctrl-label">
-      <span>WORLD SCALE</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-scale">ⓘ</button>
-    </div>
-    <input id="scale-slider" type="range" min="0.5" max="3.0" step="0.1" value="1.0"
-      style="width:160px; accent-color:#00c8ff;">
-    <div style="font-family:monospace; margin-top:4px;">
-      <span id="scale-val">1.0</span>×
-      <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
-        (1.0=実寸 / VR用に拡大)
-      </span>
-    </div>
-    <div id="info-scale" class="ctrl-info-body" hidden>
-      世界の大きさを変える倍率。1.0 が実寸(メートル単位そのまま)。
-      VRで「小さく感じる」場合は 1.5〜2.0倍に上げると体感が改善する。
-      視点(カメラ)位置を中心に拡縮するので、目の前のものが視野から外れない。
-    </div>
+  <div style="margin:12px 0 8px; letter-spacing:1px; font-weight:bold;">LOD ERROR TARGET</div>
+  <input id="lod-slider" type="range" min="20" max="50" step="0.1" value="20"
+    style="width:160px; accent-color:#00c8ff;">
+  <div style="font-family:monospace; margin-top:4px;">
+    <span id="lod-val">20.0</span>
+    <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
+      (低=高詳細/重い)
+    </span>
   </div>
 
-  <!-- LOD ERROR TARGET -->
-  <div class="ctrl-group">
-    <div class="ctrl-label">
-      <span>LOD ERROR TARGET</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-lod">ⓘ</button>
-    </div>
-    <input id="lod-slider" type="range" min="8" max="80" step="1" value="20"
-      style="width:160px; accent-color:#00c8ff;">
-    <div style="font-family:monospace; margin-top:4px;">
-      <span id="lod-val">20</span>
-      <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
-        (低=高詳細/重い)
-      </span>
-    </div>
-    <div id="info-lod" class="ctrl-info-body" hidden>
-      表示詳細度のしきい値(画面上の許容誤差ピクセル)。
-      低いほど高精細なタイルが読み込まれるが、ダウンロード量と描画負荷が増える。
-      VRでカクつく時は値を上げ、PCで綺麗に見たい時は下げる。
-      目安: VR=20前後 / ハイエンドPC=10前後 / 低速モバイル=40前後。
-    </div>
+  <div style="margin:12px 0 8px; letter-spacing:1px; font-weight:bold;">CACHE TILES</div>
+  <input id="cache-tiles-slider" type="range" min="200" max="5000" step="100" value="1500"
+    style="width:160px; accent-color:#00c8ff;">
+  <div style="font-family:monospace; margin-top:4px;">
+    <span id="cache-tiles-val">1500</span>
+    <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
+      tiles (上限)
+    </span>
   </div>
 
-  <!-- CACHE TILES -->
-  <div class="ctrl-group">
-    <div class="ctrl-label">
-      <span>CACHE TILES</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-cache-tiles">ⓘ</button>
-    </div>
-    <input id="cache-tiles-slider" type="range" min="300" max="8000" step="100" value="2000"
-      style="width:160px; accent-color:#00c8ff;">
-    <div style="font-family:monospace; margin-top:4px;">
-      <span id="cache-tiles-val">2000</span>
-      <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
-        tiles (上限)
-      </span>
-    </div>
-    <div id="info-cache-tiles" class="ctrl-info-body" hidden>
-      メモリ上に保持しておくタイル数の上限。
-      多いほど一度訪れた場所に戻った時の再ダウンロードが減って快適になるが、
-      RAM消費が増える。VRで街を歩き回って戻るような体験なら大きめが有利。
-      CACHE MEMORY と合わせて、どちらかの上限に達したら古いタイルから破棄される。
-    </div>
+  <div style="margin:12px 0 8px; letter-spacing:1px; font-weight:bold;">CACHE MEMORY</div>
+  <input id="cache-bytes-slider" type="range" min="128" max="2048" step="64" value="1024"
+    style="width:160px; accent-color:#00c8ff;">
+  <div style="font-family:monospace; margin-top:4px;">
+    <span id="cache-bytes-val">1024</span>
+    <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
+      MB (上限)
+    </span>
   </div>
 
-  <!-- CACHE MEMORY -->
-  <div class="ctrl-group">
-    <div class="ctrl-label">
-      <span>CACHE MEMORY</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-cache-mb">ⓘ</button>
-    </div>
-    <input id="cache-bytes-slider" type="range" min="256" max="4096" step="128" value="1536"
-      style="width:160px; accent-color:#00c8ff;">
-    <div style="font-family:monospace; margin-top:4px;">
-      <span id="cache-bytes-val">1536</span>
-      <span style="color:rgba(200,221,232,0.6); font-size:10px; margin-left:6px;">
-        MB (上限)
-      </span>
-    </div>
-    <div id="info-cache-mb" class="ctrl-info-body" hidden>
-      タイルキャッシュに割り当てるメモリ上限(MB)。
-      ハイエンドPCで重いデータを扱う場合は 2GB〜3GB程度まで上げると体感が向上。
-      モバイル/Quest等では 512MB前後が安全圏(超えるとブラウザに強制終了されることがある)。
-    </div>
-  </div>
-
-  <!-- PREFETCH -->
-  <div class="ctrl-group">
-    <div class="ctrl-label">
-      <span>PREFETCH</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-prefetch">ⓘ</button>
-    </div>
-    <button id="prefetch-btn" style="
-      width: 160px;
-      padding: 8px;
-      background: transparent;
-      border: 1px solid rgba(0,200,255,0.6);
-      color: #00c8ff;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: bold;
-      letter-spacing: 1px;
-      border-radius: 3px;
-      cursor: pointer;
-    ">START PREFETCH</button>
-    <div style="font-family:monospace; margin-top:4px; font-size:10px;">
-      <span id="prefetch-status">idle</span>
-    </div>
-    <div id="info-prefetch" class="ctrl-info-body" hidden>
-      現在のデータセットの全タイルを先読みしてブラウザのキャッシュに乗せる機能。
-      VR突入前など、視点移動でカクつかせたくない場合に有効。
-      タイル数が多いと相応の通信量と時間がかかる(実行前に確認ダイアログが出る)。
-    </div>
+  <div style="margin:12px 0 8px; letter-spacing:1px; font-weight:bold;">PREFETCH</div>
+  <button id="prefetch-btn" style="
+    width: 160px;
+    padding: 8px;
+    background: transparent;
+    border: 1px solid rgba(0,200,255,0.6);
+    color: #00c8ff;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    border-radius: 3px;
+    cursor: pointer;
+  ">START PREFETCH</button>
+  <div style="font-family:monospace; margin-top:4px; font-size:10px;">
+    <span id="prefetch-status">idle</span>
   </div>
   </div>
 </div>
 
 <!-- データセット切替（ボタンはJSで動的生成） -->
 <div id="dataset-switch"></div>
-
-<!-- ロード進捗オーバーレイ -->
-<!-- 状態: Loading (tileset.json取得中) → Rendering (タイル本体ロード中) → Ready (描画完了) -->
-<div id="load-progress" data-state="idle">
-  <div class="lp-row">
-    <span class="lp-stage" id="lp-stage">―</span>
-    <span class="lp-detail" id="lp-detail"></span>
-  </div>
-  <div class="lp-bar"><div class="lp-bar-fill" id="lp-bar-fill"></div></div>
-</div>
 
 <!-- データ提供元クレジット表記。データセットのライセンスに応じて文言を調整してください -->
 <div id="credit">
@@ -1163,8 +900,7 @@ for (let i = 0; i < 2; i++) {
 // errorTarget と downloadQueue.maxJobs を、現在のスライダー値に基づき適用する。
 // (旧バージョンにあった「VR中だけ別設定」「優先モード」は、schedulingCallbackの
 //  差し替え対応で不要になったため削除済み)
-// DOWNLOAD_MAX_JOBS はネットワークプロファイルにより動的に変わるため let。
-let DOWNLOAD_MAX_JOBS = 16;
+const DOWNLOAD_MAX_JOBS = 16;
 function applyActiveTilesSettings() {
   if (!tiles) return;
   tiles.errorTarget = lodErrorTarget;
@@ -1316,32 +1052,6 @@ dracoLoader.setDecoderConfig({ type: 'js' });
 let pointSize = 0.005;
 const pointMaterials = new Set();
 
-// ── 点群密度(間引き)管理 ─────────────────────────
-// pointObjects は描画される THREE.Points インスタンスを追跡するセット。
-// load-model時に追加、loadTileset の dispose時に clear する。
-// pointDensity スライダーで値が変わったら、各 Points の geometry.setDrawRange(0, N)
-// で描画頂点数を絞る。値=1.0 で全点描画、0.5 で半分、0.1 で1/10。
-const pointObjects = new Set();
-let pointDensity = 1.0;  // 0.1〜1.0
-
-function applyPointDensity(points) {
-  // 単一のPointsまたは全Pointsに setDrawRange を適用するヘルパー。
-  // 引数なしなら全Points対象。
-  const apply = (p) => {
-    if (!p || !p.geometry) return;
-    const attr = p.geometry.getAttribute('position');
-    if (!attr) return;
-    const total = attr.count;
-    const count = Math.max(1, Math.floor(total * pointDensity));
-    p.geometry.setDrawRange(0, count);
-  };
-  if (points) {
-    apply(points);
-  } else {
-    pointObjects.forEach(apply);
-  }
-}
-
 // ── 立方体点群シェーダ ──────────────────────────────
 // 各点をスクリーン空間の正方形スプライトとして描画し、
 // gl_PointCoord をワールド固定の絶対軸（+X右、+Y上、+Z前）に紐づけて陰影計算する。
@@ -1439,10 +1149,8 @@ let lodErrorTarget = 20;
 
 // LRUキャッシュ上限：訪問した領域のディテールを保持する量
 // タイル数ベース / バイト数(MB)ベース、両方を上限として併用
-// ※ ここの値はプロファイル自動判定で上書きされる(applyProfile)。
-//   スライダーのHTML既定値とも整合させて、プロファイル未動作時のフォールバック値とする。
-let cacheMaxTiles = 2000;    // タイル数の上限
-let cacheMaxBytesMB = 1536;  // バイト数の上限(MB)
+let cacheMaxTiles = 1500;    // タイル数の上限
+let cacheMaxBytesMB = 1024;  // バイト数の上限(MB)
 
 function applyCacheSettings(t) {
   if (!t || !t.lruCache) return;
@@ -1589,10 +1297,6 @@ async function prefetchAll(urls, concurrency = 6) {
   updatePrefetchUI();
 }
 
-// プリフェッチ実行前の確認ダイアログを出すタイル数の閾値。
-// これより少ない場合は確認を省略する(軽いデータなら煩わしくない)。
-const PREFETCH_CONFIRM_THRESHOLD = 100;
-
 async function startPrefetch() {
   if (prefetchState.running) return;
   if (!currentDataset) {
@@ -1608,45 +1312,10 @@ async function startPrefetch() {
   const collected = new Set();
 
   prefetchSetStatus('collecting...');
-  // ボタン表示も「収集中」状態に
-  updatePrefetchUI();
   await collectTileUris(rootUrl, collected);
   if (prefetchState.cancel) {
     prefetchSetStatus('cancelled');
     prefetchState.running = false;
-    updatePrefetchUI();
-    return;
-  }
-
-  // ── 確認ダイアログ ──
-  // 推定サイズはタイル仕様上正確には取れないので「タイル数」と
-  // 「目安サイズ(1タイル≒平均0.5MB と仮定)」を伝える。
-  // 軽いデータ(閾値未満)では確認を省略する。
-  if (collected.size >= PREFETCH_CONFIRM_THRESHOLD) {
-    const tileCount = collected.size;
-    const estMB = Math.round(tileCount * 0.5); // 平均0.5MB仮定の概算
-    const msg =
-      `PREFETCH 確認\n\n` +
-      `タイル数: 約 ${tileCount} 件\n` +
-      `推定サイズ: 約 ${estMB} MB(平均0.5MB/タイル想定の概算)\n\n` +
-      `多量のデータをダウンロードし、ブラウザのHTTPキャッシュに乗せます。\n` +
-      `モバイル回線では通信量が大きくなる場合があります。\n\n` +
-      `実行しますか?`;
-    // window.confirm はモーダルブロッキング。
-    // 注: iOS Safari等ではユーザ操作起因の同期confirm以外がブロックされる可能性あり。
-    const ok = window.confirm(msg);
-    if (!ok) {
-      prefetchSetStatus('cancelled');
-      prefetchState.running = false;
-      updatePrefetchUI();
-      return;
-    }
-  }
-  // 念のため、ダイアログ中にユーザが他データに切替た等でキャンセル要求が来ていないか再確認
-  if (prefetchState.cancel) {
-    prefetchSetStatus('cancelled');
-    prefetchState.running = false;
-    updatePrefetchUI();
     return;
   }
 
@@ -1702,116 +1371,6 @@ function updatePrefetchUI() {
   }
 }
 
-// ────────────────────────────────────────────────────────────
-// ロード進捗管理
-// ────────────────────────────────────────────────────────────
-// 状態遷移:
-//   idle      … 何も読込んでいない / 完了後の非表示状態
-//   loading   … tileset.json 取得中(load-tile-set イベント発火まで)
-//   rendering … タイル本体の取得・parse・描画中
-//   ready     … 十分な数のタイルが可視になった (2秒表示してidleへ)
-//
-// "ready" 判定:
-//   ・downloadQueue / parseQueue が空
-//   ・displayActiveTiles > 0 (1つでも描画されている)
-//   ・上記の状態が READY_HOLD_FRAMES フレーム連続で成立
-const READY_HOLD_FRAMES = 30; // 約0.5秒の安定期間
-const READY_LINGER_MS  = 1800; // "Ready" 表示を見せる時間
-const progressState = {
-  stage: 'idle',        // 'idle' | 'loading' | 'rendering' | 'ready'
-  readyStableFrames: 0, // 連続して ready条件を満たしたフレーム数
-  readyTimer: null,     // ready→idle に戻すタイマーID
-  bytesAtSwitch: 0,     // データセット切替時点の lruCache.byteSize 値(基準)
-};
-const progressEl = () => document.getElementById('load-progress');
-const progressStageEl  = () => document.getElementById('lp-stage');
-const progressDetailEl = () => document.getElementById('lp-detail');
-const progressBarFillEl = () => document.getElementById('lp-bar-fill');
-
-function setProgressStage(stage) {
-  if (progressState.stage === stage) return;
-  progressState.stage = stage;
-  const el = progressEl();
-  if (!el) return;
-  el.setAttribute('data-state', stage);
-  const stageLabel = {
-    idle:      '',
-    loading:   'LOADING',
-    rendering: 'RENDERING',
-    ready:     'READY',
-  }[stage] || '';
-  if (progressStageEl()) progressStageEl().textContent = stageLabel;
-  if (stage === 'ready') {
-    // 2秒後に idle に戻してフェードアウト
-    clearTimeout(progressState.readyTimer);
-    progressState.readyTimer = setTimeout(() => setProgressStage('idle'), READY_LINGER_MS);
-  } else if (stage !== 'idle') {
-    // ready以外への遷移ではタイマーを取り消す(rendering→readyの遷移途中など)
-    clearTimeout(progressState.readyTimer);
-    progressState.readyTimer = null;
-  }
-}
-
-// 受信バイト量を MB / KB / GB 単位の見やすい文字列に
-function formatBytes(b) {
-  if (!Number.isFinite(b) || b <= 0) return '0 KB';
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
-  if (b < 1024 * 1024 * 1024) return `${(b / 1024 / 1024).toFixed(1)} MB`;
-  return `${(b / 1024 / 1024 / 1024).toFixed(2)} GB`;
-}
-
-// 毎フレーム呼ぶ進捗UI更新。rendering⇄ready の判定もここで行う。
-function updateLoadProgress() {
-  const stage = progressState.stage;
-  if (stage === 'idle' || stage === 'loading') {
-    // idle: 何もしない / loading: tileset.json 取得中は不確定アニメーション(CSS側)
-    return;
-  }
-  if (!tiles) return;
-
-  // タイル数の取得 (バージョン差異吸収)
-  const dlQueue = tiles.downloadQueue?.items?.length ?? tiles.downloadQueue?.callbacks?.size ?? 0;
-  const parseQ  = tiles.parseQueue?.items?.length    ?? tiles.parseQueue?.callbacks?.size    ?? 0;
-  const visible = tiles.visibleTiles?.size ?? 0;
-  const active  = tiles.activeTiles?.size  ?? 0;
-  // 受信バイト量 (LRUキャッシュの byteSize は load後加算、evict時減少)
-  const cacheBytes = tiles.lruCache?.byteSize ?? 0;
-  // 切替直後を基準にした「今回のロードで増えたバイト量」
-  const sessionBytes = Math.max(0, cacheBytes - progressState.bytesAtSwitch);
-
-  // 詳細表示
-  const detail = `tiles: ${active} active / ${visible} visible · queue: ${dlQueue + parseQ} · ${formatBytes(sessionBytes)}`;
-  const dEl = progressDetailEl();
-  if (dEl) dEl.textContent = detail;
-
-  // 進捗バー: rendering中はキュー残量を視覚化
-  //   完了率 = 描画済み / (描画済み + 残りキュー)  だが、最大値が動くので
-  //   かわりに「(active) / (active + dl + parse)」で近似
-  const total = active + dlQueue + parseQ;
-  const ratio = total > 0 ? (active / total) : 0;
-  const fill = progressBarFillEl();
-  if (fill && stage === 'rendering') {
-    fill.style.width = `${Math.max(5, Math.min(100, ratio * 100))}%`;
-    fill.style.animation = 'none'; // 確定進捗に切替え
-  }
-
-  // rendering → ready 判定
-  if (stage === 'rendering') {
-    const isQueueIdle = (dlQueue === 0 && parseQ === 0);
-    const hasContent  = active > 0;
-    if (isQueueIdle && hasContent) {
-      progressState.readyStableFrames++;
-      if (progressState.readyStableFrames >= READY_HOLD_FRAMES) {
-        if (fill) fill.style.width = '100%';
-        setProgressStage('ready');
-      }
-    } else {
-      progressState.readyStableFrames = 0;
-    }
-  }
-}
-
-
 function loadTileset(id) {
   if (id === currentDataset || id === loadingDataset) return;
 
@@ -1822,31 +1381,12 @@ function loadTileset(id) {
   // ステータスもリセット
   prefetchSetStatus('idle');
 
-  // ── ロード進捗 reset & "loading" 状態に遷移 ──
-  setProgressStage('loading');
-  progressState.readyStableFrames = 0;
-  progressState.bytesAtSwitch = 0; // 古い tiles はこの後 dispose するのでリセット
-  if (progressDetailEl()) progressDetailEl().textContent = '';
-  if (progressBarFillEl()) {
-    progressBarFillEl().style.width = '';     // CSS既定(不確定アニメ)に戻す
-    progressBarFillEl().style.animation = ''; // CSS既定(不確定アニメ)に戻す
-  }
-
   // 既存のtilesを破棄
   if (tiles) {
     scene.remove(tiles.group);
-    // 各マテリアルを明示的に dispose(自作シェーダのテクスチャ等を確実に解放)
-    pointMaterials.forEach(mat => {
-      if (mat && typeof mat.dispose === 'function') mat.dispose();
-    });
-    pointMaterials.clear();
-    // 点群オブジェクト追跡セットもクリア
-    // (geometry/material の dispose は TilesRenderer 側で処理される)
-    pointObjects.clear();
-    // 3D Tiles Renderer 本体 dispose
-    // (lruCacheの全タイル content.scene の dispose は内部で行われる)
     tiles.dispose();
     tiles = null;
+    pointMaterials.clear();
     _tilesCameraRegistered = false;
     _vrEyeCamerasRegistered = false;
     _vrEyeCams.length = 0;
@@ -1883,20 +1423,6 @@ function loadTileset(id) {
         obj.material = mat;
         pointMaterials.add(mat);
         if (prev && prev.dispose) prev.dispose();
-        // 追跡セットに登録し、現在のPOINT DENSITY設定を即時反映
-        pointObjects.add(obj);
-        applyPointDensity(obj);
-      }
-    });
-  });
-
-  // dispose-model: タイルがLRUからevictされた時に呼ばれる。
-  // 追跡セットからも除去してメモリリークを防ぐ。
-  tiles.addEventListener('dispose-model', ({ scene: tileScene }) => {
-    if (!tileScene) return;
-    tileScene.traverse(obj => {
-      if (obj.isPoints) {
-        pointObjects.delete(obj);
       }
     });
   });
@@ -1955,13 +1481,6 @@ function loadTileset(id) {
     currentDataset = id;
     loadingDataset = null;
     updateDatasetButtons();
-
-    // ── loading → rendering 状態遷移 ──
-    // tileset.json は取得済、ここからタイル本体のロード&描画フェーズ。
-    // lruCache.byteSize の現在値を基準として保存し、増分を「今回のロード受信量」とする。
-    progressState.bytesAtSwitch = tiles.lruCache?.byteSize ?? 0;
-    progressState.readyStableFrames = 0;
-    setProgressStage('rendering');
   });
 
   tiles.addEventListener('load-error', (e) => {
@@ -1969,8 +1488,6 @@ function loadTileset(id) {
     if (loadingDataset === id) {
       loadingDataset = null;
       updateDatasetButtons();
-      // 進捗オーバーレイも閉じる
-      setProgressStage('idle');
     }
   });
 
@@ -2001,25 +1518,11 @@ function buildDatasetButtons() {
 }
 
 function updateDatasetButtons() {
-  const loading = loadingDataset != null;
-  // コンテナにロード状態クラス(CSSで他ボタンを薄くする)
-  datasetSwitch.classList.toggle('is-loading', loading);
-
   datasetSwitch.querySelectorAll('.dataset-btn').forEach(btn => {
     const id = btn.dataset.id;
     btn.classList.toggle('active', id === currentDataset);
     btn.classList.toggle('loading', id === loadingDataset);
-    // ロード中: ロード対象以外の全ボタンを disabled に
-    btn.disabled = loading && id !== loadingDataset;
   });
-
-  // プリフェッチボタンもロード中は無効(別データセットへの切替と相互排他)
-  const pbtn = document.getElementById('prefetch-btn');
-  if (pbtn) {
-    // 既にプリフェッチ実行中の "CANCEL" 状態だけは押せるようにする
-    const isPrefetchRunning = prefetchState.running;
-    pbtn.disabled = loading && !isPrefetchRunning;
-  }
 }
 
 // CSVを読み込んでからUIを構築 & 初期ロード
@@ -2152,31 +1655,18 @@ function updateSizeSlider() {
   }
 }
 
-// スマホ時の初期値: 20 (PC は HTML 既定値の 5 のまま)
-// スマホ表示は遠景でも見やすいよう、ややや大きめの2cm立方体を採用。
+// スマホ時の初期値: 30 (PC は HTML 既定値の 5 のまま)
 if (isTouchDevice) {
-  sizeSlider.value = '20';
+  sizeSlider.value = '30';
   sizeSlider.dispatchEvent(new Event('input', { bubbles: true }));
   // ミニスライダー表示も更新(updateSizeSliderと同等の処理)
   const miniSlider = document.getElementById('size-mini-slider');
   const miniVal    = document.getElementById('size-mini-val');
   if (miniSlider && miniVal) {
-    miniSlider.value = '20';
-    miniVal.textContent = '20';
+    miniSlider.value = '30';
+    miniVal.textContent = '30';
   }
 }
-
-// ── POINT DENSITY スライダー ──
-// 各タイルの点群を何% 描画するかを制御 (間引き)。
-// 内部値 pointDensity (0.1〜1.0) に変換し、全 Points の setDrawRange に反映。
-const densitySlider = document.getElementById('density-slider');
-const densityVal    = document.getElementById('density-val');
-densitySlider.addEventListener('input', () => {
-  const pct = parseInt(densitySlider.value, 10);
-  pointDensity = Math.max(0.01, pct / 100); // 0.10〜1.00 (UI下限10%だが念のためクランプ)
-  densityVal.textContent = String(pct);
-  applyPointDensity();
-});
 
 // ── WORLD SCALE スライダー ──
 // tiles.group のスケールを変えることで、見た目の世界の大きさを変える。
@@ -2213,8 +1703,8 @@ scaleSlider.addEventListener('input', () => {
 const lodSlider = document.getElementById('lod-slider');
 const lodVal = document.getElementById('lod-val');
 lodSlider.addEventListener('input', () => {
-  lodErrorTarget = parseInt(lodSlider.value, 10);
-  lodVal.textContent = String(lodErrorTarget);
+  lodErrorTarget = parseFloat(lodSlider.value);
+  lodVal.textContent = lodErrorTarget.toFixed(1);
   // VR状態/優先モードを加味して反映
   applyActiveTilesSettings();
 });
@@ -2245,155 +1735,6 @@ prefetchBtn.addEventListener('click', () => {
   } else {
     startPrefetch();
   }
-});
-
-// ────────────────────────────────────────────────────────────
-// ネットワーク/端末プロファイル(自動チューニング)
-// ────────────────────────────────────────────────────────────
-// 目的: 重いデータ + 遅い回線 + 低スペック端末 でも破綻しないよう、
-//      LOD ERROR TARGET / DOWNLOAD_MAX_JOBS / CACHE TILES / CACHE MB の
-//      初期値を自動で適切なプロファイルに振り分ける。
-//
-// 利用情報:
-//   ・navigator.connection.effectiveType / downlink / saveData
-//   ・navigator.hardwareConcurrency (論理CPUコア数)
-//   ・navigator.deviceMemory       (RAM GB)
-//   ・isTouchDevice                (スマホかどうか)
-//
-// プロファイル定義:
-//   low   … 低速モバイル / saveDataオン / 低スペック
-//   mid   … 3G〜中位スマホ / 4コア以下
-//   high  … 4G〜PC(現状のデフォルト相当)
-//   ultra … 高速回線 & ハイエンドPC(ゲーミング)
-//
-// 各プロファイルの値は、対応するスライダーの範囲内に収まるよう設定すること。
-//   LOD          range  8 〜 80
-//   DOWNLOAD JOBS        (スライダーなし、内部のみ)
-//   CACHE TILES  range  300 〜 8000
-//   CACHE MB     range  256 〜 4096
-const PROFILES = {
-  low:   { lod: 40, jobs:  4, tiles:  600, mb:  384, label: 'Low'   },
-  mid:   { lod: 30, jobs:  8, tiles: 1000, mb:  768, label: 'Mid'   },
-  high:  { lod: 20, jobs: 16, tiles: 2000, mb: 1536, label: 'High'  },
-  ultra: { lod: 12, jobs: 24, tiles: 4000, mb: 3072, label: 'Ultra' },
-};
-
-function detectAutoProfile() {
-  // URLで強制指定があれば最優先
-  const forced = new URLSearchParams(location.search).get('profile');
-  if (forced && PROFILES[forced]) {
-    return { key: forced, reason: 'URL ?profile=' + forced };
-  }
-
-  const conn  = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  const cores = navigator.hardwareConcurrency || 0;
-  const mem   = navigator.deviceMemory || 0; // GB (Safari未対応)
-  const eType = conn && conn.effectiveType;  // '4g' | '3g' | '2g' | 'slow-2g'
-  const dl    = conn && conn.downlink;       // Mbps
-  const save  = conn && conn.saveData;
-
-  // 1. データセーバー / 極端な低速回線 → Low
-  if (save || eType === 'slow-2g' || eType === '2g') {
-    return { key: 'low', reason: 'slow connection or save-data' };
-  }
-  // 2. 3G or タッチデバイスでコア4以下 → Mid
-  if (eType === '3g' || (isTouchDevice && cores > 0 && cores <= 4)) {
-    return { key: 'mid', reason: '3G or low-core touch device' };
-  }
-  // 3. ハイエンド条件: 4G+ で downlink >= 20Mbps かつ コア >= 8 かつ memory >= 8GB
-  if ((eType === '4g' || !eType) && dl && dl >= 20 && cores >= 8 && (!mem || mem >= 8)) {
-    return { key: 'ultra', reason: 'fast network + high-end device' };
-  }
-  // 4. デフォルト → High
-  return {
-    key: 'high',
-    reason: conn ? `${eType || '4g'} connection` : 'navigator.connection unavailable',
-  };
-}
-
-// プロファイルが手動で上書きされたかのフラグ。
-// 一度でもユーザがスライダーを動かしたら true になり、以後自動再判定しない。
-let profileManuallyOverridden = false;
-
-function applyProfile(key) {
-  const p = PROFILES[key];
-  if (!p) return;
-  // 各スライダーの value を書き換え、input イベントを発火させて既存ハンドラを動かす
-  // (内部変数 lodErrorTarget / cacheMaxTiles / cacheMaxBytesMB も同時に反映される)
-  lodSlider.value = String(p.lod);
-  lodSlider.dispatchEvent(new Event('input', { bubbles: true }));
-  cacheTilesSlider.value = String(p.tiles);
-  cacheTilesSlider.dispatchEvent(new Event('input', { bubbles: true }));
-  cacheBytesSlider.value = String(p.mb);
-  cacheBytesSlider.dispatchEvent(new Event('input', { bubbles: true }));
-  // downloadMaxJobs はスライダーがないので直接書き換え
-  DOWNLOAD_MAX_JOBS = p.jobs;
-  if (tiles) applyActiveTilesSettings();
-}
-
-// プロファイルを判定して適用 & UI表示
-const autoProfile = detectAutoProfile();
-applyProfile(autoProfile.key);
-console.log(`Auto profile: ${autoProfile.key} (${autoProfile.reason})`);
-
-// コントロールパネル本体の先頭に "Auto: ..." バッジを差し込む
-(function injectProfileBadge() {
-  const body = document.getElementById('controls-body');
-  if (!body) return;
-  const badge = document.createElement('div');
-  badge.id = 'profile-badge';
-  badge.style.cssText = `
-    margin: 0 0 10px 0;
-    padding: 4px 8px;
-    border: 1px solid rgba(0,200,255,0.3);
-    border-radius: 3px;
-    font-size: 10px;
-    color: #7fc8e0;
-    letter-spacing: 0.5px;
-    background: rgba(0,200,255,0.06);
-  `;
-  const label = PROFILES[autoProfile.key].label;
-  badge.innerHTML = `Auto: <b style="color:#00c8ff">${label}</b>` +
-    ` <span style="opacity:0.6">(${autoProfile.reason})</span>`;
-  body.insertBefore(badge, body.firstChild);
-  // ユーザがスライダーを動かしたら "manual" に切替表示
-  const watch = (slider) => {
-    slider.addEventListener('input', () => {
-      if (!profileManuallyOverridden) {
-        profileManuallyOverridden = true;
-        badge.innerHTML = `Manual <span style="opacity:0.6">(auto was ${label})</span>`;
-        badge.style.borderColor = 'rgba(255,200,80,0.4)';
-        badge.style.background  = 'rgba(255,200,80,0.06)';
-      }
-    }, { once: false });
-  };
-  [lodSlider, cacheTilesSlider, cacheBytesSlider].forEach(watch);
-})();
-
-// ── ⓘ 情報アイコン: クリックで対応する説明文を開閉 ──
-// イベントデリゲーションで .ctrl-info ボタン全部を一括処理。
-// aria-controls 属性で指定された要素を hidden トグルし、
-// aria-expanded を同期させる。
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('.ctrl-info');
-  if (!btn) return;
-  const targetId = btn.getAttribute('aria-controls');
-  if (!targetId) return;
-  const target = document.getElementById(targetId);
-  if (!target) return;
-  const willShow = target.hasAttribute('hidden');
-  if (willShow) {
-    target.removeAttribute('hidden');
-    btn.setAttribute('aria-expanded', 'true');
-  } else {
-    target.setAttribute('hidden', '');
-    btn.setAttribute('aria-expanded', 'false');
-  }
-  // スマホ折りたたみコントロールパネルが開いている時にⓘを押すと内容が伸びるので、
-  // 必要なら #controls の top を再計算(positionControlsBelowDatasetSwitchが
-  // 存在する場合のみ。PCでは未定義なので関数存在チェック)。
-  // ※ 現状のスマホ実装では top は固定 (#dataset-switch の真下) で、
-  //   高さ変化は max-height + overflow-y: auto の縦スクロールで吸収される。
 });
 
 window.addEventListener('resize', () => {
@@ -2522,9 +1863,6 @@ renderer.setAnimationLoop(() => {
     // (VR時はworldを直接書いた値、非VR時は階層から計算された値)
     tiles.update();
   }
-
-  // ロード進捗UIの更新(rendering⇄ready 判定もここで行う)
-  updateLoadProgress();
 
   // 描画
   renderer.render(scene, camera);

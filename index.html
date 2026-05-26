@@ -746,11 +746,15 @@
       </span>
     </div>
     <div id="info-quality" class="ctrl-info-body" hidden>
-      画面に描画するタイルの細かさを20段階で指定する設定。
-      値が大きいほどくっきり高詳細になるが、読み込むタイル数・通信量・GPU負荷も増える。
-      値を下げると粗くなる代わりに動作が軽くなる。
+      世界全体の細かさを20段階で指定する設定。
+      点群データは「タイル」と呼ばれる小さなブロックに分割されていて、
+      この設定はどの細かさのタイルを読み込むかを決める。
+      値を上げると細かいタイルが追加で読み込まれ、近景も遠景もくっきり見えるが、
+      通信量とメモリ使用量が増える。
+      値を下げると粗いタイルだけで描画されるので、通信量も負荷も減る代わりに
+      タイルの境目で粗さの段差が見えやすくなる。
       初期値は端末スペック・回線速度から自動判定する(画面上部のAutoバッジ参照)。
-      動作が重いと感じたら数値を下げ、もっとくっきり見たければ上げる。
+      ネット回線が遅い・データ通信量を抑えたい時はまずここを下げると効果が大きい。
       内部的には 3D Tiles Renderer の errorTarget(許容LOD誤差ピクセル数)を
       非線形に変換して制御している(画質20→errorTarget=8、画質1→errorTarget=80)。
     </div>
@@ -784,12 +788,13 @@
       </span>
     </div>
     <div id="info-density" class="ctrl-info-body" hidden>
-      各タイルの点群のうち何%を描画するかを指定する間引き設定。
-      100%で全点、50%で半分、10%なら1/10だけ描画。
-      タイル自体はそのままなのでメモリ・ダウンロード量は変わらないが、
-      描画コスト(特にGPU負荷)が直線的に下がる。
-      VRでカクつく / ハイエンドPCでも重いデータで滑らかさが欲しい時に下げる。
-      画質設定と違いタイル境界の粗さが目立たず、均一に薄くなるのが特徴。
+      ダウンロード済みの点群のうち、何%を画面に描画するかを指定する間引き設定。
+      100%で全点を描画、50%で半分、10%なら1/10だけ描画する。
+      ダウンロード自体は通常通り行われるので、通信量とメモリ使用量は変わらない。
+      減るのは描画コスト(主にGPU負荷)だけで、値に比例して直線的に軽くなる。
+      画質設定と違ってタイル境界の粗さは出ず、世界全体が均一に薄く透けたように見える。
+      ネットは十分速いがGPUが追いつかずカクつく場合、
+      VRで滑らかさを最優先したい場合に下げると効果が大きい。
     </div>
   </div>
 
@@ -855,8 +860,9 @@
       <span id="prefetch-status">待機中</span>
     </div>
     <div id="info-prefetch" class="ctrl-info-body" hidden>
-      現在のデータセットの全タイルを先読みしてブラウザのキャッシュに乗せる機能。
-      VR突入前など、視点移動でカクつかせたくない場合に有効。
+      現在のデータセットの全タイルを先読みしてブラウザのキャッシュに保存する機能。
+      VR突入前や広範囲を移動する前など、視点移動でカクつかせたくない場合に有効。
+      モバイル端末でWi-Fi接続中に先読みしておけば、後で電波の悪い場所でも快適に閲覧できる。
       タイル数が多いと相応の通信量と時間がかかる(実行前に確認ダイアログが出る)。
     </div>
   </div>
@@ -2061,20 +2067,42 @@ function formatBytes(b) {
   return `${(b / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
+// idle時にこのキュー件数以上が溜まったら自動で「描画中」表示に切り替える閾値。
+// 小さすぎると通常のカメラ微動でも毎回出てしまい鬱陶しいので、
+// 「画質を上げた」「広域に移動した」など まとまったダウンロードが起きた時だけ
+// 反応するようにする。
+const AUTO_PROGRESS_QUEUE_THRESHOLD = 10;
+
 // 毎フレーム呼ぶ進捗UI更新。rendering⇄ready の判定もここで行う。
+// idle中も裏でキュー監視し、ダウンロードが溜まったら自動的にrenderingへ遷移する。
 function updateLoadProgress() {
-  const stage = progressState.stage;
-  if (stage === 'idle' || stage === 'loading') {
-    // idle: 何もしない / loading: tileset.json 取得中は不確定アニメーション(CSS側)
-    return;
-  }
+  let stage = progressState.stage;
+
+  // loading中(tileset.json取得中)は不確定アニメーションのまま、自動検知は無効化
+  if (stage === 'loading') return;
   if (!tiles) return;
 
-  // タイル数の取得 (バージョン差異吸収)
+  // タイル数/キュー状況の取得 (バージョン差異吸収)
   const dlQueue = tiles.downloadQueue?.items?.length ?? tiles.downloadQueue?.callbacks?.size ?? 0;
   const parseQ  = tiles.parseQueue?.items?.length    ?? tiles.parseQueue?.callbacks?.size    ?? 0;
   const visible = tiles.visibleTiles?.size ?? 0;
   const active  = tiles.activeTiles?.size  ?? 0;
+
+  // idle中の自動検知:
+  //   データセット切替以外の理由(画質を上げた、広域に移動した、等)で
+  //   タイルダウンロードが大量に発生した時、自動的に「描画中」表示を出す。
+  //   ready直後のフェードアウト期間中(readyTimer中)は再発火させない。
+  if (stage === 'idle' && (dlQueue + parseQ) >= AUTO_PROGRESS_QUEUE_THRESHOLD) {
+    // 「今回の追加ロード」基準点として現在のキャッシュサイズを記録
+    progressState.bytesAtSwitch = tiles.lruCache?.byteSize ?? 0;
+    progressState.readyStableFrames = 0;
+    setProgressStage('rendering');
+    stage = 'rendering';
+  }
+
+  // idle継続(キューが閾値未満)の場合はここで終了
+  if (stage === 'idle') return;
+
   // 受信バイト量 (LRUキャッシュの byteSize は load後加算、evict時減少)
   const cacheBytes = tiles.lruCache?.byteSize ?? 0;
   // 切替直後を基準にした「今回のロードで増えたバイト量」

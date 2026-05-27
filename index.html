@@ -171,13 +171,9 @@
     body.touch #vert-buttons.touch-ui  { display: flex  !important; }
     body.touch #vr-help { display: none; }
 
-    /* ── UIパネル類のピンチ拡大を完全阻止 ──
-       スライダー類は縦並びで縦スクロール想定なので pan-y、
-       #dataset-switch はボタン横並びで横スクロール想定なので pan-x。
-       いずれも 2軸スクロール(=ピンチ)は禁止される。
-       canvas は別途 touch-action: none を設定済み。
-       注: VRボタン(button.three-vr) はピンチ阻止の対象外とし、
-           ブラウザ標準の挙動に任せる。 */
+    /* UIパネル類のピンチ拡大を阻止。スライダー類は縦スクロール想定なので pan-y、
+       #dataset-switch はボタン横並びで pan-x。VRボタンは標準挙動に任せる。
+       canvas は別途 touch-action: none を設定済み。 */
     #controls, #vr-help, #credit, #dbg-panel {
       touch-action: pan-y;
     }
@@ -250,12 +246,8 @@
     }
 
     /* ── #controls 折りたたみ機構（スマホ用）─────────────── */
-    /* PC時(スマホでない時)の #controls:
-         ・固定幅 330px。スライダーや説明文が読みやすい幅で、ⓘ説明文が長くても
-           パネル幅が暴れない。
-         ・画面高さに対して max-height を設定し、収まらない場合は本体側を縦スクロール。
-           top: 80px(インラインstyle) + 下端マージン 16px を画面高から引く。
-       body.touch のルールで width/max-height は上書きされ、スマホ用挙動が維持される。 */
+    /* PC時の #controls: 固定幅 330px、max-height で画面に収まらない時は本体側を縦スクロール。
+       body.touch の方で width:auto / max-height:none に上書きされ、スマホは中身に合わせて縮む。 */
     #controls {
       width: 330px;
       max-height: calc(100vh - 96px);
@@ -289,10 +281,8 @@
       word-break: break-word;
       overflow-wrap: anywhere;
     }
-    /* PC時のスライダーとプレフェッチボタンを、新しいパネル幅に合わせて広げる。
-       パネル幅330 − padding32 − スクロールバー余白12 ≒ 286px が利用可能幅。
-       実用上は 260px に揃える(各HTML要素のインラインstyleと一致)。
-       インラインstyleが優先されるので、ここのルールはインラインが外れた場合のフォールバック。 */
+    /* PC時のスライダーとプレフェッチボタン幅 (パネル330 - padding32 ≒ 286px のうち 260px に統一)。
+       インラインstyleが優先されるので、これはインラインが外れた場合のフォールバック。 */
     #controls input[type="range"] {
       width: 260px;
     }
@@ -386,10 +376,8 @@
     body.touch #controls.collapsed #controls-body {
       display: none;
     }
-    /* 折りたたみ展開時は、本体内の POINT SIZE 項目も表示する。
-       ヘッダーのミニスライダーと重複するが、こちらにⓘアイコンと説明文が
-       あるため、ユーザが説明を読むには本体側が必要。
-       双方のスライダーは双方向同期している (size-mini-slider ↔ size-slider) */
+    /* 折りたたみ展開時は本体のサイズ項目も表示。ヘッダーのミニスライダーと重複するが、
+       本体側にⓘアイコンと説明文がある。双方のスライダーは双方向同期 (size-mini-slider ↔ size-slider) */
     /* スマホ時はスライダー幅も画面に合わせて縮める */
     body.touch #controls-body input[type="range"] {
       width: 140px;
@@ -716,22 +704,13 @@
   <!-- 本体 -->
   <div id="controls-body">
 
-  <!-- ──────────────────────────────────────────────────────
-       コントロールパネル本体の項目順は「動作の重さに与える影響が大きい順」。
-       上から触れば性能トラブルシュートしやすく、下の項目ほど見た目の微調整。
-       1. 画質              … タイル細かさ。最も性能影響が大きい
-       2. 点の密度          … 描画頂点数を一律に増減。GPU負荷の主因
-       3. 点のサイズ        … スプライト塗り面積。フラグメント側に効く
-       4. 表示倍率          … VRで体感サイズ調整。性能影響は軽微
-       5. 先読み            … 1回限りのアクション
-       ────────────────────────────────────────────────────── -->
+  <!-- 並び順は「動作の重さに与える影響が大きい順」(上から:画質>密度>サイズ>倍率>先読み)。
+       上から触れば性能トラブルシュートしやすく、下ほど見た目の微調整。 -->
 
   <!-- ─────────── 1. 画質 (LOD ERROR TARGET) ─────────── -->
-  <!-- 内部的には 3D Tiles Renderer の errorTarget(8〜80) を制御するが、
-       UIには 1〜20 の独自スケール "画質" として見せる(値が大きいほど高品質)。
-       変換は非線形(指数)で、低品質側では1段ごとの体感差が大きく、
-       高品質側は細かく刻めるようにする。
-       初期値はプロファイル自動判定で決まり、ユーザーは手動で変更可能。 -->
+  <!-- 内部の errorTarget(8〜80)を 1〜20 の独自スケール"画質"として見せる(値↑=高品質)。
+       変換は非線形(指数)で、低品質側は段差大、高品質側は細かく刻める。
+       初期値はプロファイル自動判定、ユーザーは手動で変更可。 -->
   <div class="ctrl-group">
     <div class="ctrl-label">
       <span>画質</span>
@@ -760,10 +739,8 @@
     </div>
   </div>
 
-  <!-- キャッシュ系は引き続き自動チューニングのみ(UI非表示)。
-       スライダー要素は DOM 上は残し、JS から参照&制御する。
-       デバッグ目的でプロファイル全体を上書きしたい場合は
-       ?profile=low|mid|high|ultra で強制指定する。 -->
+  <!-- キャッシュ系は自動チューニングのみでUI非表示(スライダー要素はDOMに残し、JSから制御)。
+       デバッグでプロファイル全体を上書きする場合は ?profile=low|mid|high|ultra を指定。 -->
   <div class="ctrl-group" style="display:none">
     <input id="cache-tiles-slider" type="range" min="300" max="8000" step="100" value="2000">
     <span id="cache-tiles-val">2000</span>
@@ -944,15 +921,9 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 console.log('Three.js r' + THREE.REVISION + ' / 3D Tiles VR Viewer');
 
-// データセット定義
-// 外部CSV (datasets.csv) から読み込む。読み込み失敗時はエラー表示を出し、データセットボタンは生成しない。
+// データセット定義(datasets.csv から読み込み)
 // CSV列: id, label, xOffset, yOffset, zOffset, yawOffset
-//   id        : タイルセットURLのパス
-//   label     : ボタン表示名
-//   xOffset   : カメラ初期X座標(m)
-//   yOffset   : カメラ初期Y座標(m)
-//   zOffset   : カメラ初期Z座標(m)
-//   yawOffset : カメラ初期Y軸まわり回転(度)
+//   (id=URLパス, label=ボタン名, x/y/zOffset=初期カメラ座標m, yawOffset=Y軸回転°)
 const TILESET_BASE = 'https://gsvrg.ipri.aist.go.jp/3ddb_demo/3dtiles';
 const DATASETS_CSV_URL = './datasets.csv';
 const DEFAULT_DATASET = '1886';
@@ -1033,10 +1004,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
-// 'local-floor' だと床を原点とし、HMDの実物理身長分カメラが浮き上がる(=
-//  PC/スマホで設定した dolly.y より VR の見え高さが高くなる)。
-// 'local' は HMDの初期位置を原点とするため、dolly.position.y がそのまま目線高さになり、
-// PC/スマホ表示とVR表示の高さが揃う。
+// 'local'はHMD初期位置を原点とする(dolly.y がそのまま目線高さになり、PC/スマホと揃う)。
 renderer.xr.setReferenceSpaceType('local');
 document.body.appendChild(renderer.domElement);
 
@@ -1086,14 +1054,9 @@ function handlePCInput(dt) {
   if (keys.down)     targetVel.y -= VERT_SPEED;
 }
 
-// ── タッチUI ──────────────────────────────────
-// タッチデバイス判定
-//   ・粗いポインタ(=指)
-//   ・touch APIが存在
-//   ・画面が縦長か、短辺が900px以下(=スマホ/タブレットのみ)
-//   ・VR専用ブラウザ(Meta Quest など)は除外
-//      → Quest のブラウザは pointer:coarse かつ ontouchstart=true になるため、
-//        UA に OculusBrowser/Quest を含む場合は明示的に弾く
+// ── タッチUI ──
+// 粗いポインタ + touch対応 + 短辺≤900px のスマホ/タブレットを検出。
+// VR専用ブラウザ(Quest等)はUAで除外する。
 const ua = navigator.userAgent || '';
 const isVRBrowser = /OculusBrowser|Quest|Pico|Vive/i.test(ua);
 const isSmallScreen = Math.min(window.innerWidth, window.innerHeight) <= 900;
@@ -1122,9 +1085,7 @@ if (isTouchDevice) {
     _lastTouchEnd = now;
   }, { passive: false });
 
-  // UIパネル類の上でのピンチを確実に阻止
-  // (CSSの touch-action と、document レベルの touchmove だけでは
-  //  iOS/Android の一部環境で漏れることがあるため、直接 listener を付ける)
+  // UIパネル類の上でのピンチを listener で直接阻止 (CSS touch-action だけでは漏れる環境があるため)
   const stopPinch = (e) => {
     if (e.touches && e.touches.length > 1) {
       e.preventDefault();
@@ -1136,9 +1097,8 @@ if (isTouchDevice) {
     el.addEventListener('touchstart', stopPinch, { passive: false });
     el.addEventListener('touchmove',  stopPinch, { passive: false });
   };
-  // DOM構築済みのものは即時 attach。後から作られる #dbg-panel は MutationObserver で拾う。
-  // 注: VRボタン(button.three-vr) はピンチ阻止対象から除外。
-  //     CSSの touch-action 指定もしておらず、ブラウザ標準動作に任せる。
+  // DOM構築済みは即時attach、後から作られる#dbg-panelはMutationObserverで拾う。
+  // VRボタンはピンチ阻止対象外(ブラウザ標準動作)。
   ['controls', 'vr-help', 'dataset-switch', 'credit', 'dbg-panel'].forEach(id => {
     attachStopPinch(document.getElementById(id));
   });
@@ -1180,10 +1140,8 @@ if (isTouchDevice) {
     new ResizeObserver(positionControlsBelowDatasetSwitch).observe(datasetSwitchEl);
   }
 
-  // ミニPOINT SIZEスライダーと本体POINT SIZEスライダーを双方向同期
-  // (スケールは整数 1〜50 で揃えてある。値表示はそのまま整数)
-  // スマホ時の初期値(30)の適用は、本体スライダーのハンドラ登録後に行うため
-  // 本ファイル下部の sizeSlider.addEventListener 直後で処理する。
+  // ミニスライダーと本体スライダーを双方向同期(整数 1〜50)。
+  // 初期値(30)の適用は本体スライダーのハンドラ登録後、sizeSlider.addEventListener直後で実施。
   const miniSlider = document.getElementById('size-mini-slider');
   const miniVal    = document.getElementById('size-mini-val');
   const mainSlider = document.getElementById('size-slider');
@@ -1361,10 +1319,7 @@ for (let i = 0; i < 2; i++) {
 }
 
 // ── 設定の現在のtilesへの反映 ──
-// errorTarget と downloadQueue.maxJobs を、現在のスライダー値に基づき適用する。
-// (旧バージョンにあった「VR中だけ別設定」「優先モード」は、schedulingCallbackの
-//  差し替え対応で不要になったため削除済み)
-// DOWNLOAD_MAX_JOBS はネットワークプロファイルにより動的に変わるため let。
+// errorTarget と downloadQueue.maxJobs を現在値で適用。MAX_JOBSはプロファイルで変動するため let。
 let DOWNLOAD_MAX_JOBS = 16;
 function applyActiveTilesSettings() {
   if (!tiles) return;
@@ -1373,17 +1328,8 @@ function applyActiveTilesSettings() {
 }
 
 // ── PriorityQueue の schedulingCallback を XRセッションに合わせて差し替え ──
-//
-// 3D Tiles Renderer の downloadQueue / parseQueue は、次フレームでのジョブ実行を
-// schedulingCallback(func) → 既定では requestAnimationFrame(func) で予約する。
-//
-// しかし WebXR セッション中はグローバルの requestAnimationFrame が呼ばれない
-// (もしくは大幅に遅延する) ため、ジョブが永遠にスケジュールされず、
-// downloading キューが詰まる現象が発生する。
-// 公式ドキュメントでも「WebXR では schedulingCallback を上書きすべき」と明記されている。
-//
-// 対応: セッション開始時に xrSession.requestAnimationFrame ベースのコールバックに
-// 差し替え、セッション終了時に元に戻す。
+// WebXRセッション中はグローバルrequestAnimationFrameが呼ばれず、tilesのDLキューが
+// 詰まるため、xrSession.requestAnimationFrame に差し替える(終了時に元に戻す)。
 const _origSchedulingCallbacks = new WeakMap(); // queue -> 元のコールバック
 
 function applySchedulingCallbacks(xrSession) {
@@ -1497,12 +1443,8 @@ function handleVRInput(dt) {
   if (!session) return;
 
   // ── 最終的な向き = dolly の回転 × HMD の向き ──
-  // renderer.xr.getCamera() の matrixWorld には WebXR セッションの
-  // 参照空間における頭の姿勢が入る。実装によっては dolly の rotation が
-  // ここに反映されないことがあるため、両者を明示的に合成する。
-  //
-  // 1) HMD のローカル向き（参照空間内での向き）を取得
-  // 2) dolly の rotation を適用してワールド向きに変換
+  // renderer.xr.getCamera().matrixWorld の頭部姿勢に dolly の rotation を合成する。
+  // (実装によっては dolly rotation がXR matrixWorldに反映されないため明示合成)
   const xrCam = renderer.xr.getCamera();
   // xrCam.quaternion は HMDのローカル向き
   const hmdQuat = xrCam.quaternion.clone();
@@ -1521,11 +1463,9 @@ function handleVRInput(dt) {
   // 右方向 = forward を Y軸まわりに -90度回転
   const hmdRight = new THREE.Vector3(hmdForward.z, 0, -hmdForward.x);
 
-  // ── 入力ソースを先回りスキャン ──
-  // 中指トリガー(squeeze)の値を先に確定する:
+  // 中指トリガー(squeeze)の値を先に確定する。gamepad.buttons[1] にマップされる(Quest含む):
   //   ・右手 squeeze → 移動/回転/上下の倍率(1.0〜5.0)
-  //   ・左手 squeeze → 押下中なら Y/X の役割を POINT SIZE → POINT DENSITY に切替
-  // squeeze は WebXR標準で gamepad.buttons[1] にマップされる(Quest 含む)。
+  //   ・左手 squeeze → 押下中は Y/X の役割を POINT SIZE → POINT DENSITY に切替
   let boost = 1.0;
   let leftSqueezeHeld = false;
   for (const source of session.inputSources) {
@@ -1593,9 +1533,7 @@ function handleVRInput(dt) {
     }
 
     if (hand === 'right') {
-      // 右スティック左右：ヨー回転（上下は使わない）
-      // (以前は PC キー操作より速めの 1.5倍にしていたが、実機で速すぎたため
-      //  2/3に落として 1.0倍 = PCキーと同等にする。boost倍率は変わらず乗算)
+      // 右スティック左右: ヨー回転(上下は使用しない、速度は PC キーと同等)
       targetYawVel -= stickX * TURN_SPEED * boost;
 
       // 右手 A=buttons[4]:下降, B=buttons[5]:上昇 (boost倍率を乗算)
@@ -1624,20 +1562,15 @@ function applyPointDensity() {
   cubeUniforms.uDensity.value = pointDensity;
 }
 
-// ── 立方体点群シェーダ ──────────────────────────────
-// 各点をスクリーン空間の正方形スプライトとして描画し、
-// gl_PointCoord をワールド固定の絶対軸（+X右、+Y上、+Z前）に紐づけて陰影計算する。
-// → 立方体の見え方はワールド空間で完全に固定され、
-//    カメラの位置・向きが変わっても面の向き・明るさは一切変化しない。
-// 追加ジオメトリなし・ビルボード処理なし。
+// ── 立方体点群シェーダ ──
+// 各点をスクリーン空間の正方形スプライトとして描画し、ワールド固定の絶対軸で陰影計算。
+// カメラの位置・向きに関わらず面の向き・明るさが変わらない(ビルボード処理なし)。
 const CUBE_VERT = /* glsl */`
   uniform float uSize;
   uniform float uDensity; // 0.0〜1.0 (POINT DENSITY: 描画する点の割合)
   varying vec3 vColor;
 
-  // 位置座標から決定論的な疑似乱数を生成。
-  // 同じ点座標 → 常に同じ値、フレーム間ちらつきなし。
-  // 空間的にも均一に分布。
+  // 位置座標から決定論的な疑似乱数を生成(同座標→同値, フレーム間ちらつきなし)。
   float hash13(vec3 p) {
     p = fract(p * 0.1031);
     p += dot(p, p.zyx + 31.32);
@@ -1647,9 +1580,8 @@ const CUBE_VERT = /* glsl */`
   void main() {
     vColor = color;
 
-    // ── POINT DENSITY 間引き ──
-    // 位置ハッシュが密度しきい値を超えたら、クリップ外へ飛ばして描画スキップ。
-    // gl_PointSize = 0 と組み合わせ、確実に描かれないようにする。
+    // POINT DENSITY 間引き: 位置ハッシュが密度しきい値を超えたらクリップ外へ飛ばして描画スキップ
+    // (gl_PointSize=0 と併用で確実に描画されない)
     if (hash13(position) >= uDensity) {
       gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // クリップ空間外
       gl_PointSize = 0.0;
@@ -1677,11 +1609,9 @@ const CUBE_FRAG = /* glsl */`
   void main() {
     vec2 uv = gl_PointCoord * 2.0 - 1.0; // -1〜1（y下向き正）
 
-    // スプライトの3領域を「ワールド絶対軸の3面」に対応させる
-    //   上半分(uv.y<-0.15): +Y面 (上面)
-    //   左下(uv.x<0):       -X面 (左面)
-    //   右下:                +X面 (右面)
-    // この対応は固定なので、カメラがどう動いても変わらない
+    // スプライトの3領域をワールド絶対軸の3面に固定対応させる。
+    //   上半分(uv.y<-0.15)→+Y面(上面) / 左下(uv.x<0)→-X面(左面) / 右下→+X面(右面)
+    // この対応は固定なのでカメラがどう動いても変わらない。
     vec3 nWS;
     if (uv.y < -0.15) {
       nWS = WS_UP;
@@ -1719,10 +1649,7 @@ function makeCubeMaterial() {
   });
 }
 
-// 立方体シェーダの uniform は1組をすべてのPointsで共有しているので、
-// uSize.value を書き換えるだけで全タイルに即時反映される。
-// (以前は PointsMaterial を個別追跡していたが、現在はShaderMaterial 1種類のみ使うため
-//  pointMaterials の追跡セットは廃止した)
+// uniformはすべてのPointsで共有なので、uSize.value書換えだけで全タイルに即時反映。
 function applyPointSize() {
   cubeUniforms.uSize.value = pointSize;
 }
@@ -1733,17 +1660,12 @@ let loadingDataset = null;    // ロード進行中のデータセットID
 let cameraInitialized = false;
 let _tilesCameraRegistered = false; // tiles.setCamera を1度だけ呼ぶためのフラグ
 
-// LOD制御：errorTarget が小さいほど高詳細(=LODが効きにくい)、大きいほど積極的に間引く
-// 初期値はプロファイル自動判定で上書きされる(applyProfile)。スライダーのHTML既定値
-// (画質=12, profile 'high'相当) を qualityToErrorTarget で変換した値に揃えて、
-// プロファイル未動作時のフォールバック値とする。
-// ユーザーはスライダーから 画質 1〜20 の範囲で手動調整可能。
-let lodErrorTarget = 21;  // = qualityToErrorTarget(12)
+// errorTarget: 小さいほど高詳細。プロファイル/スライダーで上書きされる前のフォールバック値
+// (画質=12 = profile 'high'相当を qualityToErrorTarget(12) で変換した値)。
+let lodErrorTarget = 21;
 
-// LRUキャッシュ上限：訪問した領域のディテールを保持する量
-// タイル数ベース / バイト数(MB)ベース、両方を上限として併用
-// ※ ここの値はプロファイル自動判定で上書きされる(applyProfile)。
-//   スライダーのHTML既定値とも整合させて、プロファイル未動作時のフォールバック値とする。
+// LRUキャッシュ上限(タイル数 + バイト数のどちらも上限として併用)。
+// プロファイル自動判定で上書きされる前のフォールバック値。
 let cacheMaxTiles = 2000;    // タイル数の上限
 let cacheMaxBytesMB = 1536;  // バイト数の上限(MB)
 
@@ -1764,16 +1686,9 @@ function applyCacheSettings(t) {
   }
 }
 
-// ── プリフェッチ機構 ─────────────────────────────────────
-// 目的: VRセッション中はQuestブラウザ等でfetchがスロットルされる。
-// 事前にタイル本体をHTTPキャッシュに乗せておけば、VR中に tiles.update() が
-// 要求したときにネットワーク往復ではなくキャッシュから即時取得される。
-//
-// 仕組み:
-//   1. tileset.json を再帰的にウォークし、すべての content.uri を収集
-//   2. 子tileset.json は別途取得し、その中身も再帰的に展開
-//   3. 収集したURLを順次 fetch() するだけ。レスポンスは破棄してOK。
-//      ブラウザのHTTPキャッシュに乗れば目的達成。
+// ── プリフェッチ機構 ──
+// tileset.json を再帰展開して全タイルURLを集め、fetch()でHTTPキャッシュに乗せる。
+// VR中はfetchがスロットルされやすいので、事前に乗せておけば往復不要で即時取得できる。
 
 const prefetchState = {
   running: false,
@@ -1922,9 +1837,7 @@ async function startPrefetch() {
   }
 
   // ── 確認ダイアログ ──
-  // 推定サイズはタイル仕様上正確には取れないので「タイル数」と
-  // 「目安サイズ(1タイル≒平均0.5MB と仮定)」を伝える。
-  // 軽いデータ(閾値未満)では確認を省略する。
+  // タイル数と目安サイズ(1タイル≒0.5MB仮定)を表示。軽いデータでは確認省略。
   if (collected.size >= PREFETCH_CONFIRM_THRESHOLD) {
     const tileCount = collected.size;
     const estMB = Math.round(tileCount * 0.5); // 平均0.5MB仮定の概算
@@ -2005,19 +1918,9 @@ function updatePrefetchUI() {
   }
 }
 
-// ────────────────────────────────────────────────────────────
-// ロード進捗管理
-// ────────────────────────────────────────────────────────────
-// 状態遷移:
-//   idle      … 何も読込んでいない / 完了後の非表示状態
-//   loading   … tileset.json 取得中(load-tile-set イベント発火まで)
-//   rendering … タイル本体の取得・parse・描画中
-//   ready     … 十分な数のタイルが可視になった (2秒表示してidleへ)
-//
-// "ready" 判定:
-//   ・downloadQueue / parseQueue が空
-//   ・displayActiveTiles > 0 (1つでも描画されている)
-//   ・上記の状態が READY_HOLD_FRAMES フレーム連続で成立
+// ── ロード進捗管理 ──
+// 状態遷移: idle → loading(tileset.json取得) → rendering(タイル描画) → ready → idle
+// ready判定: ダウンロード/parseキュー空 + 表示タイル>0 が READY_HOLD_FRAMES 連続で成立
 const READY_HOLD_FRAMES = 30; // 約0.5秒の安定期間
 const READY_LINGER_MS  = 1800; // "Ready" 表示を見せる時間
 const progressState = {
@@ -2068,10 +1971,8 @@ function formatBytes(b) {
   return `${(b / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
-// idle時にこのキュー件数以上が溜まったら自動で「描画中」表示に切り替える閾値。
-// 小さすぎると通常のカメラ微動でも毎回出てしまい鬱陶しいので、
-// 「画質を上げた」「広域に移動した」など まとまったダウンロードが起きた時だけ
-// 反応するようにする。
+// idle時にこのキュー件数以上溜まったら自動で「描画中」表示に切り替える閾値。
+// 小さすぎるとカメラ微動で頻発するので、画質変更や広域移動などまとめロード時のみ反応する値に。
 const AUTO_PROGRESS_QUEUE_THRESHOLD = 10;
 
 // 毎フレーム呼ぶ進捗UI更新。rendering⇄ready の判定もここで行う。
@@ -2089,10 +1990,9 @@ function updateLoadProgress() {
   const visible = tiles.visibleTiles?.size ?? 0;
   const active  = tiles.activeTiles?.size  ?? 0;
 
-  // idle中の自動検知:
-  //   データセット切替以外の理由(画質を上げた、広域に移動した、等)で
-  //   タイルダウンロードが大量に発生した時、自動的に「描画中」表示を出す。
-  //   ready直後のフェードアウト期間中(readyTimer中)は再発火させない。
+  // idle中の自動検知: データセット切替以外でタイルダウンロードが大量発生した時
+  // (画質を上げた、広域移動など)に自動で「描画中」表示を出す。
+  // ready直後のフェードアウト期間中は再発火しない。
   if (stage === 'idle' && (dlQueue + parseQ) >= AUTO_PROGRESS_QUEUE_THRESHOLD) {
     // 「今回の追加ロード」基準点として現在のキャッシュサイズを記録
     progressState.bytesAtSwitch = tiles.lruCache?.byteSize ?? 0;
@@ -2167,10 +2067,8 @@ function loadTileset(id) {
   // 既存のtilesを破棄
   if (tiles) {
     scene.remove(tiles.group);
-    // tiles.group以下のすべてのマテリアルを明示的にdispose
-    // (自作シェーダのuniformテクスチャ等を確実に解放するため。
-    //  3d-tiles-renderer内部のdisposeはgeometry中心で、material disposeは
-    //  必ずしも呼ばれない可能性があるので明示する)
+    // tiles.group下のマテリアルを明示的にdispose
+    // (3d-tiles-renderer内部はgeometry中心で、material disposeは保証されないため)
     tiles.group.traverse(obj => {
       if (obj.isPoints && obj.material && typeof obj.material.dispose === 'function') {
         obj.material.dispose();
@@ -2211,8 +2109,7 @@ function loadTileset(id) {
     tileScene.traverse(obj => {
       if (obj.isPoints) {
         // 既存マテリアルを立方体シェーダに差し替え
-        // (uniform uSize/uDensity はマテリアル間で共有されるので、新規Pointsにも
-        //  自動的に現在のPOINT SIZE / POINT DENSITY設定が反映される)
+        // (uniform uSize/uDensity はマテリアル間共有なので新規Pointsにも自動反映)
         const prev = obj.material;
         const mat = makeCubeMaterial();
         obj.material = mat;
@@ -2221,9 +2118,8 @@ function loadTileset(id) {
     });
   });
 
-  // タイルがLRUキャッシュからevictされる時に、立方体シェーダMaterialを明示的にdispose。
-  // ShaderMaterialは個別インスタンスでuniform参照を持つので、長時間運用での
-  // メモリ蓄積を防ぐために必要。geometry等はTilesRenderer内部で処理される。
+  // LRUキャッシュからevictされる時、立方体シェーダMaterialを明示dispose。
+  // ShaderMaterialは個別uniform参照を持つため、長時間運用でのメモリ蓄積を防ぐ。
   tiles.addEventListener('dispose-model', ({ scene: tileScene }) => {
     tileScene.traverse(obj => {
       if (obj.isPoints && obj.material && typeof obj.material.dispose === 'function') {
@@ -2253,9 +2149,8 @@ function loadTileset(id) {
       // (applyWorldScale で dolly を中心にスケール変換するための基準点)
       tilesBasePosition.copy(tiles.group.position);
 
-      // ── CSVの値はカメラ初期位置(x,y,z)と yaw(度) を表す ──
-      // デバッグモードで通常移動した時に表示されるxyz/yawと、
-      // CSVに書く値が完全に一致する設計。
+      // CSVの値はカメラ初期位置(x,y,z)と yaw(度) を表す。
+      // デバッグモードで移動時に表示される xyz/yaw と完全一致する設計。
       const ds = getDataset(id);
       const camX   = ds ? ds.xOffset   : 0;
       const camY   = ds ? ds.yOffset   : 1.6;
@@ -2287,9 +2182,8 @@ function loadTileset(id) {
     loadingDataset = null;
     updateDatasetButtons();
 
-    // ── loading → rendering 状態遷移 ──
-    // tileset.json は取得済、ここからタイル本体のロード&描画フェーズ。
-    // lruCache.byteSize の現在値を基準として保存し、増分を「今回のロード受信量」とする。
+    // loading→rendering 遷移: tileset.json取得完了、ここからタイル本体ロード&描画フェーズ。
+    // lruCache.byteSize 現在値を基準保存し、増分を「今回のロード受信量」とする。
     progressState.bytesAtSwitch = tiles.lruCache?.byteSize ?? 0;
     progressState.readyStableFrames = 0;
     setProgressStage('rendering');
@@ -2457,10 +2351,7 @@ if (DEBUG_MODE) {
   });
 }
 
-// スライダーで点サイズを動的に変更
-// POINT SIZE スライダー
-//   UI表示は整数 1〜50 で統一(PC/スマホ共通スケール)。
-//   内部 pointSize(メートル単位) は UI値 × 0.001 で変換。
+// 点のサイズスライダー: UI値(1〜80)を pointSize(m) = UI × 0.001 で変換。
 const sizeSlider = document.getElementById('size-slider');
 const sizeVal = document.getElementById('size-val');
 const POINT_SIZE_FACTOR = 0.001;
@@ -2497,10 +2388,8 @@ if (isTouchDevice) {
   }
 }
 
-// ── POINT DENSITY スライダー ──
-// 各タイルの点群を何% 描画するかを制御 (間引き)。
-// 内部値 pointDensity (0.1〜1.0) を uniform uDensity に反映 → シェーダ側で
-// 頂点位置ハッシュベースの均一間引きが効く。
+// ── 点の密度スライダー ──
+// UI値(10〜100%)を uniform uDensity(0.1〜1.0)に反映、シェーダで均一間引き。
 const densitySlider = document.getElementById('density-slider');
 const densityVal    = document.getElementById('density-val');
 densitySlider.addEventListener('input', () => {
@@ -2511,16 +2400,8 @@ densitySlider.addEventListener('input', () => {
 });
 
 // ── WORLD SCALE スライダー ──
-// tiles.group のスケールを変えることで、見た目の世界の大きさを変える。
-// 1.0=実寸(=ECEFのメートル単位そのまま)。
-// 数値を上げるとVRなどで「世界が大きく感じる」ようになる(=自分が縮んだ視点)。
-//
-// 重要: 単純に scale.setScalar() だけだと、原点を中心に拡大されて
-// 目の前にあったタイルが遠ざかってしまう。
-// そこで「カメラ(dolly)位置を中心とした相似変換」になるよう
-// position も同時に補正する:
-//   new_pos = dolly.position + scale * (base_pos - dolly.position)
-// base_pos は scale=1.0 時のタイル群位置 (load-tile-set で保存)。
+// tiles.group のスケール変更で世界の大きさを変える(1.0=実寸)。
+// カメラ位置中心の相似変換にするため、position も new_pos = dolly + scale*(base - dolly) で補正。
 let worldScale = 1.0;
 const tilesBasePosition = new THREE.Vector3();
 const _scaleTmp = new THREE.Vector3();
@@ -2541,13 +2422,9 @@ scaleSlider.addEventListener('input', () => {
   applyWorldScale();
 });
 
-// 画質スライダー(独自スケール 1〜20) → errorTarget(8〜80) 変換
-// 非線形(指数)変換:
-//   errorTarget = round( 80 * 0.1^((q-1)/19) )
-// q=1  → 80 (最軽量、粗い)
-// q=12 → 21 (デフォルト 'high' 相当)
-// q=20 → 8  (最高品質)
-// 低品質側で1段ごとの体感差が大きく、高品質側は細かく刻める設計。
+// 画質スライダー(1〜20) → errorTarget(8〜80) を非線形(指数)で変換。
+// q=1→80(粗い軽量) / q=12→21(default high) / q=20→8(最高品質)。
+// 低品質側で段差が大きく、高品質側は細かく刻める設計。
 function qualityToErrorTarget(q) {
   q = Math.max(1, Math.min(20, q | 0));
   const et = Math.round(80 * Math.pow(0.1, (q - 1) / 19));
@@ -2592,42 +2469,9 @@ prefetchBtn.addEventListener('click', () => {
   }
 });
 
-// ────────────────────────────────────────────────────────────
-// ネットワーク/端末プロファイル(自動チューニング)
-// ────────────────────────────────────────────────────────────
-// 目的: 重いデータ + 遅い回線 + 低スペック端末 でも破綻しないよう、
-//      LOD ERROR TARGET / DOWNLOAD_MAX_JOBS / CACHE TILES / CACHE MB の
-//      初期値を自動で適切なプロファイルに振り分ける。
-//
-// 利用情報:
-//   ・navigator.connection.effectiveType / downlink / saveData
-//   ・navigator.hardwareConcurrency (論理CPUコア数)
-//   ・navigator.deviceMemory       (RAM GB)
-//   ・isTouchDevice                (スマホかどうか)
-//
-// プロファイル定義:
-//   low   … 低速モバイル / saveDataオン / 低スペック
-//   mid   … 3G〜中位スマホ / 4コア以下
-//   high  … 4G〜PC(現状のデフォルト相当)
-//   ultra … 高速回線 & ハイエンドPC(ゲーミング)
-//
-// 各プロファイルの値は、対応するスライダーの範囲内に収まるよう設定すること。
-//   LOD          range  8 〜 80
-//   DOWNLOAD JOBS        (スライダーなし、内部のみ)
-//   CACHE TILES  range  300 〜 8000
-//   CACHE MB     range  256 〜 4096
-// プロファイル定義
-//
-// 'lod' フィールドは UIスライダーの "画質" 値(1〜20)を意味する。
-// 画質値が大きいほど高詳細(errorTarget が小さくなる方向)。
-// 実際の errorTarget は qualityToErrorTarget(quality) で非線形変換される。
-//
-//   low:   重い端末/回線でも破綻しない最低品質
-//   mid:   3G〜中位スマホ・タッチ端末向け
-//   high:  4G〜PC向け、現実的なデフォルト(画質スケールの中央寄り)
-//   ultra: 高速回線 & ハイエンドPC向け
-//
-// ※ ユーザーは UI のスライダーから初期値を上書き可能(画質範囲 1〜20)。
+// ── ネットワーク/端末プロファイル(自動チューニング) ──
+// 回線・CPU・メモリから lod(画質1-20)/jobs(DL並列)/tiles・mb(LRU上限) を自動振り分け。
+// ユーザーは画質スライダーで上書き可能。
 const PROFILES = {
   low:   { lod:  5, jobs:  4, tiles:  600, mb:  384, label: 'Low'   },
   mid:   { lod:  8, jobs:  8, tiles: 1000, mb:  768, label: 'Mid'   },
@@ -2689,9 +2533,8 @@ const autoProfile = detectAutoProfile();
 applyProfile(autoProfile.key);
 console.log(`Auto profile: ${autoProfile.key} (${autoProfile.reason})`);
 
-// コントロールパネル本体の先頭に "Auto: ..." バッジを差し込む
-// (LOD ERROR TARGET スライダーはユーザーが手動で動かせるが、CACHE TILES/MEMORY は
-//  非表示で自動値のままなので、現状どのプロファイルが効いているか分かるよう表示する)
+// コントロールパネル先頭に "Auto: ..." バッジを差し込み。
+// (画質スライダーは手動変更可だが、CACHE系は自動値のままなのでプロファイル確認用に表示)
 (function injectProfileBadge() {
   const body = document.getElementById('controls-body');
   if (!body) return;
@@ -2714,9 +2557,7 @@ console.log(`Auto profile: ${autoProfile.key} (${autoProfile.reason})`);
 })();
 
 // ── ⓘ 情報アイコン: クリックで対応する説明文を開閉 ──
-// イベントデリゲーションで .ctrl-info ボタン全部を一括処理。
-// aria-controls 属性で指定された要素を hidden トグルし、
-// aria-expanded を同期させる。
+// イベントデリゲーションで .ctrl-info を一括処理、aria-controls→hidden、aria-expanded同期
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.ctrl-info');
   if (!btn) return;
@@ -2732,11 +2573,8 @@ document.addEventListener('click', (e) => {
     target.setAttribute('hidden', '');
     btn.setAttribute('aria-expanded', 'false');
   }
-  // スマホ折りたたみコントロールパネルが開いている時にⓘを押すと内容が伸びるので、
-  // 必要なら #controls の top を再計算(positionControlsBelowDatasetSwitchが
-  // 存在する場合のみ。PCでは未定義なので関数存在チェック)。
-  // ※ 現状のスマホ実装では top は固定 (#dataset-switch の真下) で、
-  //   高さ変化は max-height + overflow-y: auto の縦スクロールで吸収される。
+  // スマホ展開時、ⓘで高さが伸びても #controls 本体側の max-height + overflow-y で吸収される。
+  // top は #dataset-switch 真下に固定で再計算不要。
 });
 
 // ── ライセンス詳細パネル開閉 ──
@@ -2812,9 +2650,8 @@ renderer.setAnimationLoop(() => {
   scene.updateMatrixWorld(true);
 
   if (tiles) {
-    // ── カメラ登録は常に PC用 camera ひとつだけ ──
-    // VR時はサブカメラを直接登録するのではなく、
-    // この `camera` に XRカメラのワールド姿勢を手動コピーする。
+    // カメラ登録は常に PC用 camera ひとつだけ。
+    // VR時はサブカメラを直接登録せず、この camera にXRカメラのワールド姿勢を手動コピーする。
     if (_vrEyeCamerasRegistered) {
       // 過去の登録が残っていれば解除
       for (const eye of _vrEyeCams) {
@@ -2829,18 +2666,9 @@ renderer.setAnimationLoop(() => {
     }
 
     if (renderer.xr.isPresenting) {
-      // ── VR時：XRカメラのワールド姿勢を camera に毎フレーム反映 ──
-      //
-      // 問題: camera は dolly の子なので、scene.updateMatrixWorld() の中で
-      //   camera.matrixWorld = dolly.matrixWorld * camera.matrix
-      // が必ず再計算され、手動で書いた matrixWorld が後段で上書きされうる。
-      // また 3D Tiles Renderer 内部は camera.matrixWorldInverse を独自に
-      // 再計算する箇所があるため、camera.position が古い(=VR入場時の初期値)
-      // ままだと、LOD評価がそこから動かない。
-      //
-      // 解決: camera.matrixAutoUpdate を切り、ワールド姿勢を直接
-      //   matrix と matrixWorld の両方に入れる。
-      //   こうすると以後の updateMatrixWorld(force=false) でも上書きされない。
+      // VR時:XRカメラのワールド姿勢を毎フレーム camera に反映。camera は dolly の子で
+      // updateMatrixWorld が再計算するため、matrixAutoUpdate を切り
+      // matrix/matrixWorld の両方を直接書き込む(LOD評価に必要な camera.position も更新)。
       const xrCam = renderer.xr.getCamera();
 
       // ワールド姿勢を取り出す
@@ -2864,11 +2692,9 @@ renderer.setAnimationLoop(() => {
       camera.projectionMatrix.copy(xrCam.projectionMatrix);
       camera.projectionMatrixInverse.copy(xrCam.projectionMatrix).invert();
 
-      // 解像度：XR フレームバッファサイズ
-      // baseLayer.framebufferWidth は「両目合計」の幅。
-      // これをそのまま渡すとSSE評価で「同じ実空間誤差でもピクセル換算で小さい」と
-      // 判定され、高詳細タイルがロードされにくくなる(=粗いLODで満足してしまう)。
-      // 片目分の幅で評価させることで、非VR時と同程度のロード厳格さにする。
+      // 解像度: XRフレームバッファの「両目合計幅」をそのまま渡すと、SSE評価で
+      // 「同じ実空間誤差でもピクセル換算で小さい」と判定され粗いLODで満足してしまう。
+      // 片目分の幅で評価させ、非VR時と同程度のロード厳格さにする。
       if (baseLayer) {
         tiles.setResolution(
           camera,
@@ -2879,9 +2705,8 @@ renderer.setAnimationLoop(() => {
         tiles.setResolutionFromRenderer(camera, renderer);
       }
     } else {
-      // ── 非VR時 ──
-      // VRから抜けた直後は matrixAutoUpdate=false になっているので元に戻す。
-      // 戻したあと、通常のシーン階層から matrixWorld を再計算させる。
+      // 非VR時: VRから抜けた直後の matrixAutoUpdate=false を元に戻し、
+      // 通常のシーン階層から matrixWorld を再計算させる。
       if (camera.matrixAutoUpdate === false) {
         camera.matrixAutoUpdate = true;
         camera.matrixWorldAutoUpdate = true;

@@ -735,7 +735,7 @@
   <div class="ctrl-group">
     <div class="ctrl-label">
       <span>画質</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-quality">ⓘ</button>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-quality" aria-label="画質の説明">ⓘ</button>
     </div>
     <input id="lod-slider" type="range" min="1" max="20" step="1" value="12"
       style="width:260px; accent-color:#00c8ff;">
@@ -753,7 +753,7 @@
       通信量とメモリ使用量が増える。
       値を下げると粗いタイルだけで描画されるので、通信量も負荷も減る代わりに
       タイルの境目で粗さの段差が見えやすくなる。
-      初期値は端末スペック・回線速度から自動判定する(画面上部のAutoバッジ参照)。
+      初期値は端末スペック・回線速度から自動判定する(コントロールパネル上部のAutoバッジ参照)。
       ネット回線が遅い・データ通信量を抑えたい時はまずここを下げると効果が大きい。
       内部的には 3D Tiles Renderer の errorTarget(許容LOD誤差ピクセル数)を
       非線形に変換して制御している(画質20→errorTarget=8、画質1→errorTarget=80)。
@@ -777,7 +777,7 @@
   <div class="ctrl-group">
     <div class="ctrl-label">
       <span>点の密度</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-density">ⓘ</button>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-density" aria-label="点の密度の説明">ⓘ</button>
     </div>
     <input id="density-slider" type="range" min="10" max="100" step="5" value="100"
       style="width:260px; accent-color:#00c8ff;">
@@ -802,7 +802,7 @@
   <div id="size-row" class="ctrl-group">
     <div class="ctrl-label">
       <span>点のサイズ</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-size">ⓘ</button>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-size" aria-label="点のサイズの説明">ⓘ</button>
     </div>
     <input id="size-slider" type="range" min="1" max="80" step="1" value="5"
       style="width:260px; accent-color:#00c8ff;">
@@ -820,7 +820,7 @@
   <div class="ctrl-group">
     <div class="ctrl-label">
       <span>表示倍率</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-scale">ⓘ</button>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-scale" aria-label="表示倍率の説明">ⓘ</button>
     </div>
     <input id="scale-slider" type="range" min="0.5" max="3.0" step="0.1" value="1.0"
       style="width:260px; accent-color:#00c8ff;">
@@ -841,7 +841,7 @@
   <div class="ctrl-group">
     <div class="ctrl-label">
       <span>先読み</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-prefetch">ⓘ</button>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-prefetch" aria-label="先読み機能の説明">ⓘ</button>
     </div>
     <button id="prefetch-btn" style="
       width: 260px;
@@ -1614,7 +1614,6 @@ dracoLoader.setDecoderConfig({ type: 'js' });
 
 // 点群の点サイズ管理（タイルセット切替後も維持）
 let pointSize = 0.005;
-const pointMaterials = new Set();
 
 // ── 点群密度(間引き)管理 ─────────────────────────
 // シェーダ側で「位置座標ハッシュ vs しきい値」の比較で空間的に均一に間引く。
@@ -1720,15 +1719,12 @@ function makeCubeMaterial() {
   });
 }
 
+// 立方体シェーダの uniform は1組をすべてのPointsで共有しているので、
+// uSize.value を書き換えるだけで全タイルに即時反映される。
+// (以前は PointsMaterial を個別追跡していたが、現在はShaderMaterial 1種類のみ使うため
+//  pointMaterials の追跡セットは廃止した)
 function applyPointSize() {
   cubeUniforms.uSize.value = pointSize;
-  // 念のためフォールバック（PointsMaterialが残っていた場合用）
-  pointMaterials.forEach(m => {
-    if (m.isPointsMaterial) {
-      m.size = pointSize;
-      m.needsUpdate = true;
-    }
-  });
 }
 
 let tiles = null;             // 現在アクティブなTilesRenderer
@@ -2031,9 +2027,14 @@ const progressState = {
   bytesAtSwitch: 0,     // データセット切替時点の lruCache.byteSize 値(基準)
 };
 const progressEl = () => document.getElementById('load-progress');
-const progressStageEl  = () => document.getElementById('lp-stage');
-const progressDetailEl = () => document.getElementById('lp-detail');
-const progressBarFillEl = () => document.getElementById('lp-bar-fill');
+// 進捗UI要素は static なので起動時に1度だけ取得してキャッシュする。
+// 毎フレーム呼ばれる updateLoadProgress 内で document.getElementById を回避する目的。
+const progressStageEl   = document.getElementById('lp-stage');
+const progressDetailEl  = document.getElementById('lp-detail');
+const progressBarFillEl = document.getElementById('lp-bar-fill');
+const progressOverlayEl = document.getElementById('load-progress');
+// 前回書き込んだdetail文字列。変化が無い時はDOM書き込みをスキップする。
+let lastProgressDetailText = '';
 
 function setProgressStage(stage) {
   if (progressState.stage === stage) return;
@@ -2047,7 +2048,7 @@ function setProgressStage(stage) {
     rendering: '描画中',
     ready:     '完了',
   }[stage] || '';
-  if (progressStageEl()) progressStageEl().textContent = stageLabel;
+  if (progressStageEl) progressStageEl.textContent = stageLabel;
   if (stage === 'ready') {
     // 2秒後に idle に戻してフェードアウト
     clearTimeout(progressState.readyTimer);
@@ -2108,20 +2109,21 @@ function updateLoadProgress() {
   // 切替直後を基準にした「今回のロードで増えたバイト量」
   const sessionBytes = Math.max(0, cacheBytes - progressState.bytesAtSwitch);
 
-  // 詳細表示
+  // 詳細表示。前回と同じテキストならDOM書き込みをスキップ(毎フレームの無駄を削減)
   const detail = `タイル: ${active}表示中 / ${visible}視界内 · 待機: ${dlQueue + parseQ} · ${formatBytes(sessionBytes)}`;
-  const dEl = progressDetailEl();
-  if (dEl) dEl.textContent = detail;
+  if (progressDetailEl && detail !== lastProgressDetailText) {
+    progressDetailEl.textContent = detail;
+    lastProgressDetailText = detail;
+  }
 
   // 進捗バー: rendering中はキュー残量を視覚化
   //   完了率 = 描画済み / (描画済み + 残りキュー)  だが、最大値が動くので
   //   かわりに「(active) / (active + dl + parse)」で近似
   const total = active + dlQueue + parseQ;
   const ratio = total > 0 ? (active / total) : 0;
-  const fill = progressBarFillEl();
-  if (fill && stage === 'rendering') {
-    fill.style.width = `${Math.max(5, Math.min(100, ratio * 100))}%`;
-    fill.style.animation = 'none'; // 確定進捗に切替え
+  if (progressBarFillEl && stage === 'rendering') {
+    progressBarFillEl.style.width = `${Math.max(5, Math.min(100, ratio * 100))}%`;
+    progressBarFillEl.style.animation = 'none'; // 確定進捗に切替え
   }
 
   // rendering → ready 判定
@@ -2131,7 +2133,7 @@ function updateLoadProgress() {
     if (isQueueIdle && hasContent) {
       progressState.readyStableFrames++;
       if (progressState.readyStableFrames >= READY_HOLD_FRAMES) {
-        if (fill) fill.style.width = '100%';
+        if (progressBarFillEl) progressBarFillEl.style.width = '100%';
         setProgressStage('ready');
       }
     } else {
@@ -2155,20 +2157,25 @@ function loadTileset(id) {
   setProgressStage('loading');
   progressState.readyStableFrames = 0;
   progressState.bytesAtSwitch = 0; // 古い tiles はこの後 dispose するのでリセット
-  if (progressDetailEl()) progressDetailEl().textContent = '';
-  if (progressBarFillEl()) {
-    progressBarFillEl().style.width = '';     // CSS既定(不確定アニメ)に戻す
-    progressBarFillEl().style.animation = ''; // CSS既定(不確定アニメ)に戻す
+  if (progressDetailEl) progressDetailEl.textContent = '';
+  lastProgressDetailText = ''; // テキストキャッシュもリセット
+  if (progressBarFillEl) {
+    progressBarFillEl.style.width = '';     // CSS既定(不確定アニメ)に戻す
+    progressBarFillEl.style.animation = ''; // CSS既定(不確定アニメ)に戻す
   }
 
   // 既存のtilesを破棄
   if (tiles) {
     scene.remove(tiles.group);
-    // 各マテリアルを明示的に dispose(自作シェーダのテクスチャ等を確実に解放)
-    pointMaterials.forEach(mat => {
-      if (mat && typeof mat.dispose === 'function') mat.dispose();
+    // tiles.group以下のすべてのマテリアルを明示的にdispose
+    // (自作シェーダのuniformテクスチャ等を確実に解放するため。
+    //  3d-tiles-renderer内部のdisposeはgeometry中心で、material disposeは
+    //  必ずしも呼ばれない可能性があるので明示する)
+    tiles.group.traverse(obj => {
+      if (obj.isPoints && obj.material && typeof obj.material.dispose === 'function') {
+        obj.material.dispose();
+      }
     });
-    pointMaterials.clear();
     // 3D Tiles Renderer 本体 dispose
     // (lruCacheの全タイル content.scene の dispose は内部で行われる)
     tiles.dispose();
@@ -2204,13 +2211,23 @@ function loadTileset(id) {
     tileScene.traverse(obj => {
       if (obj.isPoints) {
         // 既存マテリアルを立方体シェーダに差し替え
-        // (uniform uDensity はマテリアル間で共有されるので、新規Pointsにも
-        //  自動的に現在のPOINT DENSITY設定が反映される)
+        // (uniform uSize/uDensity はマテリアル間で共有されるので、新規Pointsにも
+        //  自動的に現在のPOINT SIZE / POINT DENSITY設定が反映される)
         const prev = obj.material;
         const mat = makeCubeMaterial();
         obj.material = mat;
-        pointMaterials.add(mat);
         if (prev && prev.dispose) prev.dispose();
+      }
+    });
+  });
+
+  // タイルがLRUキャッシュからevictされる時に、立方体シェーダMaterialを明示的にdispose。
+  // ShaderMaterialは個別インスタンスでuniform参照を持つので、長時間運用での
+  // メモリ蓄積を防ぐために必要。geometry等はTilesRenderer内部で処理される。
+  tiles.addEventListener('dispose-model', ({ scene: tileScene }) => {
+    tileScene.traverse(obj => {
+      if (obj.isPoints && obj.material && typeof obj.material.dispose === 'function') {
+        obj.material.dispose();
       }
     });
   });

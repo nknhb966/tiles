@@ -324,6 +324,25 @@
       font-size: 11px;
       color: #00c8ff;
     }
+
+    /* ── タブレット(短辺≥600px の touch 端末) 向け調整 ──
+       スマホ向けレイアウトのままだと、タブレットでは中身に合わせてパネルが画面いっぱいに広がる。
+       PC と同じ固定幅(330px) + 縦スクロールに切り替える。
+       タッチUI(ヘッダー折りたたみ・ジョイスティック等)は維持。 */
+    body.touch.touch-wide #controls {
+      width: 330px;
+      max-width: calc(100vw - 8px);
+    }
+    /* 展開時のパネル本体: 画面下端まで使い切らないよう max-height を制限し、内側で縦スクロール */
+    body.touch.touch-wide #controls-body {
+      max-height: calc(100vh - 160px);
+    }
+    /* 説明文サイズもタブレットでは大きめに(スマホは11pxのまま、タブレットは13pxに) */
+    body.touch.touch-wide .ctrl-info-body {
+      font-size: 13px;
+      padding: 10px 12px;
+      line-height: 1.55;
+    }
     /* ミニPOINT SIZEスライダー（折りたたみ時も操作可） */
     body.touch #size-mini {
       display: flex;
@@ -1114,6 +1133,18 @@ if (isTouchDevice) {
 
 if (isTouchDevice) {
   document.body.classList.add('touch');
+
+  // 「画面が十分広いタッチ端末」(=タブレット相当) は body.touch-wide も付与。
+  // PC 寄りの固定幅レイアウトを適用して、コントロールパネルが画面いっぱいに広がらないようにする。
+  // 閾値は短辺 600px (フォン系は wide にならず、iPad mini 以上は wide)。
+  const updateTouchWide = () => {
+    const shortSide = Math.min(window.innerWidth, window.innerHeight);
+    document.body.classList.toggle('touch-wide', shortSide >= 600);
+  };
+  updateTouchWide();
+  window.addEventListener('resize', updateTouchWide);
+  window.addEventListener('orientationchange', updateTouchWide);
+
   // スマホでは #controls をデフォルトで折りたたみ、トグルボタンで開閉
   const controlsEl = document.getElementById('controls');
   const controlsToggle = document.getElementById('controls-toggle');
@@ -1141,7 +1172,7 @@ if (isTouchDevice) {
   }
 
   // ミニスライダーと本体スライダーを双方向同期(整数 1〜80)。
-  // スマホ時の初期値(50)の適用は本体スライダーのハンドラ登録後、sizeSlider.addEventListener直後で実施。
+  // スマホ時の初期値(30)の適用は本体スライダーのハンドラ登録後、sizeSlider.addEventListener直後で実施。
   const miniSlider = document.getElementById('size-mini-slider');
   const miniVal    = document.getElementById('size-mini-val');
   const mainSlider = document.getElementById('size-slider');
@@ -2374,17 +2405,17 @@ function updateSizeSlider() {
   }
 }
 
-// スマホ時の初期値: 50 (PC は HTML 既定値の 5 のまま)
-// スマホ表示は遠景でも見やすいよう、大きめの5cm立方体を採用。
+// スマホ時の初期値: 30 (PC は HTML 既定値の 5 のまま)
+// スマホ表示は遠景でも見やすいよう、やや大きめの3cm立方体を採用。
 if (isTouchDevice) {
-  sizeSlider.value = '50';
+  sizeSlider.value = '30';
   sizeSlider.dispatchEvent(new Event('input', { bubbles: true }));
   // ミニスライダー表示も更新(updateSizeSliderと同等の処理)
   const miniSlider = document.getElementById('size-mini-slider');
   const miniVal    = document.getElementById('size-mini-val');
   if (miniSlider && miniVal) {
-    miniSlider.value = '50';
-    miniVal.textContent = '50';
+    miniSlider.value = '30';
+    miniVal.textContent = '30';
   }
 }
 

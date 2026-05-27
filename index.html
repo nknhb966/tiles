@@ -1140,8 +1140,8 @@ if (isTouchDevice) {
     new ResizeObserver(positionControlsBelowDatasetSwitch).observe(datasetSwitchEl);
   }
 
-  // ミニスライダーと本体スライダーを双方向同期(整数 1〜50)。
-  // 初期値(30)の適用は本体スライダーのハンドラ登録後、sizeSlider.addEventListener直後で実施。
+  // ミニスライダーと本体スライダーを双方向同期(整数 1〜80)。
+  // スマホ時の初期値(50)の適用は本体スライダーのハンドラ登録後、sizeSlider.addEventListener直後で実施。
   const miniSlider = document.getElementById('size-mini-slider');
   const miniVal    = document.getElementById('size-mini-val');
   const mainSlider = document.getElementById('size-slider');
@@ -2374,17 +2374,17 @@ function updateSizeSlider() {
   }
 }
 
-// スマホ時の初期値: 20 (PC は HTML 既定値の 5 のまま)
-// スマホ表示は遠景でも見やすいよう、ややや大きめの2cm立方体を採用。
+// スマホ時の初期値: 50 (PC は HTML 既定値の 5 のまま)
+// スマホ表示は遠景でも見やすいよう、大きめの5cm立方体を採用。
 if (isTouchDevice) {
-  sizeSlider.value = '20';
+  sizeSlider.value = '50';
   sizeSlider.dispatchEvent(new Event('input', { bubbles: true }));
   // ミニスライダー表示も更新(updateSizeSliderと同等の処理)
   const miniSlider = document.getElementById('size-mini-slider');
   const miniVal    = document.getElementById('size-mini-val');
   if (miniSlider && miniVal) {
-    miniSlider.value = '20';
-    miniVal.textContent = '20';
+    miniSlider.value = '50';
+    miniVal.textContent = '50';
   }
 }
 

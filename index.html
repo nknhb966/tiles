@@ -290,6 +290,32 @@
       width: 260px;
     }
 
+    /* 説明パネル表示トグルボタン。ON(表示中)はシアン枠、OFF(非表示)はグレー枠。 */
+    #annotation-toggle {
+      width: 260px;
+      padding: 8px;
+      background: transparent;
+      border: 1px solid rgba(0,200,255,0.6);
+      color: #00c8ff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    #annotation-toggle[aria-pressed="true"] {
+      background: rgba(0,200,255,0.12);
+      border-color: #00c8ff;
+      color: #00c8ff;
+    }
+    #annotation-toggle[aria-pressed="false"] {
+      background: transparent;
+      border-color: rgba(160,180,195,0.5);
+      color: rgba(160,180,195,0.8);
+    }
+
     /* ヘッダーは常時 display:none（PC時は出さない） */
     #controls-header {
       display: none;
@@ -403,6 +429,10 @@
       max-width: calc(100vw - 64px);
     }
     body.touch #controls-body #prefetch-btn {
+      width: 140px;
+      max-width: calc(100vw - 64px);
+    }
+    body.touch #controls-body #annotation-toggle {
       width: 140px;
       max-width: calc(100vw - 64px);
     }
@@ -814,6 +844,20 @@
 
   <!-- 本体 -->
   <div id="controls-body">
+
+  <!-- ─────────── 0. 説明パネル表示トグル ─────────── -->
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>説明パネル</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-annotation" aria-label="説明パネルの説明">ⓘ</button>
+    </div>
+    <button type="button" id="annotation-toggle" aria-pressed="true">表示中</button>
+    <div id="info-annotation" class="ctrl-info-body" hidden>
+      各地点に設置された説明用の球体とパネルの表示/非表示を切り替えます。
+      非表示にすると球体ごと消え、点群だけのすっきりした表示になります。
+      パネルは球体に一定距離まで近づくと自動的に開きます。
+    </div>
+  </div>
 
   <!-- 並び順は「動作の重さに与える影響が大きい順」(上から:画質>密度>サイズ>倍率>先読み)。
        上から触れば性能トラブルシュートしやすく、下ほど見た目の微調整。 -->
@@ -1596,7 +1640,7 @@ function buildAnnotationObject(a) {
   const group = new THREE.Group();
   group.position.set(a.x, a.y, a.z);
 
-  // 球体(半透明シアン)
+  // 球体(半透明シアン)。脈動はこの sphere の scale で行う。
   const sphereGeo = new THREE.SphereGeometry(a.radius, 24, 16);
   const sphereMat = new THREE.MeshBasicMaterial({
     color: 0x00c8ff, transparent: true, opacity: 0.45, depthWrite: false,
@@ -1604,13 +1648,13 @@ function buildAnnotationObject(a) {
   const sphere = new THREE.Mesh(sphereGeo, sphereMat);
   group.add(sphere);
 
-  // パネル(球の上に配置)
+  // パネル(球の上に配置)。位置は球の基準半径(脈動の最大)を基準に固定。
   const panel = makeAnnotationPanel(a.title, a.body);
   const panelY = a.radius + 0.4 + (panel.userData.worldH / 2);
   panel.position.set(0, panelY, 0);
   group.add(panel);
 
-  // 球とパネルを結ぶ接続線
+  // 球とパネルを結ぶ接続線(固定。球の脈動には追従しない)
   const lineGeo = new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(0, a.radius, 0),
     new THREE.Vector3(0, panelY - panel.userData.worldH / 2, 0),
@@ -1620,7 +1664,12 @@ function buildAnnotationObject(a) {
   group.add(line);
 
   annotationGroup.add(group);
-  return { group, panel, sphere, line, pos: new THREE.Vector3(a.x, a.y, a.z), dist: a.dist };
+  return {
+    group, panel, sphere, line,
+    pos: new THREE.Vector3(a.x, a.y, a.z),
+    dist: a.dist,
+    pulsePhase: Math.random() * Math.PI * 2, // 球ごとにバラバラな脈動位相
+  };
 }
 
 // 現在のアノテーションをすべて破棄
@@ -1660,10 +1709,30 @@ function applyAnnotationScale() {
 }
 const _annScaleTmp = new THREE.Vector3();
 
-// 毎フレーム: パネルをカメラに向け(ビルボード)、距離に応じて表示/非表示
+// 説明パネル全体の表示ON/OFF。トグルボタンから切り替える。
+let annotationsVisible = true;
+function setAnnotationsVisible(v) {
+  annotationsVisible = v;
+  annotationGroup.visible = v;
+}
+
+// 脈動の設定: 球体スケールを 0.3〜1.0 倍の範囲で周期的に変化させる。
+const PULSE_MIN = 0.3, PULSE_MAX = 1.0;
+const PULSE_PERIOD_S = 2.0;        // 1周期の秒数
+let _annClock = 0;                 // 経過時間(秒)
+
+// 毎フレーム: パネルのビルボード向き調整、距離による表示制御、球体の脈動
 const _annCamPos = new THREE.Vector3();
-function updateAnnotations() {
+function updateAnnotations(dt) {
   if (annotationItems.length === 0) return;
+  // 非表示中はグループごと描画されないので、更新もスキップ
+  if (!annotationsVisible) return;
+
+  _annClock += dt;
+  const omega = (Math.PI * 2) / PULSE_PERIOD_S;
+  const halfRange = (PULSE_MAX - PULSE_MIN) / 2;
+  const mid = (PULSE_MAX + PULSE_MIN) / 2;
+
   // カメラのワールド位置(VR時はXRカメラ、非VR時はcamera)
   if (renderer.xr.isPresenting) {
     renderer.xr.getCamera().getWorldPosition(_annCamPos);
@@ -1671,9 +1740,12 @@ function updateAnnotations() {
     camera.getWorldPosition(_annCamPos);
   }
   for (const it of annotationItems) {
-    // 表示判定はスケール適用後の実際の位置で行う
+    // 球体の脈動(位相は球ごとにバラバラ)
+    const s = mid + halfRange * Math.sin(_annClock * omega + it.pulsePhase);
+    it.sphere.scale.setScalar(s);
+
+    // パネル表示判定はスケール適用後の実際の位置で(distはworldScale1.0基準)
     const d = it.group.position.distanceTo(_annCamPos);
-    // dist はワールドスケール1.0基準なので、スケール分を考慮
     const visible = d <= it.dist * worldScale;
     it.panel.visible = visible;
     it.line.visible = visible;
@@ -3168,6 +3240,18 @@ document.addEventListener('click', (e) => {
   // top は #dataset-switch 真下に固定で再計算不要。
 });
 
+// ── 説明パネル表示トグル ──
+(function setupAnnotationToggle() {
+  const btn = document.getElementById('annotation-toggle');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const next = btn.getAttribute('aria-pressed') !== 'true'; // 現在ONなら次はOFF
+    setAnnotationsVisible(next);
+    btn.setAttribute('aria-pressed', next ? 'true' : 'false');
+    btn.textContent = next ? '表示中' : '非表示';
+  });
+})();
+
 // ── ライセンス詳細パネル開閉 ──
 // クレジット行の ⓘ ボタンで開く、✕ボタンまたはパネル外クリックで閉じる、Escでも閉じる。
 (function setupCreditInfo() {
@@ -3478,8 +3562,8 @@ renderer.setAnimationLoop(() => {
   // ロード進捗UIの更新(rendering⇄ready 判定もここで行う)
   updateLoadProgress();
 
-  // アノテーション(説明パネル)のビルボード向き調整と距離による表示制御
-  updateAnnotations();
+  // アノテーション(説明パネル)のビルボード向き、距離表示制御、球体の脈動
+  updateAnnotations(dt);
 
   // 描画
   renderer.render(scene, camera);

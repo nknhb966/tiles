@@ -2777,11 +2777,11 @@ if (DEBUG_MODE) {
   setInterval(refreshDebug, 60);
 
   // ── IJKL 押し込み式オービット(アノテーション配置モードのみ) ──
-  // 立方体(設置点)を固定したまま、IJKLを押している間だけカメラがその点を中心に回り込む。
-  //   I=上へ回り込み(見下ろし) / K=下へ(見上げ) / J=左へ / L=右へ。
-  //   押した時間に比例して回転(90度/秒)、最大90度で頭打ち。
-  //   離すと同じ速度(90度/秒)で正面(0度)に巻き戻る。同時押しで斜めも可。
-  //   オービット中は通常の移動/回転キーは無視。カメラは常に立方体を注視(yaw+pitch)。
+  // 立方体(設置点)を lookAt して画面中心に捉えたまま、IJKLを押している間だけ
+  // カメラがその点を中心に回り込む。
+  //   I=上から見下ろし / K=下から見上げ / J=左から / L=右から。
+  //   押した時間に比例(90度/秒)、最大90度で頭打ち。離すと90度/秒で正面に戻る。同時押しで斜めも可。
+  //   オービット中は通常の移動/回転キーは無視。
   const ORBIT_DIST = 3.0;                   // 立方体からカメラまでの距離(固定)
   const ORBIT_RATE = Math.PI / 2;           // 回転速度 90度/秒 (rad/s)
   const ORBIT_MAX  = Math.PI / 2;           // 最大角 90度
@@ -2789,8 +2789,7 @@ if (DEBUG_MODE) {
     active: false,                          // 立方体ロック中(押下 or 巻き戻し中)
     target: new THREE.Vector3(),            // 注視する立方体ワールド座標
     azimuth: 0, elevation: 0,               // 現在の方位角/仰角(rad)
-    baseDir: new THREE.Vector3(),           // 正面基準: 立方体→カメラ手前 の水平方向
-    baseRight: new THREE.Vector3(),         // その右手方向
+    frontDir: new THREE.Vector3(),          // 正面基準: 立方体→押し始めカメラ の水平単位ベクトル
   };
   // IJKL の押下状態
   const orbitKeys = { up: false, down: false, left: false, right: false };
@@ -2799,35 +2798,51 @@ if (DEBUG_MODE) {
   function lockOrbitTarget() {
     const p = annotationPlacePoint();
     orbitState.target.set(p.x, p.y, p.z);
+    // 正面基準 = 立方体→カメラ手前 の水平方向(押し始めカメラyawの逆向き)
     const yaw = dolly.rotation.y;
-    const fx = -Math.sin(yaw), fz = -Math.cos(yaw);          // カメラ前方
-    orbitState.baseDir.set(-fx, 0, -fz).normalize();          // 立方体→手前=前方の逆
-    orbitState.baseRight.set(orbitState.baseDir.z, 0, -orbitState.baseDir.x).normalize();
+    const fx = -Math.sin(yaw), fz = -Math.cos(yaw);  // カメラ前方(水平)
+    orbitState.frontDir.set(-fx, 0, -fz).normalize(); // 立方体→手前 = 前方の逆
     orbitState.azimuth = 0;
     orbitState.elevation = 0;
     orbitState.active = true;
   }
 
-  // 球面座標(az,el)からカメラ位置と注視向き(yaw,pitch)を dolly に適用
+  // 球面座標(az,el)からカメラ位置を決め、立方体を lookAt して dolly に適用。
+  // 考え方(ゼロベース):
+  //   1. 立方体Tを中心とする。
+  //   2. 「立方体→カメラ」方向ベクトル dir を、正面基準frontDirから
+  //      方位角az(水平回転)・仰角el(上下)で回して作る。
+  //   3. カメラ位置 = T + dir × 距離。
+  //   4. その位置から T へ lookAt → 立方体が必ず画面中心に来る。
+  const _orbitDir = new THREE.Vector3();
   const _orbitCamPos = new THREE.Vector3();
+  const _orbitLookM = new THREE.Matrix4();
+  const _orbitUp = new THREE.Vector3(0, 1, 0);
   function applyOrbitPose() {
     const T = orbitState.target;
-    const el = Math.max(-ORBIT_MAX, Math.min(ORBIT_MAX, orbitState.elevation));
     const az = orbitState.azimuth;
-    const elc = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, el));
-    const horiz = Math.cos(elc);
-    const ox = Math.sin(az) * horiz;  // 右成分
-    const oy = Math.sin(elc);         // 上成分
-    const oz = Math.cos(az) * horiz;  // 正面成分
-    const hx = orbitState.baseDir.x * oz + orbitState.baseRight.x * ox;
-    const hz = orbitState.baseDir.z * oz + orbitState.baseRight.z * ox;
-    _orbitCamPos.set(T.x + hx * ORBIT_DIST, T.y + oy * ORBIT_DIST, T.z + hz * ORBIT_DIST);
+    // 仰角は ±89度でクランプ(真上/真下の特異点回避)
+    const el = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, orbitState.elevation));
+
+    // 1. frontDir(水平)を az だけ Y軸まわりに回し、さらに el だけ上下に傾ける
+    //    水平成分の長さ cos(el)、垂直成分 sin(el)。
+    const cosEl = Math.cos(el), sinEl = Math.sin(el);
+    const cosAz = Math.cos(az), sinAz = Math.sin(az);
+    // frontDir を Y軸まわりに az 回転(水平)
+    const fdx = orbitState.frontDir.x, fdz = orbitState.frontDir.z;
+    const rx = fdx * cosAz - fdz * sinAz; // 回転後の水平X
+    const rz = fdx * sinAz + fdz * cosAz; // 回転後の水平Z
+    // 仰角を反映: 水平成分を cosEl 倍、Yに sinEl
+    _orbitDir.set(rx * cosEl, sinEl, rz * cosEl).normalize();
+
+    // 2. カメラ位置 = T + dir × 距離
+    _orbitCamPos.copy(T).addScaledVector(_orbitDir, ORBIT_DIST);
     dolly.position.copy(_orbitCamPos);
-    const dx = T.x - _orbitCamPos.x, dy = T.y - _orbitCamPos.y, dz = T.z - _orbitCamPos.z;
-    const yaw = Math.atan2(-dx, -dz);
-    const horizLen = Math.sqrt(dx * dx + dz * dz);
-    const pitch = Math.atan2(dy, horizLen);
-    dolly.rotation.set(pitch, yaw, 0);
+
+    // 3. カメラ位置から T へ lookAt する回転を quaternion で設定
+    //    (atan2手計算をやめ、Three.jsのlookAtに任せて確実に中心へ向ける)
+    _orbitLookM.lookAt(_orbitCamPos, T, _orbitUp);
+    dolly.quaternion.setFromRotationMatrix(_orbitLookM);
   }
 
   // 0に向けて step ぶん近づける(巻き戻し用)
@@ -2841,24 +2856,20 @@ if (DEBUG_MODE) {
   // 戻り値: このフレームでオービット制御が有効だったか(=通常制御を抑制すべきか)
   function tickAnnotateOrbit(dt) {
     const anyKey = orbitKeys.up || orbitKeys.down || orbitKeys.left || orbitKeys.right;
-    // 押下開始: まだロックしてなければロック
     if (anyKey && !orbitState.active) lockOrbitTarget();
     if (!orbitState.active) return false;
 
     const step = ORBIT_RATE * dt;
     if (anyKey) {
-      // 押している方向へ角度を進める(±90度で頭打ち)
       if (orbitKeys.up)    orbitState.elevation = Math.min(ORBIT_MAX, orbitState.elevation + step);
       if (orbitKeys.down)  orbitState.elevation = Math.max(-ORBIT_MAX, orbitState.elevation - step);
       if (orbitKeys.left)  orbitState.azimuth   = Math.max(-ORBIT_MAX, orbitState.azimuth - step);
       if (orbitKeys.right) orbitState.azimuth   = Math.min(ORBIT_MAX, orbitState.azimuth + step);
     } else {
-      // 離した: 同じ速度で正面(0)へ巻き戻す
       orbitState.azimuth   = decayToward(orbitState.azimuth, step);
       orbitState.elevation = decayToward(orbitState.elevation, step);
-      // 完全に正面に戻ったらオービット解除(通常制御に復帰)
       if (orbitState.azimuth === 0 && orbitState.elevation === 0) {
-        applyOrbitPose(); // 正面姿勢で確定
+        applyOrbitPose();        // 正面姿勢で確定
         orbitState.active = false;
         return false;
       }
@@ -3373,12 +3384,11 @@ renderer.setAnimationLoop(() => {
     dolly.rotation.y += yawVel * dt;
   }
 
-  // オービット制御中は pitch(見下ろし角)を維持。それ以外は水平強制(pitch/roll=0)。
+  // オービット制御中は applyOrbitPose が設定した quaternion(lookAt)をそのまま保持。
+  // それ以外は従来通り水平強制(pitch/roll=0)。
   if (!orbitActive) {
     dolly.rotation.x = 0;
     dolly.rotation.z = 0;
-  } else {
-    dolly.rotation.z = 0; // rollだけは常にゼロ
   }
 
   // dollyを動かしたあと、シーン全体のワールド行列を更新

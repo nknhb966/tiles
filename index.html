@@ -1047,12 +1047,17 @@ console.log('Three.js r' + THREE.REVISION + ' / 3D Tiles VR Viewer');
 //   (id=URLパス, label=ボタン名, x/y/zOffset=初期カメラ座標m, yawOffset=Y軸回転°)
 const TILESET_BASE = 'https://gsvrg.ipri.aist.go.jp/3ddb_demo/3dtiles';
 const DATASETS_CSV_URL = './datasets.csv';
+const ANNOTATIONS_CSV_URL = './annotations.csv';
 const DEFAULT_DATASET = '1886';
 
 // CSV読込後にここに入る。読込前/失敗時は空配列のまま。
 let DATASETS = [];
+// アノテーション(説明パネル)定義。{datasetId, x, y, z, title, body, radius, dist} の配列。
+let ANNOTATIONS = [];
 const tilesetUrl = (id) => `${TILESET_BASE}/${id}/tileset.json`;
 const getDataset = (id) => DATASETS.find(d => d.id === id);
+// 指定データセットに属するアノテーションだけ取り出す
+const getAnnotations = (id) => ANNOTATIONS.filter(a => a.datasetId === id);
 
 // --- CSVパーサ（カンマ区切り、引用符なしの想定。ヘッダ行は1行目）---
 function parseDatasetsCSV(text) {
@@ -1106,6 +1111,70 @@ async function loadDatasetsCSV() {
     DATASETS = [];
     datasetsLoadError = `datasets.csv 読込失敗: ${e.message}`;
     console.warn(datasetsLoadError);
+  }
+}
+
+// --- 引用符対応CSVパーサ（本文にカンマ・改行を含められる）---
+// RFC4180準拠の簡易版: "..." で囲まれたフィールド内のカンマ/改行を許容し、
+// "" を引用符のエスケープとして扱う。
+function parseCSVRows(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }  // "" → "
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\r') { /* skip */ }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else field += c;
+    }
+  }
+  // 最終フィールド/行を回収
+  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+// annotations.csv をパース。ヘッダ: datasetId,x,y,z,title,body,radius,dist
+function parseAnnotationsCSV(text) {
+  const rows = parseCSVRows(text)
+    .filter(r => r.length > 1 && r[0] && !r[0].trim().startsWith('#'));
+  if (rows.length < 2) return [];
+  const header = rows[0].map(s => s.trim());
+  const idx = (name) => header.indexOf(name);
+  const iDs = idx('datasetId'), iX = idx('x'), iY = idx('y'), iZ = idx('z');
+  const iTitle = idx('title'), iBody = idx('body'), iR = idx('radius'), iDist = idx('dist');
+  if (iDs < 0 || iX < 0 || iY < 0 || iZ < 0) {
+    console.warn('annotations.csv: 必須列(datasetId,x,y,z)が不足');
+    return [];
+  }
+  const num = (v, def) => { const n = parseFloat(v); return Number.isFinite(n) ? n : def; };
+  return rows.slice(1).map(cols => ({
+    datasetId: (cols[iDs] || '').trim(),
+    x: num(cols[iX], 0),
+    y: num(cols[iY], 0),
+    z: num(cols[iZ], 0),
+    title: iTitle >= 0 ? (cols[iTitle] || '').trim() : '',
+    body:  iBody  >= 0 ? (cols[iBody]  || '').trim() : '',
+    radius: iR    >= 0 ? num(cols[iR], 1.0) : 1.0,   // 球半径(m) 既定1.0
+    dist:   iDist >= 0 ? num(cols[iDist], 30) : 30,  // パネル表示距離(m) 既定30
+  })).filter(a => a.datasetId);
+}
+
+async function loadAnnotationsCSV() {
+  try {
+    const res = await fetch(ANNOTATIONS_CSV_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    ANNOTATIONS = parseAnnotationsCSV(await res.text());
+    console.log(`annotations.csv 読込完了: ${ANNOTATIONS.length}件`);
+  } catch (e) {
+    ANNOTATIONS = [];
+    console.warn(`annotations.csv 読込失敗(アノテーション無しで継続): ${e.message}`);
   }
 }
 
@@ -1436,6 +1505,184 @@ const grid = new THREE.GridHelper(1000, 100, 0x114455, 0x002233);
 grid.material.opacity = 0.3;
 grid.material.transparent = true;
 scene.add(grid);
+
+// ── アノテーション(説明パネル)機能 ───────────────────────
+// 各アノテーション = 球体 + 接続線 + Canvasテクスチャの説明パネル(タイトル/本文)。
+// 座標は dolly と同じワールド座標系(CSVのxyz)。WORLD SCALE には applyWorldScale で追従。
+// パネルは常にカメラを向き(ビルボード)、一定距離(dist)内に入ると表示される。
+const annotationGroup = new THREE.Group();
+scene.add(annotationGroup);
+let annotationItems = []; // { group, panel, sphere, line, pos(Vector3), dist } の配列
+
+// タイトル+本文を Canvas に描画してテクスチャ化し、板メッシュに貼る。
+// 日本語も描画可能。点群と正しく前後し、VRでも見える。
+function makeAnnotationPanel(title, body) {
+  const W = 512, H = 320;             // テクスチャ解像度
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // 背景(半透明の暗パネル + シアン枠)
+  ctx.fillStyle = 'rgba(6,12,18,0.88)';
+  roundRect(ctx, 6, 6, W - 12, H - 12, 16); ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,200,255,0.8)';
+  roundRect(ctx, 6, 6, W - 12, H - 12, 16); ctx.stroke();
+
+  // タイトル
+  ctx.fillStyle = '#00d8ff';
+  ctx.font = 'bold 38px sans-serif';
+  ctx.textBaseline = 'top';
+  wrapText(ctx, title, 28, 28, W - 56, 44);
+
+  // タイトル下の区切り線
+  const titleLines = countWrapLines(ctx, title, W - 56);
+  const bodyTop = 28 + titleLines * 44 + 14;
+  ctx.strokeStyle = 'rgba(0,200,255,0.4)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(28, bodyTop - 8); ctx.lineTo(W - 28, bodyTop - 8); ctx.stroke();
+
+  // 本文
+  ctx.fillStyle = '#dcebf2';
+  ctx.font = '26px sans-serif';
+  wrapText(ctx, body, 28, bodyTop, W - 56, 36);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = 4;
+  tex.needsUpdate = true;
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+  // ワールド幅 2.5m、アスペクト比に合わせて高さを決定
+  const worldW = 2.5, worldH = worldW * (H / W);
+  const geo = new THREE.PlaneGeometry(worldW, worldH);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.userData.worldH = worldH;
+  return mesh;
+}
+
+// Canvas角丸矩形ヘルパ
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y,     x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x,     y + h, r);
+  ctx.arcTo(x,     y + h, x,     y,     r);
+  ctx.arcTo(x,     y,     x + w, y,     r);
+  ctx.closePath();
+}
+// テキスト折り返し描画(日本語は文字単位、英単語はできるだけ語境界で)
+function wrapText(ctx, text, x, y, maxW, lineH) {
+  const lines = splitToLines(ctx, text, maxW);
+  lines.forEach((ln, i) => ctx.fillText(ln, x, y + i * lineH));
+}
+function countWrapLines(ctx, text, maxW) {
+  return splitToLines(ctx, text, maxW).length;
+}
+function splitToLines(ctx, text, maxW) {
+  const out = [];
+  // 明示改行(\n)を尊重しつつ、各段落を幅で折り返す
+  for (const para of String(text).split(/\n/)) {
+    let line = '';
+    for (const ch of para) {
+      const test = line + ch;
+      if (ctx.measureText(test).width > maxW && line) {
+        out.push(line); line = ch;
+      } else line = test;
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+// アノテーション1件分の3Dオブジェクト(球+線+パネル)を生成
+function buildAnnotationObject(a) {
+  const group = new THREE.Group();
+  group.position.set(a.x, a.y, a.z);
+
+  // 球体(半透明シアン)
+  const sphereGeo = new THREE.SphereGeometry(a.radius, 24, 16);
+  const sphereMat = new THREE.MeshBasicMaterial({
+    color: 0x00c8ff, transparent: true, opacity: 0.45, depthWrite: false,
+  });
+  const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+  group.add(sphere);
+
+  // パネル(球の上に配置)
+  const panel = makeAnnotationPanel(a.title, a.body);
+  const panelY = a.radius + 0.4 + (panel.userData.worldH / 2);
+  panel.position.set(0, panelY, 0);
+  group.add(panel);
+
+  // 球とパネルを結ぶ接続線
+  const lineGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, a.radius, 0),
+    new THREE.Vector3(0, panelY - panel.userData.worldH / 2, 0),
+  ]);
+  const lineMat = new THREE.LineBasicMaterial({ color: 0x00c8ff, transparent: true, opacity: 0.6 });
+  const line = new THREE.Line(lineGeo, lineMat);
+  group.add(line);
+
+  annotationGroup.add(group);
+  return { group, panel, sphere, line, pos: new THREE.Vector3(a.x, a.y, a.z), dist: a.dist };
+}
+
+// 現在のアノテーションをすべて破棄
+function clearAnnotations() {
+  for (const it of annotationItems) {
+    it.group.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) {
+        if (o.material.map) o.material.map.dispose();
+        o.material.dispose();
+      }
+    });
+    annotationGroup.remove(it.group);
+  }
+  annotationItems = [];
+}
+
+// 指定データセットのアノテーションを構築(切替時に呼ぶ)
+function rebuildAnnotations(datasetId) {
+  clearAnnotations();
+  for (const a of getAnnotations(datasetId)) {
+    annotationItems.push(buildAnnotationObject(a));
+  }
+  // WORLD SCALE を即反映
+  applyAnnotationScale();
+}
+
+// WORLD SCALE をアノテーション群に適用(タイルと同じ dolly中心の相似変換)
+function applyAnnotationScale() {
+  // 各アノテーションの基準ワールド位置を、dolly中心で worldScale 倍した位置へ移動。
+  // スケール自体も worldScale 倍して、球やパネルもタイルと同じ拡縮に揃える。
+  for (const it of annotationItems) {
+    _annScaleTmp.copy(it.pos).sub(dolly.position).multiplyScalar(worldScale).add(dolly.position);
+    it.group.position.copy(_annScaleTmp);
+    it.group.scale.setScalar(worldScale);
+  }
+}
+const _annScaleTmp = new THREE.Vector3();
+
+// 毎フレーム: パネルをカメラに向け(ビルボード)、距離に応じて表示/非表示
+const _annCamPos = new THREE.Vector3();
+function updateAnnotations() {
+  if (annotationItems.length === 0) return;
+  // カメラのワールド位置(VR時はXRカメラ、非VR時はcamera)
+  if (renderer.xr.isPresenting) {
+    renderer.xr.getCamera().getWorldPosition(_annCamPos);
+  } else {
+    camera.getWorldPosition(_annCamPos);
+  }
+  for (const it of annotationItems) {
+    // 表示判定はスケール適用後の実際の位置で行う
+    const d = it.group.position.distanceTo(_annCamPos);
+    // dist はワールドスケール1.0基準なので、スケール分を考慮
+    const visible = d <= it.dist * worldScale;
+    it.panel.visible = visible;
+    it.line.visible = visible;
+    if (visible) {
+      it.panel.lookAt(_annCamPos); // ビルボード
+    }
+  }
+}
+
 
 // VRボタン
 const vrBtn = VRButton.createButton(renderer);
@@ -2215,6 +2462,8 @@ function loadTileset(id) {
     _vrEyeCamerasRegistered = false;
     _vrEyeCams.length = 0;
   }
+  // 旧データセットのアノテーションも破棄(新しいものは load-tile-set 完了時に構築)
+  clearAnnotations();
 
   loadingDataset = id;
   // データセット切替時はカメラ位置・向きをそのデータセットの初期位置にリセット
@@ -2308,6 +2557,9 @@ function loadTileset(id) {
       // (データセット切替時にも前回のスケール値が維持される)
       applyWorldScale();
 
+      // このデータセットのアノテーション(説明パネル)を構築
+      rebuildAnnotations(id);
+
       console.log(`タイル ${id} 読込完了 (r=${r.toFixed(1)}m, cam=[${camX},${camY},${camZ}], yaw=${camYaw}°)`);
     }
 
@@ -2382,7 +2634,8 @@ function updateDatasetButtons() {
 
 // CSVを読み込んでからUIを構築 & 初期ロード
 (async () => {
-  await loadDatasetsCSV();
+  // datasets と annotations を並行で読み込む(annotationsは失敗しても続行)
+  await Promise.all([loadDatasetsCSV(), loadAnnotationsCSV()]);
   buildDatasetButtons();
   // デフォルトデータが定義に含まれていればそれを、なければ先頭を使う
   const startId = DATASETS.find(d => d.id === DEFAULT_DATASET)
@@ -2414,10 +2667,20 @@ if (DEBUG_MODE) {
       WASD/矢印キーで視点を動かし、希望の見え方になったら下記値を CSV に貼り付けてください
     </div>
     <div style="margin-top:4px;">
-      <span style="color:#9f9;">CSV行:</span>
+      <span style="color:#9f9;">datasets.csv行:</span>
       <span id="dbg-csv" style="color:#fff; user-select:all;">-</span>
     </div>
-    <div style="margin-top:4px; color:#9f9;">R: CSVのデフォルト値にリセット &nbsp; C: CSV行をコピー</div>
+    <div style="margin-top:8px; padding-top:6px; border-top:1px solid #0a0; color:#ff0;">
+      <b>アノテーション配置</b> (黄色い立方体=3m先の設置点)
+    </div>
+    <div style="margin-top:2px;">
+      <span style="color:#9f9;">annotations.csv行:</span>
+      <span id="dbg-ann" style="color:#fff; user-select:all;">-</span>
+    </div>
+    <div style="margin-top:4px; color:#9f9;">
+      R: 初期位置リセット &nbsp; C: datasets行コピー<br>
+      A: annotations行コピー (3m先に設置)
+    </div>
   `;
   document.body.appendChild(dbg);
   const dbgId   = document.getElementById('dbg-id');
@@ -2425,6 +2688,7 @@ if (DEBUG_MODE) {
   const dbgY    = document.getElementById('dbg-y');
   const dbgZ    = document.getElementById('dbg-z');
   const dbgYaw  = document.getElementById('dbg-yaw');
+  const dbgAnn  = document.getElementById('dbg-ann');
   const dbgCsv  = document.getElementById('dbg-csv');
 
   // dolly の現在のx/y/z と yaw(度) を取得
@@ -2442,6 +2706,26 @@ if (DEBUG_MODE) {
     return { id, x, y, z, yawDeg };
   }
 
+  // ── アノテーション設置点(カメラの3m前方)を計算 ──
+  // PCでは目の前の点群がカメラ位置と重なって分かりにくいので、視線方向に少し離す。
+  const ANNOTATION_PLACE_DIST = 3.0; // カメラから前方何mに設置するか
+  function annotationPlacePoint() {
+    // dolly のyawから前方ベクトルを求める(水平面)。VR時もdollyのyaw基準で十分。
+    const yaw = dolly.rotation.y;
+    const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+    return {
+      x: dolly.position.x + fx * ANNOTATION_PLACE_DIST,
+      y: dolly.position.y,
+      z: dolly.position.z + fz * ANNOTATION_PLACE_DIST,
+    };
+  }
+
+  // 設置点を示す黄色い小立方体マーカー(デバッグ時のみ表示)
+  const markerGeo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+  const markerMat = new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.8 });
+  const placeMarker = new THREE.Mesh(markerGeo, markerMat);
+  scene.add(placeMarker);
+
   function refreshDebug() {
     const o = currentCam();
     dbgId.textContent  = o.id ?? '-';
@@ -2454,7 +2738,22 @@ if (DEBUG_MODE) {
     dbgCsv.textContent = o.id != null
       ? `${o.id},${label},${o.x.toFixed(2)},${o.y.toFixed(2)},${o.z.toFixed(2)},${o.yawDeg.toFixed(1)}`
       : '-';
+
+    // 設置点マーカーを3m先へ移動。WORLD SCALE 中はスケール後の見た目位置に合わせる。
+    const p = annotationPlacePoint();
+    _dbgMarkerTmp.set(p.x, p.y, p.z);
+    if (worldScale !== 1.0) {
+      _dbgMarkerTmp.sub(dolly.position).multiplyScalar(worldScale).add(dolly.position);
+    }
+    placeMarker.position.copy(_dbgMarkerTmp);
+    placeMarker.scale.setScalar(worldScale);
+
+    // annotations.csv の雛形行(title/bodyは空欄、後で埋める)
+    dbgAnn.textContent = o.id != null
+      ? `${o.id},${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)},タイトル,本文,1.0,30`
+      : '-';
   }
+  const _dbgMarkerTmp = new THREE.Vector3();
   // 毎フレーム更新したいので、軽い間隔(60ms)で polling
   setInterval(refreshDebug, 60);
 
@@ -2478,7 +2777,16 @@ if (DEBUG_MODE) {
         const label = ds ? ds.label : '';
         const line = `${o.id},${label},${o.x.toFixed(2)},${o.y.toFixed(2)},${o.z.toFixed(2)},${o.yawDeg.toFixed(1)}`;
         navigator.clipboard?.writeText(line);
-        console.log('CSV行をコピー:', line);
+        console.log('datasets.csv行をコピー:', line);
+      }
+    } else if (e.code === 'KeyA') {
+      // 3m先の設置点を annotations.csv 行としてコピー
+      const id = currentDataset ?? loadingDataset;
+      if (id != null) {
+        const p = annotationPlacePoint();
+        const line = `${id},${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)},タイトル,本文,1.0,30`;
+        navigator.clipboard?.writeText(line);
+        console.log('annotations.csv行をコピー(title/bodyを編集してください):', line);
       }
     }
   });
@@ -2546,6 +2854,8 @@ function applyWorldScale() {
   tiles.group.position.copy(_scaleTmp);
   // matrixWorld を即時更新して、tiles.update() の LOD評価に反映させる
   tiles.group.updateMatrixWorld(true);
+  // アノテーション群も同じ dolly中心スケールに追従させる
+  applyAnnotationScale();
 }
 const scaleSlider = document.getElementById('scale-slider');
 const scaleVal    = document.getElementById('scale-val');
@@ -2988,6 +3298,9 @@ renderer.setAnimationLoop(() => {
 
   // ロード進捗UIの更新(rendering⇄ready 判定もここで行う)
   updateLoadProgress();
+
+  // アノテーション(説明パネル)のビルボード向き調整と距離による表示制御
+  updateAnnotations();
 
   // 描画
   renderer.render(scene, camera);

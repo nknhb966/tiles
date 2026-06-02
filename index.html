@@ -450,6 +450,88 @@
       white-space: nowrap;
     }
     .dataset-btn:hover { background: rgba(0,200,255,0.1); }
+
+    /* ── 初期位置リセットボタン (右上、#controlsの上) ──
+       手動クリックでも、60秒の無操作タイマー満了でも同じ動作で初期位置に戻る。 */
+    #reset-view-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 110;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: rgba(0,0,0,0.8);
+      border: 1px solid rgba(0,200,255,0.4);
+      border-radius: 4px;
+      color: #00c8ff;
+      font-family: sans-serif;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 0.15s, border-color 0.15s;
+    }
+    #reset-view-btn:hover {
+      background: rgba(0,200,255,0.15);
+      border-color: #00c8ff;
+    }
+    #reset-view-btn .rv-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+    /* スマホ・タブレットでは "初期位置" ラベルを隠してアイコンのみ(横幅節約) */
+    body.touch #reset-view-btn .rv-label {
+      display: none;
+    }
+    /* タブレットなら横幅に余裕があるのでラベルも表示する */
+    body.touch.touch-wide #reset-view-btn .rv-label {
+      display: inline;
+    }
+    /* スマホでは右上が #controls の真上にあると干渉するので、位置を微調整。
+       #controls は top:48px / right:4px に上書きされているので、ボタンは右上端のまま。
+       ただし #dataset-switch が画面上端を専有するため、top を少し下げる */
+    body.touch:not(.touch-wide) #reset-view-btn {
+      top: 12px;
+      right: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    /* ── アイドルタイマーのカウントダウン通知 (5秒前から表示) ──
+       画面中央上部に控えめに表示。クリックで dismiss はせず、ユーザーが操作したら自動的に消える。 */
+    #idle-notice {
+      position: fixed;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      padding: 8px 16px;
+      background: rgba(0,0,0,0.85);
+      border: 1px solid rgba(255,180,0,0.6);
+      border-radius: 4px;
+      color: #ffb400;
+      font-family: sans-serif;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      backdrop-filter: blur(8px);
+      pointer-events: none; /* ユーザーの背景操作を邪魔しない */
+      animation: idle-notice-pulse 1s ease-in-out infinite alternate;
+    }
+    #idle-notice[hidden] { display: none; }
+    @keyframes idle-notice-pulse {
+      from { opacity: 0.8; }
+      to   { opacity: 1.0; }
+    }
+    #idle-countdown {
+      display: inline-block;
+      min-width: 1.2em;
+      text-align: center;
+      font-weight: bold;
+      font-size: 16px;
+    }
     .dataset-btn.active {
       background: rgba(0,200,255,0.3);
       border-color: #00c8ff;
@@ -867,6 +949,16 @@
 
 <!-- データセット切替（ボタンはJSで動的生成） -->
 <div id="dataset-switch"></div>
+
+<!-- 初期位置に戻すボタン。データセット切替の右端に独立配置(横スクロールに巻き込まれない位置)。
+     60秒間の無操作でも自動的にこの動作が実行される。 -->
+<button type="button" id="reset-view-btn" aria-label="初期位置に戻る" title="初期位置に戻る">
+  <span class="rv-icon">⌂</span>
+  <span class="rv-label">初期位置</span>
+</button>
+
+<!-- アイドル状態のカウントダウン通知(5秒前から表示)。普段はhidden。 -->
+<div id="idle-notice" hidden>まもなく初期位置に戻ります <span id="idle-countdown">5</span></div>
 
 <!-- ロード進捗オーバーレイ -->
 <!-- 状態: Loading (tileset.json取得中) → Rendering (タイル本体ロード中) → Ready (描画完了) -->
@@ -2638,6 +2730,127 @@ document.addEventListener('click', (e) => {
   });
 })();
 
+// ── 初期位置リセット & アイドルタイマー ─────────────────
+// 機能: ①「初期位置」ボタンクリック ②60秒の無操作 で dolly を初期位置にアニメで戻す。
+//       5秒前から画面中央上部にカウントダウン表示。
+//       VR中・先読み中・データセット切替中はタイマー停止(誤発動防止)。
+(() => {
+  const IDLE_TIMEOUT_MS  = 60_000;  // アイドル判定時間
+  const IDLE_WARN_MS     = 5_000;   // 何秒前から警告表示するか
+  const ANIM_DURATION_MS = 800;     // 復帰アニメ長
+  const TICK_INTERVAL_MS = 250;     // アイドル監視チェック間隔
+
+  let lastActivityAt = performance.now();
+  let animState = null;
+  const noticeEl    = document.getElementById('idle-notice');
+  const countdownEl = document.getElementById('idle-countdown');
+  const btnEl       = document.getElementById('reset-view-btn');
+
+  // 現在データセットの初期位置/向きを取得
+  function getInitialPose() {
+    const ds = currentDataset ? getDataset(currentDataset) : null;
+    if (!ds) return null;
+    return {
+      x: ds.xOffset, y: ds.yOffset, z: ds.zOffset,
+      yawRad: THREE.MathUtils.degToRad(ds.yawOffset || 0),
+    };
+  }
+
+  // yaw差分を -PI〜+PI に正規化(360度回らずに最短経路で戻る)
+  function shortestAngleDiff(a, b) {
+    let d = (b - a) % (Math.PI * 2);
+    if (d >  Math.PI) d -= Math.PI * 2;
+    if (d < -Math.PI) d += Math.PI * 2;
+    return d;
+  }
+
+  function startResetAnimation() {
+    const target = getInitialPose();
+    if (!target) return;
+    animState = {
+      startTime: performance.now(),
+      fromPos: dolly.position.clone(),
+      toPos:   new THREE.Vector3(target.x, target.y, target.z),
+      fromYaw: dolly.rotation.y,
+      yawDelta: shortestAngleDiff(dolly.rotation.y, target.yawRad),
+    };
+    hideNotice();
+    lastActivityAt = performance.now(); // 戻った直後の即時再発動を防ぐ
+  }
+
+  // 毎フレーム呼ばれてdollyを補間
+  function tickResetAnimation() {
+    if (!animState) return;
+    const t = (performance.now() - animState.startTime) / ANIM_DURATION_MS;
+    if (t >= 1) {
+      dolly.position.copy(animState.toPos);
+      dolly.rotation.y = animState.fromYaw + animState.yawDelta;
+      animState = null;
+    } else {
+      // ease-in-out (smoothstep)
+      const e = t * t * (3 - 2 * t);
+      dolly.position.lerpVectors(animState.fromPos, animState.toPos, e);
+      dolly.rotation.y = animState.fromYaw + animState.yawDelta * e;
+    }
+  }
+
+  function showNotice(remainingSec) {
+    if (noticeEl.hasAttribute('hidden')) noticeEl.removeAttribute('hidden');
+    if (countdownEl) countdownEl.textContent = String(Math.max(1, Math.ceil(remainingSec)));
+  }
+  function hideNotice() {
+    if (!noticeEl.hasAttribute('hidden')) noticeEl.setAttribute('hidden', '');
+  }
+
+  function markActivity() {
+    lastActivityAt = performance.now();
+    if (!noticeEl.hasAttribute('hidden')) hideNotice();
+  }
+
+  // タイマー一時停止条件(VR / 先読み / データセット切替 / 復帰アニメ中)
+  function isTimerPaused() {
+    if (renderer.xr.isPresenting) return true;
+    if (typeof prefetchState !== 'undefined' && prefetchState.running) return true;
+    if (loadingDataset) return true;
+    if (animState) return true;
+    return false;
+  }
+
+  // 操作イベントでタイマー延長(VR操作はVRがpaused扱いなのでここに含めない)
+  ['keydown', 'pointerdown', 'pointermove', 'wheel', 'touchstart', 'touchmove'].forEach(t => {
+    window.addEventListener(t, markActivity, { passive: true });
+  });
+
+  // ボタンクリックで即時実行
+  if (btnEl) {
+    btnEl.addEventListener('click', () => {
+      markActivity();
+      startResetAnimation();
+    });
+  }
+
+  // アイドル監視ループ
+  setInterval(() => {
+    if (isTimerPaused()) {
+      markActivity(); // 待機中は時計を進めて、復帰時に即発動しないようにする
+      return;
+    }
+    const elapsed = performance.now() - lastActivityAt;
+    const remaining = IDLE_TIMEOUT_MS - elapsed;
+    if (remaining <= 0) {
+      startResetAnimation();
+    } else if (remaining <= IDLE_WARN_MS) {
+      showNotice(remaining / 1000);
+    } else if (!noticeEl.hasAttribute('hidden')) {
+      hideNotice();
+    }
+  }, TICK_INTERVAL_MS);
+
+  // アニメーションループからアクセスできるよう公開
+  window.__tickResetAnimation = tickResetAnimation;
+  window.__isResetAnimating = () => animState !== null;
+})();
+
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -2656,23 +2869,34 @@ const _vrScale = new THREE.Vector3(1, 1, 1);
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.1);
 
-  targetVel.set(0, 0, 0);
-  targetYawVel = 0;
-
-  if (renderer.xr.isPresenting) {
-    handleVRInput(dt);
-  } else if (isTouchDevice) {
-    handleTouchInput(dt);
+  // 初期位置リセットアニメ中: dolly を補間で更新し、通常の移動入力は抑制する
+  const resetting = window.__isResetAnimating && window.__isResetAnimating();
+  if (resetting) {
+    window.__tickResetAnimation();
+    // 慣性も止める(アニメ完了直後に残速度で滑らない)
+    velocity.set(0, 0, 0);
+    yawVel = 0;
+    targetVel.set(0, 0, 0);
+    targetYawVel = 0;
   } else {
-    handlePCInput(dt);
+    targetVel.set(0, 0, 0);
+    targetYawVel = 0;
+
+    if (renderer.xr.isPresenting) {
+      handleVRInput(dt);
+    } else if (isTouchDevice) {
+      handleTouchInput(dt);
+    } else {
+      handlePCInput(dt);
+    }
+
+    const t = 1 - Math.exp(-SMOOTH * dt);
+    velocity.lerp(targetVel, t);
+    yawVel += (targetYawVel - yawVel) * t;
+
+    dolly.position.addScaledVector(velocity, dt);
+    dolly.rotation.y += yawVel * dt;
   }
-
-  const t = 1 - Math.exp(-SMOOTH * dt);
-  velocity.lerp(targetVel, t);
-  yawVel += (targetYawVel - yawVel) * t;
-
-  dolly.position.addScaledVector(velocity, dt);
-  dolly.rotation.y += yawVel * dt;
 
   dolly.rotation.x = 0;
   dolly.rotation.z = 0;

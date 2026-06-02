@@ -2790,6 +2790,8 @@ if (DEBUG_MODE) {
     target: new THREE.Vector3(),            // 注視する立方体ワールド座標
     azimuth: 0, elevation: 0,               // 現在の方位角/仰角(rad)
     frontDir: new THREE.Vector3(),          // 正面基準: 立方体→押し始めカメラ の水平単位ベクトル
+    savedPos: new THREE.Vector3(),          // 押し始めのカメラ位置(正面復帰時に完全復元)
+    savedYaw: 0,                            // 押し始めのカメラyaw(同上)
   };
   // IJKL の押下状態
   const orbitKeys = { up: false, down: false, left: false, right: false };
@@ -2802,6 +2804,9 @@ if (DEBUG_MODE) {
     const yaw = dolly.rotation.y;
     const fx = -Math.sin(yaw), fz = -Math.cos(yaw);  // カメラ前方(水平)
     orbitState.frontDir.set(-fx, 0, -fz).normalize(); // 立方体→手前 = 前方の逆
+    // 押し始めのカメラ位置・yawを保存(正面復帰時に完全復元し、向きのズレを防ぐ)
+    orbitState.savedPos.copy(dolly.position);
+    orbitState.savedYaw = yaw;
     orbitState.azimuth = 0;
     orbitState.elevation = 0;
     orbitState.active = true;
@@ -2869,7 +2874,10 @@ if (DEBUG_MODE) {
       orbitState.azimuth   = decayToward(orbitState.azimuth, step);
       orbitState.elevation = decayToward(orbitState.elevation, step);
       if (orbitState.azimuth === 0 && orbitState.elevation === 0) {
-        applyOrbitPose();        // 正面姿勢で確定
+        // 完全に正面へ戻った: lookAtではなく押し始めの位置・yawを厳密に復元する。
+        // (lookAt由来のquaternion→オイラー角変換で生じる微小な向きズレを避ける)
+        dolly.position.copy(orbitState.savedPos);
+        dolly.rotation.set(0, orbitState.savedYaw, 0);
         orbitState.active = false;
         return false;
       }

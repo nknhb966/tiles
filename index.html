@@ -2868,8 +2868,9 @@ if (DEBUG_MODE) {
     if (anyKey) {
       if (orbitKeys.up)    orbitState.elevation = Math.min(ORBIT_MAX, orbitState.elevation + step);
       if (orbitKeys.down)  orbitState.elevation = Math.max(-ORBIT_MAX, orbitState.elevation - step);
-      if (orbitKeys.left)  orbitState.azimuth   = Math.max(-ORBIT_MAX, orbitState.azimuth - step);
-      if (orbitKeys.right) orbitState.azimuth   = Math.min(ORBIT_MAX, orbitState.azimuth + step);
+      // J/L は見た目の感覚に合わせて反転(Jで+az, Lで-az)
+      if (orbitKeys.left)  orbitState.azimuth   = Math.min(ORBIT_MAX, orbitState.azimuth + step);
+      if (orbitKeys.right) orbitState.azimuth   = Math.max(-ORBIT_MAX, orbitState.azimuth - step);
     } else {
       orbitState.azimuth   = decayToward(orbitState.azimuth, step);
       orbitState.elevation = decayToward(orbitState.elevation, step);

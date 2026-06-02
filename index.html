@@ -1635,10 +1635,13 @@ function splitToLines(ctx, text, maxW) {
   return out;
 }
 
-// アノテーション1件分の3Dオブジェクト(球+線+パネル)を生成
+// アノテーション1件分の3Dオブジェクト(球+オーラ+線+パネル)を生成
 function buildAnnotationObject(a) {
   const group = new THREE.Group();
   group.position.set(a.x, a.y, a.z);
+
+  // 脈動で球がとる最小スケール時の半径(線の起点に使う)
+  const minR = a.radius * PULSE_MIN;
 
   // 球体(半透明シアン)。脈動はこの sphere の scale で行う。
   const sphereGeo = new THREE.SphereGeometry(a.radius, 24, 16);
@@ -1648,15 +1651,27 @@ function buildAnnotationObject(a) {
   const sphere = new THREE.Mesh(sphereGeo, sphereMat);
   group.add(sphere);
 
+  // オーラ: 本体より一回り大きい半透明球を BackSide で描画。
+  // 裏面のみ描くと縁がぼんやり光る光輪のように見える(追加シェーダ不要で軽量)。
+  // sphere の子にして、本体の脈動スケールに自動追従させる。
+  const auraGeo = new THREE.SphereGeometry(a.radius * 1.6, 20, 14);
+  const auraMat = new THREE.MeshBasicMaterial({
+    color: 0x33ddff, transparent: true, opacity: 0.18,
+    side: THREE.BackSide, depthWrite: false,
+  });
+  const aura = new THREE.Mesh(auraGeo, auraMat);
+  sphere.add(aura); // 本体の脈動に追従
+
   // パネル(球の上に配置)。位置は球の基準半径(脈動の最大)を基準に固定。
   const panel = makeAnnotationPanel(a.title, a.body);
   const panelY = a.radius + 0.4 + (panel.userData.worldH / 2);
   panel.position.set(0, panelY, 0);
   group.add(panel);
 
-  // 球とパネルを結ぶ接続線(固定。球の脈動には追従しない)
+  // 球とパネルを結ぶ接続線。起点を最小スケール時の球上端(minR)にし、
+  // 球が0.4倍に縮んでも線が球に接し続けて関連が分かるようにする。
   const lineGeo = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0, a.radius, 0),
+    new THREE.Vector3(0, minR, 0),
     new THREE.Vector3(0, panelY - panel.userData.worldH / 2, 0),
   ]);
   const lineMat = new THREE.LineBasicMaterial({ color: 0x00c8ff, transparent: true, opacity: 0.6 });
@@ -1716,9 +1731,9 @@ function setAnnotationsVisible(v) {
   annotationGroup.visible = v;
 }
 
-// 脈動の設定: 球体スケールを 0.3〜1.0 倍の範囲で周期的に変化させる。
-const PULSE_MIN = 0.3, PULSE_MAX = 1.0;
-const PULSE_PERIOD_S = 2.0;        // 1周期の秒数
+// 脈動の設定: 球体スケールを 0.4〜1.0 倍の範囲で周期的に変化させる。
+const PULSE_MIN = 0.4, PULSE_MAX = 1.0;
+const PULSE_PERIOD_S = 5.0;        // 1周期の秒数
 let _annClock = 0;                 // 経過時間(秒)
 
 // 毎フレーム: パネルのビルボード向き調整、距離による表示制御、球体の脈動

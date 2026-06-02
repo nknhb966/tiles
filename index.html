@@ -409,8 +409,9 @@
 
     /* データセット切替UI */
     #dataset-switch {
-      position: fixed; top: 16px; left: 16px;
-      max-width: calc(100vw - 32px);
+      /* 初期位置ボタン(left:16px, width:120px) の右隣から開始 */
+      position: fixed; top: 16px; left: 144px;
+      max-width: calc(100vw - 160px);
       background: rgba(0,0,0,0.8);
       border: 1px solid rgba(0,200,255,0.3);
       border-radius: 4px;
@@ -451,15 +452,21 @@
     }
     .dataset-btn:hover { background: rgba(0,200,255,0.1); }
 
-    /* ── 初期位置リセットボタン (右上、#controlsの上) ──
-       手動クリックでも、60秒の無操作タイマー満了でも同じ動作で初期位置に戻る。 */
+    /* ── 初期位置リセットボタン ──
+       画面左上に固定配置。データセット切替UI(#dataset-switch)の横スクロールには
+       一切影響されず、常に同じ位置にある独立要素として扱う。
+       手動クリックでも60秒無操作タイマー満了でも同じ動作で初期位置に戻る。
+       幅を固定(120px)にしておくと、#dataset-switch の left オフセットも計算しやすい。 */
     #reset-view-btn {
       position: fixed;
       top: 16px;
-      right: 16px;
-      z-index: 110;
+      left: 16px;
+      z-index: 110;  /* #dataset-switch(z-index:100) より前面に */
+      width: 120px;
+      box-sizing: border-box;
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
       padding: 8px 14px;
       background: rgba(0,0,0,0.8);
@@ -482,22 +489,20 @@
       font-size: 16px;
       line-height: 1;
     }
-    /* スマホ・タブレットでは "初期位置" ラベルを隠してアイコンのみ(横幅節約) */
-    body.touch #reset-view-btn .rv-label {
+    /* スマホでは "初期位置" ラベルを隠してアイコンのみ。横幅も縮める。 */
+    body.touch:not(.touch-wide) #reset-view-btn {
+      top: 4px;
+      left: 8px;
+      width: 40px;
+      padding: 6px 0;
+      font-size: 12px;
+    }
+    body.touch:not(.touch-wide) #reset-view-btn .rv-label {
       display: none;
     }
-    /* タブレットなら横幅に余裕があるのでラベルも表示する */
-    body.touch.touch-wide #reset-view-btn .rv-label {
-      display: inline;
-    }
-    /* スマホでは右上が #controls の真上にあると干渉するので、位置を微調整。
-       #controls は top:48px / right:4px に上書きされているので、ボタンは右上端のまま。
-       ただし #dataset-switch が画面上端を専有するため、top を少し下げる */
-    body.touch:not(.touch-wide) #reset-view-btn {
-      top: 12px;
-      right: 8px;
-      padding: 6px 10px;
-      font-size: 12px;
+    /* タブレットなら横幅に余裕があるのでラベルも表示。PCと同じ120px。 */
+    body.touch.touch-wide #reset-view-btn {
+      top: 4px;
     }
 
     /* ── アイドルタイマーのカウントダウン通知 (5秒前から表示) ──
@@ -726,12 +731,17 @@
     /* スマホ時：データセットUIが他UIと重ならないようサイズ調整。
        上端ぎりぎり(top:4px)に寄せて表示エリアを最大化、
        横方向は元のレイアウトを維持して横スクロールしやすさを保つ。 */
-    body.touch #dataset-switch {
+    /* スマホ時の#dataset-switch: 初期位置ボタン(left:8px, width:40px)の右隣から開始。
+       タブレット(touch-wide)はPCと同じ left:144px を継承するので、ここでは:not(.touch-wide)で対象を絞る。 */
+    body.touch:not(.touch-wide) #dataset-switch {
       top: 4px;
-      left: 16px;
-      max-width: calc(100vw - 32px);
+      left: 56px;
+      max-width: calc(100vw - 64px);
       font-size: 11px;
       padding: 6px 8px;
+    }
+    body.touch.touch-wide #dataset-switch {
+      top: 4px;  /* タブレットでも上端寄せはスマホと共通(PC用 top:16px を上書き) */
     }
     body.touch .dataset-btn {
       padding: 6px 10px;

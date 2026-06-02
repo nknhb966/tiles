@@ -2675,8 +2675,9 @@ if (DEBUG_MODE) {
     </div>
     <div style="margin-top:4px; color:#9f9;">
       A: annotations行コピー (3m先に設置)<br>
-      I/J/K/L: 立方体を 上/左/下/右 から見る<br>
-      H: 正面に戻る &nbsp; (WASD等で通常操作に復帰)
+      I/K: 押している間 上/下 から回り込み(見下ろし/見上げ)<br>
+      J/L: 押している間 左/右 から回り込み<br>
+      (1秒で90度・最大90度、離すと正面に戻る。同時押しで斜めも可)
     </div>
   ` : '';
   dbg.innerHTML = `
@@ -2764,7 +2765,7 @@ if (DEBUG_MODE) {
       }
       placeMarker.position.copy(_dbgMarkerTmp);
       placeMarker.scale.setScalar(worldScale);
-      // annotations.csv の雛形行(title/bodyは後で埋める。radius=0.25, dist=5 が既定)
+      // annotations.csv の雛形行(title/bodyは後で埋める。radius=0.25, dist=10 が既定)
       if (dbgAnn) {
         dbgAnn.textContent = o.id != null
           ? `${o.id},${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)},タイトル,本文,0.25,10`
@@ -2775,111 +2776,101 @@ if (DEBUG_MODE) {
   // 毎フレーム更新したいので、軽い間隔(60ms)で polling
   setInterval(refreshDebug, 60);
 
-  // ── IJKL/H オービット(アノテーション配置モードのみ) ──
-  // 立方体(設置点)を固定したまま、カメラがその点を中心に球面上を回り込む。
-  //   I=上へ90度(見下ろしへ) / K=下へ90度(見上げへ) / J=左へ90度 / L=右へ90度 / H=正面に戻す。
-  // カメラは常に立方体を注視(yaw+pitch)。1秒かけて90度ぶん回り込む。
-  // dolly.position をカメラ位置に、dolly.rotation に yaw/pitch を入れ、
-  // オービット中はメインループの pitch=0 強制をスキップする(window.__isAnnotateOrbitActive)。
-  const ORBIT_DIST = 3.0;        // 立方体からカメラまでの距離(固定)
-  const ORBIT_ANIM_MS = 1000;    // 90度回り込みにかける時間
+  // ── IJKL 押し込み式オービット(アノテーション配置モードのみ) ──
+  // 立方体(設置点)を固定したまま、IJKLを押している間だけカメラがその点を中心に回り込む。
+  //   I=上へ回り込み(見下ろし) / K=下へ(見上げ) / J=左へ / L=右へ。
+  //   押した時間に比例して回転(90度/秒)、最大90度で頭打ち。
+  //   離すと同じ速度(90度/秒)で正面(0度)に巻き戻る。同時押しで斜めも可。
+  //   オービット中は通常の移動/回転キーは無視。カメラは常に立方体を注視(yaw+pitch)。
+  const ORBIT_DIST = 3.0;                   // 立方体からカメラまでの距離(固定)
+  const ORBIT_RATE = Math.PI / 2;           // 回転速度 90度/秒 (rad/s)
+  const ORBIT_MAX  = Math.PI / 2;           // 最大角 90度
   const orbitState = {
-    active: false,                // オービット視点中か(通常移動で解除)
-    target: new THREE.Vector3(),  // 注視する立方体のワールド座標
-    azimuth: 0,                   // 方位角(rad) 0=正面(設置時のカメラ側)
-    elevation: 0,                 // 仰角(rad) +で上から見下ろし、-で下から見上げ
-    anim: null,                   // {startTime, fromAz, toAz, fromEl, toEl}
+    active: false,                          // 立方体ロック中(押下 or 巻き戻し中)
+    target: new THREE.Vector3(),            // 注視する立方体ワールド座標
+    azimuth: 0, elevation: 0,               // 現在の方位角/仰角(rad)
+    baseDir: new THREE.Vector3(),           // 正面基準: 立方体→カメラ手前 の水平方向
+    baseRight: new THREE.Vector3(),         // その右手方向
   };
+  // IJKL の押下状態
+  const orbitKeys = { up: false, down: false, left: false, right: false };
 
-  // 球面座標(azimuth, elevation)から、立方体を中心としたカメラ位置と注視回転を求めて dolly に適用
+  // 立方体位置と正面基準をロック(押し始めの1回)
+  function lockOrbitTarget() {
+    const p = annotationPlacePoint();
+    orbitState.target.set(p.x, p.y, p.z);
+    const yaw = dolly.rotation.y;
+    const fx = -Math.sin(yaw), fz = -Math.cos(yaw);          // カメラ前方
+    orbitState.baseDir.set(-fx, 0, -fz).normalize();          // 立方体→手前=前方の逆
+    orbitState.baseRight.set(orbitState.baseDir.z, 0, -orbitState.baseDir.x).normalize();
+    orbitState.azimuth = 0;
+    orbitState.elevation = 0;
+    orbitState.active = true;
+  }
+
+  // 球面座標(az,el)からカメラ位置と注視向き(yaw,pitch)を dolly に適用
   const _orbitCamPos = new THREE.Vector3();
-  function applyOrbitPose(az, el) {
+  function applyOrbitPose() {
     const T = orbitState.target;
-    // 仰角は ±89度でクランプ(真上/真下の特異点回避)
+    const el = Math.max(-ORBIT_MAX, Math.min(ORBIT_MAX, orbitState.elevation));
+    const az = orbitState.azimuth;
     const elc = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, el));
     const horiz = Math.cos(elc);
-    const ox = Math.sin(az) * horiz;   // 右方向成分
-    const oy = Math.sin(elc);          // 上方向成分
-    const oz = Math.cos(az) * horiz;   // 正面方向成分
-    // カメラ位置 = 立方体 + 距離 ×(正面基準ベクトル合成)
-    const hx = orbitBaseDir.x * oz + orbitBaseRight.x * ox;
-    const hz = orbitBaseDir.z * oz + orbitBaseRight.z * ox;
-    _orbitCamPos.set(
-      T.x + hx * ORBIT_DIST,
-      T.y + oy * ORBIT_DIST,
-      T.z + hz * ORBIT_DIST
-    );
+    const ox = Math.sin(az) * horiz;  // 右成分
+    const oy = Math.sin(elc);         // 上成分
+    const oz = Math.cos(az) * horiz;  // 正面成分
+    const hx = orbitState.baseDir.x * oz + orbitState.baseRight.x * ox;
+    const hz = orbitState.baseDir.z * oz + orbitState.baseRight.z * ox;
+    _orbitCamPos.set(T.x + hx * ORBIT_DIST, T.y + oy * ORBIT_DIST, T.z + hz * ORBIT_DIST);
     dolly.position.copy(_orbitCamPos);
-    // 立方体を見る向き(yaw, pitch)
-    const dx = T.x - _orbitCamPos.x;
-    const dy = T.y - _orbitCamPos.y;
-    const dz = T.z - _orbitCamPos.z;
-    const yaw = Math.atan2(-dx, -dz);              // forward=(-sin yaw, *, -cos yaw)
+    const dx = T.x - _orbitCamPos.x, dy = T.y - _orbitCamPos.y, dz = T.z - _orbitCamPos.z;
+    const yaw = Math.atan2(-dx, -dz);
     const horizLen = Math.sqrt(dx * dx + dz * dz);
-    const pitch = Math.atan2(dy, horizLen);         // 上を見る角
+    const pitch = Math.atan2(dy, horizLen);
     dolly.rotation.set(pitch, yaw, 0);
   }
 
-  // 正面基準の方向ベクトル(設置時のカメラ向きから決定)
-  const orbitBaseDir = new THREE.Vector3();   // 立方体→カメラ手前 の水平方向
-  const orbitBaseRight = new THREE.Vector3(); // その右手方向
-
-  function startOrbit(dir) {
-    // 初回起動時に立方体位置を確定(ロック)し、正面基準を設定
-    if (!orbitState.active) {
-      const p = annotationPlacePoint();
-      orbitState.target.set(p.x, p.y, p.z);
-      // 設置時カメラyawから「立方体→カメラ手前」方向を基準(正面)に
-      const yaw = dolly.rotation.y;
-      const fx = -Math.sin(yaw), fz = -Math.cos(yaw); // カメラ前方
-      orbitBaseDir.set(-fx, 0, -fz).normalize();       // 立方体→手前 = 前方の逆
-      orbitBaseRight.set(orbitBaseDir.z, 0, -orbitBaseDir.x).normalize(); // 右手
-      orbitState.azimuth = 0;
-      orbitState.elevation = 0;
-      orbitState.active = true;
-    }
-    // 目標の方位角/仰角(現在値から相対的に90度動かす)
-    let toAz = orbitState.azimuth, toEl = orbitState.elevation;
-    const Q = Math.PI / 2; // 90度
-    if (dir === 'up')        toEl = orbitState.elevation + Q;
-    else if (dir === 'down') toEl = orbitState.elevation - Q;
-    else if (dir === 'left') toAz = orbitState.azimuth - Q;
-    else if (dir === 'right')toAz = orbitState.azimuth + Q;
-    else { toAz = 0; toEl = 0; } // front: 正面に戻す
-    orbitState.anim = {
-      startTime: performance.now(),
-      fromAz: orbitState.azimuth, toAz,
-      fromEl: orbitState.elevation, toEl,
-    };
+  // 0に向けて step ぶん近づける(巻き戻し用)
+  function decayToward(v, step) {
+    if (v > 0) return Math.max(0, v - step);
+    if (v < 0) return Math.min(0, v + step);
+    return 0;
   }
 
-  // メインループから毎フレーム呼ばれ、オービットアニメ中なら球面座標を補間
-  function tickAnnotateOrbit() {
-    const a = orbitState.anim;
-    if (!a) return;
-    const t = (performance.now() - a.startTime) / ORBIT_ANIM_MS;
-    if (t >= 1) {
-      orbitState.azimuth = a.toAz;
-      orbitState.elevation = a.toEl;
-      applyOrbitPose(orbitState.azimuth, orbitState.elevation);
-      orbitState.anim = null;
+  // メインループから毎フレーム呼ばれる。押下に応じて角度を更新し、姿勢を適用。
+  // 戻り値: このフレームでオービット制御が有効だったか(=通常制御を抑制すべきか)
+  function tickAnnotateOrbit(dt) {
+    const anyKey = orbitKeys.up || orbitKeys.down || orbitKeys.left || orbitKeys.right;
+    // 押下開始: まだロックしてなければロック
+    if (anyKey && !orbitState.active) lockOrbitTarget();
+    if (!orbitState.active) return false;
+
+    const step = ORBIT_RATE * dt;
+    if (anyKey) {
+      // 押している方向へ角度を進める(±90度で頭打ち)
+      if (orbitKeys.up)    orbitState.elevation = Math.min(ORBIT_MAX, orbitState.elevation + step);
+      if (orbitKeys.down)  orbitState.elevation = Math.max(-ORBIT_MAX, orbitState.elevation - step);
+      if (orbitKeys.left)  orbitState.azimuth   = Math.max(-ORBIT_MAX, orbitState.azimuth - step);
+      if (orbitKeys.right) orbitState.azimuth   = Math.min(ORBIT_MAX, orbitState.azimuth + step);
     } else {
-      const e = t * t * (3 - 2 * t); // smoothstep
-      const az = a.fromAz + (a.toAz - a.fromAz) * e;
-      const el = a.fromEl + (a.toEl - a.fromEl) * e;
-      applyOrbitPose(az, el);
+      // 離した: 同じ速度で正面(0)へ巻き戻す
+      orbitState.azimuth   = decayToward(orbitState.azimuth, step);
+      orbitState.elevation = decayToward(orbitState.elevation, step);
+      // 完全に正面に戻ったらオービット解除(通常制御に復帰)
+      if (orbitState.azimuth === 0 && orbitState.elevation === 0) {
+        applyOrbitPose(); // 正面姿勢で確定
+        orbitState.active = false;
+        return false;
+      }
     }
+    applyOrbitPose();
+    return true;
   }
-  // 通常移動キー(WASD等)が押されたらオービットを解除
-  function cancelOrbit() {
-    orbitState.active = false;
-    orbitState.anim = null;
-  }
-  // メインループ・キー処理から使えるよう公開
+
+  // 公開(アノテーション配置モード時のみ)
   window.__tickAnnotateOrbit = ANNOTATE_MODE ? tickAnnotateOrbit : null;
-  window.__isAnnotateOrbiting = ANNOTATE_MODE ? (() => orbitState.anim !== null) : null;
   window.__isAnnotateOrbitActive = ANNOTATE_MODE ? (() => orbitState.active) : null;
-  window.__cancelAnnotateOrbit = ANNOTATE_MODE ? cancelOrbit : null;
+  window.__orbitTarget = orbitState.target; // マーカー位置表示用
 
   // R = CSVのデフォルト値にカメラをリセット、C = CSV行をクリップボードにコピー
   window.addEventListener('keydown', (e) => {
@@ -2912,18 +2903,21 @@ if (DEBUG_MODE) {
         navigator.clipboard?.writeText(line);
         console.log('annotations.csv行をコピー(title/bodyを編集してください):', line);
       }
-    } else if (ANNOTATE_MODE && e.code === 'KeyI') {
-      startOrbit('up');
-    } else if (ANNOTATE_MODE && e.code === 'KeyK') {
-      startOrbit('down');
-    } else if (ANNOTATE_MODE && e.code === 'KeyJ') {
-      startOrbit('left');
-    } else if (ANNOTATE_MODE && e.code === 'KeyL') {
-      startOrbit('right');
-    } else if (ANNOTATE_MODE && e.code === 'KeyH') {
-      startOrbit('front');
-    }
+    } else if (ANNOTATE_MODE && e.code === 'KeyI') { orbitKeys.up = true; }
+    else if (ANNOTATE_MODE && e.code === 'KeyK') { orbitKeys.down = true; }
+    else if (ANNOTATE_MODE && e.code === 'KeyJ') { orbitKeys.left = true; }
+    else if (ANNOTATE_MODE && e.code === 'KeyL') { orbitKeys.right = true; }
   });
+
+  // IJKL を離したら押下フラグを下ろす(離すと巻き戻る)
+  if (ANNOTATE_MODE) {
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'KeyI') orbitKeys.up = false;
+      else if (e.code === 'KeyK') orbitKeys.down = false;
+      else if (e.code === 'KeyJ') orbitKeys.left = false;
+      else if (e.code === 'KeyL') orbitKeys.right = false;
+    });
+  }
 }
 
 // 点のサイズスライダー: UI値(1〜80)を pointSize(m) = UI × 0.001 で変換。
@@ -3337,21 +3331,24 @@ const _vrScale = new THREE.Vector3(1, 1, 1);
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.1);
 
-  // アノテーション配置モードのオービット視点アニメ中か
-  const orbiting = window.__isAnnotateOrbiting && window.__isAnnotateOrbiting();
-
   // 初期位置リセットアニメ中: dolly を補間で更新し、通常の移動入力は抑制する
   const resetting = window.__isResetAnimating && window.__isResetAnimating();
+
+  // アノテーション配置モードのオービット: 押下に応じて角度更新&姿勢適用。
+  // true が返れば「オービット制御中」=通常の移動/回転入力を抑制し、pitchを維持する。
+  let orbitActive = false;
+  if (!resetting && window.__tickAnnotateOrbit) {
+    orbitActive = window.__tickAnnotateOrbit(dt);
+  }
+
   if (resetting) {
     window.__tickResetAnimation();
-    // 慣性も止める(アニメ完了直後に残速度で滑らない)
     velocity.set(0, 0, 0);
     yawVel = 0;
     targetVel.set(0, 0, 0);
     targetYawVel = 0;
-  } else if (orbiting) {
-    // オービット視点アニメ中: dolly を補間。通常移動は抑制。
-    window.__tickAnnotateOrbit();
+  } else if (orbitActive) {
+    // オービット制御中: dolly は tickAnnotateOrbit が設定済み。通常移動は完全に無視。
     velocity.set(0, 0, 0);
     yawVel = 0;
     targetVel.set(0, 0, 0);
@@ -3368,12 +3365,6 @@ renderer.setAnimationLoop(() => {
       handlePCInput(dt);
     }
 
-    // アノテーション配置モードで、オービット視点に「居る」状態のまま
-    // 移動入力が入ったら、オービットを解除して通常操作に戻す。
-    if (window.__cancelAnnotateOrbit && (targetVel.lengthSq() > 0 || targetYawVel !== 0)) {
-      window.__cancelAnnotateOrbit();
-    }
-
     const t = 1 - Math.exp(-SMOOTH * dt);
     velocity.lerp(targetVel, t);
     yawVel += (targetYawVel - yawVel) * t;
@@ -3382,9 +3373,7 @@ renderer.setAnimationLoop(() => {
     dolly.rotation.y += yawVel * dt;
   }
 
-  // オービット視点に居る間は pitch(上下の見下ろし角)を維持する。
-  // それ以外では従来通り水平を強制(pitch/roll=0)。
-  const orbitActive = window.__isAnnotateOrbitActive && window.__isAnnotateOrbitActive();
+  // オービット制御中は pitch(見下ろし角)を維持。それ以外は水平強制(pitch/roll=0)。
   if (!orbitActive) {
     dolly.rotation.x = 0;
     dolly.rotation.z = 0;

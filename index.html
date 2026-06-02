@@ -1161,8 +1161,8 @@ function parseAnnotationsCSV(text) {
     z: num(cols[iZ], 0),
     title: iTitle >= 0 ? (cols[iTitle] || '').trim() : '',
     body:  iBody  >= 0 ? (cols[iBody]  || '').trim() : '',
-    radius: iR    >= 0 ? num(cols[iR], 1.0) : 1.0,   // 球半径(m) 既定1.0
-    dist:   iDist >= 0 ? num(cols[iDist], 30) : 30,  // パネル表示距離(m) 既定30
+    radius: iR    >= 0 ? num(cols[iR], 0.25) : 0.25,  // 球半径(m) 既定0.25
+    dist:   iDist >= 0 ? num(cols[iDist], 5) : 5,      // パネル表示距離(m) 既定5
   })).filter(a => a.datasetId);
 }
 
@@ -2644,10 +2644,14 @@ function updateDatasetButtons() {
   if (startId) loadTileset(startId);
 })();
 
-// ── デバッグモード: URLに ?debug=1 を付けると現在カメラ位置/向きを表示 ──
-// 通常の WASD / 矢印キー で視点移動/回転すると、リアルタイムに更新される。
-// 表示される x, y, z, yaw はそのまま datasets.csv に貼り付け可能。
-const DEBUG_MODE = new URLSearchParams(location.search).has('debug');
+// ── ツールモード ──
+//   ?debug=1    : カメラ位置/向きを表示(datasets.csv 作成用)
+//   ?annotate=1 : それに加え、黄色い立方体でアノテーション設置点を指定 +
+//                 IJKL/H で立方体を上下左右/正面から確認するオービット操作(annotations.csv 作成用)
+// どちらかが付いていればツールパネルを表示する。
+const _params = new URLSearchParams(location.search);
+const ANNOTATE_MODE = _params.has('annotate');
+const DEBUG_MODE = _params.has('debug') || ANNOTATE_MODE;
 if (DEBUG_MODE) {
   const dbg = document.createElement('div');
   dbg.id = 'dbg-panel';
@@ -2659,8 +2663,24 @@ if (DEBUG_MODE) {
     border-radius:4px; z-index:200; line-height:1.5;
     min-width:280px;
   `;
+  // アノテーション配置モード時のみ、設置点ブロックと操作説明を表示
+  const annotateBlock = ANNOTATE_MODE ? `
+    <div style="margin-top:8px; padding-top:6px; border-top:1px solid #0a0; color:#ff0;">
+      <b>アノテーション配置モード</b> (?annotate=1)<br>
+      黄色い立方体 = カメラ3m先の設置点
+    </div>
+    <div style="margin-top:2px;">
+      <span style="color:#9f9;">annotations.csv行:</span>
+      <span id="dbg-ann" style="color:#fff; user-select:all;">-</span>
+    </div>
+    <div style="margin-top:4px; color:#9f9;">
+      A: annotations行コピー (3m先に設置)<br>
+      I/J/K/L: 立方体を 上/左/下/右 から見る<br>
+      H: 正面に戻る &nbsp; (WASD等で通常操作に復帰)
+    </div>
+  ` : '';
   dbg.innerHTML = `
-    <div><b>DEBUG MODE</b> (?debug=1)</div>
+    <div><b>${ANNOTATE_MODE ? 'ANNOTATE MODE' : 'DEBUG MODE'}</b></div>
     <div>現在: <span id="dbg-id">-</span></div>
     <div>x=<span id="dbg-x">0</span> y=<span id="dbg-y">0</span> z=<span id="dbg-z">0</span> yaw=<span id="dbg-yaw">0</span>°</div>
     <div style="margin-top:6px; color:#9f9;">
@@ -2670,17 +2690,8 @@ if (DEBUG_MODE) {
       <span style="color:#9f9;">datasets.csv行:</span>
       <span id="dbg-csv" style="color:#fff; user-select:all;">-</span>
     </div>
-    <div style="margin-top:8px; padding-top:6px; border-top:1px solid #0a0; color:#ff0;">
-      <b>アノテーション配置</b> (黄色い立方体=3m先の設置点)
-    </div>
-    <div style="margin-top:2px;">
-      <span style="color:#9f9;">annotations.csv行:</span>
-      <span id="dbg-ann" style="color:#fff; user-select:all;">-</span>
-    </div>
-    <div style="margin-top:4px; color:#9f9;">
-      R: 初期位置リセット &nbsp; C: datasets行コピー<br>
-      A: annotations行コピー (3m先に設置)
-    </div>
+    <div style="margin-top:4px; color:#9f9;">R: 初期位置リセット &nbsp; C: datasets行コピー</div>
+    ${annotateBlock}
   `;
   document.body.appendChild(dbg);
   const dbgId   = document.getElementById('dbg-id');
@@ -2688,7 +2699,7 @@ if (DEBUG_MODE) {
   const dbgY    = document.getElementById('dbg-y');
   const dbgZ    = document.getElementById('dbg-z');
   const dbgYaw  = document.getElementById('dbg-yaw');
-  const dbgAnn  = document.getElementById('dbg-ann');
+  const dbgAnn  = document.getElementById('dbg-ann'); // annotateモード時のみ存在
   const dbgCsv  = document.getElementById('dbg-csv');
 
   // dolly の現在のx/y/z と yaw(度) を取得
@@ -2720,12 +2731,17 @@ if (DEBUG_MODE) {
     };
   }
 
-  // 設置点を示す黄色い小立方体マーカー(デバッグ時のみ表示)
-  const markerGeo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
-  const markerMat = new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.8 });
-  const placeMarker = new THREE.Mesh(markerGeo, markerMat);
-  scene.add(placeMarker);
+  // 設置点を示す黄色い小立方体マーカー(アノテーション配置モード時のみ)。
+  // depthTest通常なので点群に埋もれて前後関係が分かる。
+  let placeMarker = null;
+  if (ANNOTATE_MODE) {
+    const markerGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+    const markerMat = new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.85 });
+    placeMarker = new THREE.Mesh(markerGeo, markerMat);
+    scene.add(placeMarker);
+  }
 
+  const _dbgMarkerTmp = new THREE.Vector3();
   function refreshDebug() {
     const o = currentCam();
     dbgId.textContent  = o.id ?? '-';
@@ -2739,23 +2755,106 @@ if (DEBUG_MODE) {
       ? `${o.id},${label},${o.x.toFixed(2)},${o.y.toFixed(2)},${o.z.toFixed(2)},${o.yawDeg.toFixed(1)}`
       : '-';
 
-    // 設置点マーカーを3m先へ移動。WORLD SCALE 中はスケール後の見た目位置に合わせる。
-    const p = annotationPlacePoint();
-    _dbgMarkerTmp.set(p.x, p.y, p.z);
-    if (worldScale !== 1.0) {
-      _dbgMarkerTmp.sub(dolly.position).multiplyScalar(worldScale).add(dolly.position);
+    if (ANNOTATE_MODE) {
+      // 設置点マーカーを更新。オービット中は「ロックした立方体位置」、通常は3m先。
+      const p = orbitState.active ? orbitState.target : annotationPlacePoint();
+      _dbgMarkerTmp.set(p.x, p.y, p.z);
+      if (worldScale !== 1.0) {
+        _dbgMarkerTmp.sub(dolly.position).multiplyScalar(worldScale).add(dolly.position);
+      }
+      placeMarker.position.copy(_dbgMarkerTmp);
+      placeMarker.scale.setScalar(worldScale);
+      // annotations.csv の雛形行(title/bodyは後で埋める。radius=0.25, dist=5 が既定)
+      if (dbgAnn) {
+        dbgAnn.textContent = o.id != null
+          ? `${o.id},${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)},タイトル,本文,0.25,5`
+          : '-';
+      }
     }
-    placeMarker.position.copy(_dbgMarkerTmp);
-    placeMarker.scale.setScalar(worldScale);
-
-    // annotations.csv の雛形行(title/bodyは空欄、後で埋める)
-    dbgAnn.textContent = o.id != null
-      ? `${o.id},${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)},タイトル,本文,1.0,30`
-      : '-';
   }
-  const _dbgMarkerTmp = new THREE.Vector3();
   // 毎フレーム更新したいので、軽い間隔(60ms)で polling
   setInterval(refreshDebug, 60);
+
+  // ── IJKL/H オービット(アノテーション配置モードのみ) ──
+  // 立方体(設置点)を固定したまま、カメラがその点を中心に上下左右/正面へスムーズ移動する。
+  // I=上から見下ろす / J=左から / K=下から見上げる / L=右から / H=正面(元の向き)。
+  // メインのアニメーションループ内 __tickAnnotateOrbit() で dolly を補間する。
+  const ORBIT_DIST = 3.0;       // 立方体からカメラまでの距離(固定)
+  const ORBIT_ANIM_MS = 600;    // 視点移動アニメ長
+  const orbitState = {
+    active: false,              // オービット視点中か(通常移動で解除)
+    target: { x: 0, y: 0, z: 0 }, // 注視する立方体のワールド座標
+    anim: null,                 // 補間アニメ状態
+  };
+
+  // 指定方向から立方体を見るカメラ位置/yaw を計算して、アニメ開始
+  function startOrbit(dir) {
+    // オービット開始時、立方体位置を現在の3m先で確定(ロック)
+    if (!orbitState.active) {
+      const p = annotationPlacePoint();
+      orbitState.target = p;
+      orbitState.active = true;
+    }
+    const T = orbitState.target;
+    // 方向ごとのカメラ相対オフセットと向き
+    // (yはワールドY、立方体を見る向きyaw/pitchを決める)
+    let camPos, lookYaw;
+    const eps = 0.001;
+    if (dir === 'up') {        // 真上から見下ろす
+      camPos = { x: T.x, y: T.y + ORBIT_DIST, z: T.z + eps };
+    } else if (dir === 'down') { // 真下から見上げる
+      camPos = { x: T.x, y: T.y - ORBIT_DIST, z: T.z + eps };
+    } else if (dir === 'left') { // 左から
+      camPos = { x: T.x - ORBIT_DIST, y: T.y, z: T.z };
+    } else if (dir === 'right') { // 右から
+      camPos = { x: T.x + ORBIT_DIST, y: T.y, z: T.z };
+    } else { // front: 正面(元のカメラyaw方向の反対=立方体の手前)
+      // 立方体設置時のカメラ前方の逆向きに3m引いた位置
+      const yaw = dolly.rotation.y;
+      const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+      camPos = { x: T.x - fx * ORBIT_DIST, y: T.y, z: T.z - fz * ORBIT_DIST };
+    }
+    // カメラから立方体を見るyaw(水平方向)を計算
+    const dx = T.x - camPos.x, dz = T.z - camPos.z;
+    lookYaw = Math.atan2(-dx, -dz); // forward=(-sin,-cos)に対応
+    orbitState.anim = {
+      startTime: performance.now(),
+      fromPos: dolly.position.clone(),
+      toPos: new THREE.Vector3(camPos.x, camPos.y, camPos.z),
+      fromYaw: dolly.rotation.y,
+      yawDelta: shortestAngleDiffDbg(dolly.rotation.y, lookYaw),
+    };
+  }
+  function shortestAngleDiffDbg(a, b) {
+    let d = (b - a) % (Math.PI * 2);
+    if (d >  Math.PI) d -= Math.PI * 2;
+    if (d < -Math.PI) d += Math.PI * 2;
+    return d;
+  }
+  // メインループから毎フレーム呼ばれ、オービットアニメ中なら dolly を補間
+  function tickAnnotateOrbit() {
+    const a = orbitState.anim;
+    if (!a) return;
+    const t = (performance.now() - a.startTime) / ORBIT_ANIM_MS;
+    if (t >= 1) {
+      dolly.position.copy(a.toPos);
+      dolly.rotation.y = a.fromYaw + a.yawDelta;
+      orbitState.anim = null;
+    } else {
+      const e = t * t * (3 - 2 * t); // smoothstep
+      dolly.position.lerpVectors(a.fromPos, a.toPos, e);
+      dolly.rotation.y = a.fromYaw + a.yawDelta * e;
+    }
+  }
+  // 通常移動キー(WASD等)が押されたらオービットを解除
+  function cancelOrbit() {
+    orbitState.active = false;
+    orbitState.anim = null;
+  }
+  // メインループ・キー処理から使えるよう公開
+  window.__tickAnnotateOrbit = ANNOTATE_MODE ? tickAnnotateOrbit : null;
+  window.__isAnnotateOrbiting = ANNOTATE_MODE ? (() => orbitState.anim !== null) : null;
+  window.__cancelAnnotateOrbit = ANNOTATE_MODE ? cancelOrbit : null;
 
   // R = CSVのデフォルト値にカメラをリセット、C = CSV行をクリップボードにコピー
   window.addEventListener('keydown', (e) => {
@@ -2780,14 +2879,24 @@ if (DEBUG_MODE) {
         console.log('datasets.csv行をコピー:', line);
       }
     } else if (e.code === 'KeyA') {
-      // 3m先の設置点を annotations.csv 行としてコピー
+      // 3m先の設置点を annotations.csv 行としてコピー(オービット中はロック点)
       const id = currentDataset ?? loadingDataset;
       if (id != null) {
-        const p = annotationPlacePoint();
-        const line = `${id},${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)},タイトル,本文,1.0,30`;
+        const p = (ANNOTATE_MODE && orbitState.active) ? orbitState.target : annotationPlacePoint();
+        const line = `${id},${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)},タイトル,本文,0.25,5`;
         navigator.clipboard?.writeText(line);
         console.log('annotations.csv行をコピー(title/bodyを編集してください):', line);
       }
+    } else if (ANNOTATE_MODE && e.code === 'KeyI') {
+      startOrbit('up');
+    } else if (ANNOTATE_MODE && e.code === 'KeyK') {
+      startOrbit('down');
+    } else if (ANNOTATE_MODE && e.code === 'KeyJ') {
+      startOrbit('left');
+    } else if (ANNOTATE_MODE && e.code === 'KeyL') {
+      startOrbit('right');
+    } else if (ANNOTATE_MODE && e.code === 'KeyH') {
+      startOrbit('front');
     }
   });
 }
@@ -3128,11 +3237,25 @@ document.addEventListener('click', (e) => {
   }
 
   // タイマー一時停止条件(VR / 先読み / データセット切替 / 復帰アニメ中)
+  // カメラが初期位置・向きと完全に一致しているか(完全不動の判定)
+  // 完全一致の時は「戻す意味がない」のでタイマーを発動させない。
+  // わずかでも動いていれば(誤差があっても)通知は出す仕様。
+  function isAtInitialPose() {
+    const p = getInitialPose();
+    if (!p) return false;
+    return dolly.position.x === p.x &&
+           dolly.position.y === p.y &&
+           dolly.position.z === p.z &&
+           dolly.rotation.y === p.yawRad;
+  }
+
   function isTimerPaused() {
+    if (typeof ANNOTATE_MODE !== 'undefined' && ANNOTATE_MODE) return true; // 配置作業中は自動リセットしない
     if (renderer.xr.isPresenting) return true;
     if (typeof prefetchState !== 'undefined' && prefetchState.running) return true;
     if (loadingDataset) return true;
     if (animState) return true;
+    if (isAtInitialPose()) return true; // 初期位置から完全に動いていない
     return false;
   }
 
@@ -3189,11 +3312,21 @@ const _vrScale = new THREE.Vector3(1, 1, 1);
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.1);
 
+  // アノテーション配置モードのオービット視点アニメ中か
+  const orbiting = window.__isAnnotateOrbiting && window.__isAnnotateOrbiting();
+
   // 初期位置リセットアニメ中: dolly を補間で更新し、通常の移動入力は抑制する
   const resetting = window.__isResetAnimating && window.__isResetAnimating();
   if (resetting) {
     window.__tickResetAnimation();
     // 慣性も止める(アニメ完了直後に残速度で滑らない)
+    velocity.set(0, 0, 0);
+    yawVel = 0;
+    targetVel.set(0, 0, 0);
+    targetYawVel = 0;
+  } else if (orbiting) {
+    // オービット視点アニメ中: dolly を補間。通常移動は抑制。
+    window.__tickAnnotateOrbit();
     velocity.set(0, 0, 0);
     yawVel = 0;
     targetVel.set(0, 0, 0);
@@ -3208,6 +3341,12 @@ renderer.setAnimationLoop(() => {
       handleTouchInput(dt);
     } else {
       handlePCInput(dt);
+    }
+
+    // アノテーション配置モードで、オービット視点に「居る」状態のまま
+    // 移動入力が入ったら、オービットを解除して通常操作に戻す。
+    if (window.__cancelAnnotateOrbit && (targetVel.lengthSq() > 0 || targetYawVel !== 0)) {
+      window.__cancelAnnotateOrbit();
     }
 
     const t = 1 - Math.exp(-SMOOTH * dt);

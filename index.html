@@ -169,7 +169,6 @@
     body.touch #swipe-area.touch-ui    { display: block !important; }
     body.touch #joystick-base.touch-ui { display: block !important; }
     body.touch #vert-buttons.touch-ui  { display: flex  !important; }
-    body.touch #boost-toggle.touch-ui  { display: block !important; }
     body.touch #vr-help { display: none; }
 
     /* UIパネル類のピンチ拡大を阻止。スライダー類は縦スクロール想定なので pan-y、
@@ -215,11 +214,17 @@
       pointer-events: none;
     }
 
-    /* スマホ用 高速移動トグル(ジョイスティックの上)。ON中は移動×10。 */
-    #boost-toggle {
+    /* 高速移動ボタン群(×10/×30)。PC・スマホ共通。左下ジョイスティックの上に配置。
+       排他選択: 押した方がアクティブ、もう一度押すと等倍に戻る。 */
+    #boost-group {
       position: fixed;
       left: 24px; bottom: 156px;
-      width: 120px;
+      display: flex;
+      gap: 6px;
+      z-index: 90;
+    }
+    .boost-btn {
+      width: 57px;
       box-sizing: border-box;
       padding: 8px 0;
       text-align: center;
@@ -231,17 +236,18 @@
       font-size: 13px;
       font-weight: bold;
       letter-spacing: 1px;
-      z-index: 90;
+      cursor: pointer;
       touch-action: manipulation;
       backdrop-filter: blur(6px);
       user-select: none;
       -webkit-user-select: none;
     }
-    #boost-toggle[aria-pressed="true"] {
+    .boost-btn[aria-pressed="true"] {
       background: rgba(0,200,255,0.3);
       border-color: #00c8ff;
       color: #ffffff;
     }
+    /* PCでもスマホでも表示するので、touch依存の表示切替は不要 */
 
     /* 右下：上昇/下降ボタン */
     #vert-buttons {
@@ -887,7 +893,8 @@
     <b style="color:#ff6b35;">W A S D</b> 前後左右の移動<br>
     <b style="color:#ff6b35;">← →</b> 視点を回す<br>
     <b style="color:#ff6b35;">↑ ↓</b> 上昇・下降<br>
-    <b style="color:#ff6b35;">Shift + 上記</b> 微調整(低速)
+    <b style="color:#ff6b35;">Shift + 上記</b> 微調整(低速)<br>
+    <b style="color:#ff6b35;">×10 / ×30</b> ボタンで高速移動
   </div>
 </div>
 
@@ -1046,7 +1053,8 @@
   </div>
 
   <!-- ─────────── 真俯瞰図(トップダウン) ─────────── -->
-  <div class="ctrl-group">
+  <!-- ?topdown=1 のときだけ JS で表示する作業用機能。既定は非表示。 -->
+  <div class="ctrl-group" id="topdown-group" hidden>
     <div class="ctrl-label">
       <span>真俯瞰図</span>
       <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-topdown" aria-label="真俯瞰図の説明">ⓘ</button>
@@ -1194,7 +1202,11 @@
 </div>
 
 <!-- スマホ用 高速移動トグル(ON中は移動量×10)。ジョイスティック上部に配置。 -->
-<div id="boost-toggle" class="touch-ui" aria-pressed="false">⏩ 高速</div>
+<!-- 高速移動ボタン群(×10/×30)。PC・スマホ共通。排他選択。 -->
+<div id="boost-group">
+  <div class="boost-btn" id="boost-x10" aria-pressed="false">×10</div>
+  <div class="boost-btn" id="boost-x30" aria-pressed="false">×30</div>
+</div>
 
 <!-- 真俯瞰モード中に表示する操作説明パネル。"今モードに入っている"ことを示す。 -->
 <div id="topdown-mode-panel" hidden>
@@ -1202,7 +1214,7 @@
   <div class="tmp-body">
     <b>W A S D</b> 地図を移動<br>
     <b>← →</b> 向きを回転<br>
-    <b>Ctrl + 移動</b> 高速(×10)<br>
+    <b>×10 / ×30</b> ボタンで高速移動<br>
     <b>Shift + 移動</b> 微調整<br>
     右上のコンパスで 北↑ / 前方↑ 切替
   </div>
@@ -1396,11 +1408,11 @@ const keys = {
   forward: false, back: false, left: false, right: false,
   yawLeft: false, yawRight: false, up: false, down: false,
   fine: false, // Shift押下中=微調整モード(移動/回転/上下を低速化)
-  boost: false // Ctrl押下中=高速モード(移動を10倍)
 };
+// 高速移動の倍率。画面の「×10」「×30」ボタンで切り替える(PC/スマホ共通)。1=等倍。
+let boostLevel = 1;
 window.addEventListener('keydown', (e) => {
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.fine = true;
-  if (e.code === 'ControlLeft' || e.code === 'ControlRight') keys.boost = true;
   switch (e.code) {
     case 'KeyW':       keys.forward  = true; break;
     case 'KeyS':       keys.back     = true; break;
@@ -1414,7 +1426,6 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keyup', (e) => {
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.fine = false;
-  if (e.code === 'ControlLeft' || e.code === 'ControlRight') keys.boost = false;
   switch (e.code) {
     case 'KeyW':       keys.forward  = false; break;
     case 'KeyS':       keys.back     = false; break;
@@ -1427,7 +1438,6 @@ window.addEventListener('keyup', (e) => {
   }
 });
 // フォーカスが外れた時(Alt+Tab等)はkeyupを取り逃すことがあるので全キーを解除。
-// Shiftの押しっぱなし誤検知(微調整モードが固定される)も防ぐ。
 window.addEventListener('blur', () => {
   for (const k in keys) keys[k] = false;
 });
@@ -1437,10 +1447,10 @@ function handlePCInput(dt) {
   const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
   const right   = new THREE.Vector3( Math.cos(yaw), 0, -Math.sin(yaw));
 
-  // Shift押下中は微調整(1/5)、Ctrl押下中は高速(×10)。移動・上下に適用。
-  // 回転(turn)は高速化の対象外(速すぎ・酔い防止)。両方押した場合は乗算。
+  // Shift押下中は微調整(1/5)、画面ボタンの高速倍率(boostLevel)で移動・上下を加速。
+  // 回転(turn)は高速化の対象外(速すぎ・酔い防止)。
   const f = keys.fine ? 0.2 : 1.0;
-  const b = keys.boost ? 10.0 : 1.0;
+  const b = boostLevel;
   const move = MOVE_SPEED * f * b;
   const turn = TURN_SPEED * f;       // 回転は boost を掛けない
   const vert = VERT_SPEED * f * b;
@@ -1583,7 +1593,6 @@ const touchStick = { x: 0, y: 0 };
 const swipeDelta = { x: 0 };
 // 上下ボタン状態
 const touchVert = { up: false, down: false };
-let touchBoost = false; // スマホ高速トグル(ON中は移動×10)
 
 // --- 左下：仮想スティック ---
 {
@@ -1683,16 +1692,22 @@ let touchBoost = false; // スマホ高速トグル(ON中は移動×10)
   };
   setupBtn(document.getElementById('btn-up'),   (on) => { touchVert.up = on; });
   setupBtn(document.getElementById('btn-down'), (on) => { touchVert.down = on; });
-
-  // 高速移動トグル: タップで ON/OFF を切り替え(ON中は移動×10)
-  const boostBtn = document.getElementById('boost-toggle');
-  if (boostBtn) {
-    boostBtn.addEventListener('click', () => {
-      touchBoost = !touchBoost;
-      boostBtn.setAttribute('aria-pressed', touchBoost ? 'true' : 'false');
-    });
-  }
 }
+
+// ── 高速移動ボタン(×10/×30) PC・スマホ共通 ──
+// 排他選択: 押した方をアクティブに、もう一度押すと等倍(1)に戻る。boostLevel を更新。
+(function setupBoostButtons() {
+  const b10 = document.getElementById('boost-x10');
+  const b30 = document.getElementById('boost-x30');
+  if (!b10 || !b30) return;
+  function refresh() {
+    b10.setAttribute('aria-pressed', boostLevel === 10 ? 'true' : 'false');
+    b30.setAttribute('aria-pressed', boostLevel === 30 ? 'true' : 'false');
+  }
+  b10.addEventListener('click', () => { boostLevel = (boostLevel === 10) ? 1 : 10; refresh(); });
+  b30.addEventListener('click', () => { boostLevel = (boostLevel === 30) ? 1 : 30; refresh(); });
+  refresh();
+})();
 
 // タッチ入力をtargetVel/targetYawVelへ反映
 const SWIPE_YAW_SENS = 0.005;   // 1pxあたりのヨー(rad)
@@ -1702,8 +1717,8 @@ function handleTouchInput(dt) {
   const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
   const right   = new THREE.Vector3( Math.cos(yaw), 0, -Math.sin(yaw));
 
-  // 高速トグルON中は移動・上下を×10
-  const b = touchBoost ? 10.0 : 1.0;
+  // 高速ボタンの倍率(boostLevel: 1/10/30)を移動・上下に適用
+  const b = boostLevel;
 
   // touchStick.y: 上=-1, 下=+1 → 前進=-y方向
   targetVel.addScaledVector(forward, -touchStick.y * MOVE_SPEED * b);
@@ -3090,6 +3105,7 @@ function updateDatasetButtons() {
 const _params = new URLSearchParams(location.search);
 const ANNOTATE_MODE = _params.has('annotate');
 const DEBUG_MODE = _params.has('debug') || ANNOTATE_MODE;
+const TOPDOWN_MODE = _params.has('topdown'); // ?topdown=1 で真俯瞰図UIを有効化(作業用)
 if (DEBUG_MODE) {
   const dbg = document.createElement('div');
   dbg.id = 'dbg-panel';
@@ -3620,6 +3636,15 @@ document.addEventListener('click', (e) => {
 
 // ── 真俯瞰図(トップダウン)トグル & 縮尺 & コンパス ──
 (function setupTopdown() {
+  // ?topdown=1 のときだけ真俯瞰UIを表示する(作業用機能)。
+  // 付いていなければ UI グループは hidden のまま、トグルも無効。
+  const group = document.getElementById('topdown-group');
+  if (!TOPDOWN_MODE) {
+    if (group) group.setAttribute('hidden', '');
+    return;
+  }
+  if (group) group.removeAttribute('hidden');
+
   const btn = document.getElementById('topdown-toggle');
   const slider = document.getElementById('topdown-range-slider');
   const num = document.getElementById('topdown-range-num');
@@ -3873,9 +3898,9 @@ renderer.setAnimationLoop(() => {
     targetVel.set(0, 0, 0);
     targetYawVel = 0;
 
-    // 移動速度は表示範囲に比例(広域なら速く、拡大時はゆっくり)。Shift微調整/Ctrl高速。
+    // 移動速度は表示範囲に比例(広域なら速く、拡大時はゆっくり)。Shift微調整/高速ボタン。
     const fine = keys.fine ? 0.2 : 1.0;
-    const boost = keys.boost ? 10.0 : 1.0;
+    const boost = boostLevel;
     const panSpeed = topdownState.rangeM * 0.5 * fine * boost; // m/秒
     let dx = 0, dy = 0;
     if (keys.forward) dy += panSpeed * dt; // W=画面上へ

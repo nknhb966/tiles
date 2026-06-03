@@ -1063,11 +1063,13 @@
 <div id="topdown-compass" hidden title="クリックで 北が上 / 前方が上 を切替">
   <svg viewBox="0 0 80 80" width="80" height="80">
     <circle cx="40" cy="40" r="36" fill="rgba(6,12,18,0.8)" stroke="rgba(0,200,255,0.6)" stroke-width="2"/>
-    <!-- 回転する針グループ(JSで transform を設定) -->
+    <!-- 回転する針グループ(JSで rotate を中心40,40に設定)。
+         上半分=赤(北)、下半分=灰。頂点は中心(40,40)対称に配置。 -->
     <g id="compass-needle">
-      <polygon points="40,10 34,42 46,42" fill="#ff5555"/>
-      <polygon points="40,70 34,42 46,42" fill="#cccccc"/>
-      <text x="40" y="22" text-anchor="middle" fill="#ffffff" font-size="13" font-family="sans-serif" font-weight="bold">N</text>
+      <polygon points="40,12 33,40 47,40" fill="#ff5555"/>
+      <polygon points="40,68 33,40 47,40" fill="#cccccc"/>
+      <circle cx="40" cy="40" r="3" fill="#ffffff"/>
+      <text x="40" y="26" text-anchor="middle" fill="#ffffff" font-size="12" font-family="sans-serif" font-weight="bold">N</text>
     </g>
   </svg>
 </div>
@@ -1297,11 +1299,11 @@ const topdownState = {
   center: new THREE.Vector3(),   // 俯瞰の中心(WASDで移動可)
   camHeight: 0,                  // カメラを置く高さ(中心の上方)
   heading: 0,                    // 画面の「上」が向くワールド方位(rad)。一人称のyawから引き継ぐ
-  northUp: false,                // true=北(-Z)が常に上 / false=headingが上(向いていた方向)
+  northUp: false,                // true=北が常に上 / false=headingが上(向いていた方向)
   savedPointUI: null,            // 真俯瞰前の点サイズUI値(復帰用)
+  northYaw: 0,                   // データから導出した真北の方位角(rad)。-Z基準。
+  hasGeoNorth: false,            // 地理参照から北を取得できたか
 };
-// ワールドで北とする方向は -Z(3Dの一般的慣習)。北の方位角=0。
-const NORTH_DIR = new THREE.Vector3(0, 0, -1);
 
 // VR時のカメラリグ（dolly）：カメラをこの中に入れて移動・回転させる
 const dolly = new THREE.Group();
@@ -1885,11 +1887,11 @@ const _topUp = new THREE.Vector3();
 function placeTopdownCamera() {
   const c = topdownState.center;
   orthoCamera.position.set(c.x, topdownState.camHeight, c.z);
-  // 画面上に向けたいワールド方向(水平)を up に設定。
-  // 真下を見るカメラでは、up が「画面の上」に対応する。
-  const upYaw = topdownState.northUp ? 0 : topdownState.heading;
-  // yaw=0 で北(-Z)。yawを増やすと時計回り。up = (sin(yaw), 0, -cos(yaw))
-  _topUp.set(Math.sin(upYaw), 0, -Math.cos(upYaw));
+  // 画面上に向けたいワールド方向(水平)を up に設定。真下を見るカメラでは up が画面の上。
+  // northUp: データ由来の真北(northYaw)を上に。そうでなければ heading(向いていた方向)を上に。
+  // 一人称の forward = (-sin yaw, 0, -cos yaw) と一致させる。
+  const upYaw = topdownState.northUp ? topdownState.northYaw : topdownState.heading;
+  _topUp.set(-Math.sin(upYaw), 0, -Math.cos(upYaw));
   orthoCamera.up.copy(_topUp);
   orthoCamera.lookAt(c.x, c.y, c.z);
   orthoCamera.updateMatrixWorld(true);
@@ -1903,6 +1905,9 @@ function enterTopdown() {
   // 画面の「上」= 一人称で向いていた方向(dolly.rotation.y)を引き継ぐ
   topdownState.heading = dolly.rotation.y;
   topdownState.active = true;
+
+  // 正射投影フラグをシェーダに伝える(点サイズをdepth非依存の固定サイズにする)
+  cubeUniforms.uOrtho.value = 1.0;
 
   // 点サイズを自動拡大: 真俯瞰だと点が小さく見えるため。
   // 現在のUI値を退避し、大きめ(40)にセット。真俯瞰中はユーザーが再調整可能。
@@ -1920,6 +1925,8 @@ function enterTopdown() {
 // 真俯瞰モードを抜ける(通常の一人称視点へ)
 function exitTopdown() {
   topdownState.active = false;
+  // 透視投影の点サイズ計算に戻す
+  cubeUniforms.uOrtho.value = 0.0;
   // 点サイズを一人称用の値に復元
   if (topdownState.savedPointUI != null) {
     sizeSlider.value = topdownState.savedPointUI;
@@ -1942,11 +1949,11 @@ const _tdForward = new THREE.Vector3();
 const _tdRight = new THREE.Vector3();
 function moveTopdownCenter(dx, dy) {
   // dy: 画面上方向(+)、dx: 画面右方向(+)
-  const upYaw = topdownState.northUp ? 0 : topdownState.heading;
-  // 画面上方向(ワールド水平): (sin upYaw, 0, -cos upYaw)
-  _tdForward.set(Math.sin(upYaw), 0, -Math.cos(upYaw));
-  // 画面右方向: 上方向を-90度回した向き
-  _tdRight.set(Math.cos(upYaw), 0, Math.sin(upYaw));
+  const upYaw = topdownState.northUp ? topdownState.northYaw : topdownState.heading;
+  // 画面上方向(=up と同じ): (-sin, 0, -cos)
+  _tdForward.set(-Math.sin(upYaw), 0, -Math.cos(upYaw));
+  // 画面右方向: 上方向を90度右に回した向き (-cos, 0, sin)
+  _tdRight.set(-Math.cos(upYaw), 0, Math.sin(upYaw));
   topdownState.center.addScaledVector(_tdForward, dy);
   topdownState.center.addScaledVector(_tdRight, dx);
   placeTopdownCamera();
@@ -1961,17 +1968,15 @@ function rotateTopdownHeading(deltaRad) {
   updateCompass();
 }
 
-// コンパスの針を更新。針は「北」を指す。
-// northUp時: 画面上=北なので針は真上(回転0)。
-// heading時: 画面上=heading方向。北は画面上から見て -heading の位置。
+// コンパスの針を更新。針は実際の北(northYaw)を指す。
+// 画面上方向の方位 upYaw に対し、北は画面上から (northYaw - upYaw) 回転した位置に見える。
 function updateCompass() {
   const needle = document.getElementById('compass-needle');
   if (!needle) return;
-  // 画面上方向の方位
-  const upYaw = topdownState.northUp ? 0 : topdownState.heading;
-  // 北(方位0)が画面上(upYaw)からどれだけ回転して見えるか。
-  // SVGのrotateは時計回りが正。北の画面上での角度 = -upYaw(rad)→度。
-  const deg = -upYaw * 180 / Math.PI;
+  const upYaw = topdownState.northUp ? topdownState.northYaw : topdownState.heading;
+  // 北が画面上(upYaw)からどれだけ回転して見えるか。SVG rotateは時計回りが正。
+  const rel = topdownState.northYaw - upYaw;
+  const deg = rel * 180 / Math.PI;
   needle.setAttribute('transform', `rotate(${deg} 40 40)`);
 }
 
@@ -2247,6 +2252,8 @@ function applyPointDensity() {
 const CUBE_VERT = /* glsl */`
   uniform float uSize;
   uniform float uDensity; // 0.0〜1.0 (POINT DENSITY: 描画する点の割合)
+  uniform float uOrtho;   // 1.0=正射投影(真俯瞰), 0.0=透視投影
+  uniform float uOrthoPx; // 正射時の点サイズ係数(uSize×この値=ピクセル)
   varying vec3 vColor;
 
   // 位置座標から決定論的な疑似乱数を生成(同座標→同値, フレーム間ちらつきなし)。
@@ -2268,9 +2275,15 @@ const CUBE_VERT = /* glsl */`
     }
 
     vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
-    float depth = -mvPos.z;
-    float sz = uSize * (300.0 / depth);
-    gl_PointSize = clamp(sz, 1.0, 64.0);
+    if (uOrtho > 0.5) {
+      // 正射投影(真俯瞰): 距離で大きさが変わらないので depth 補正しない。
+      // uSize に比例した固定ピクセルサイズにし、スライダーが効くようにする。
+      gl_PointSize = clamp(uSize * uOrthoPx, 1.0, 64.0);
+    } else {
+      // 透視投影: 距離(depth)に反比例してスクリーンサイズを決める。
+      float depth = -mvPos.z;
+      gl_PointSize = clamp(uSize * (300.0 / depth), 1.0, 64.0);
+    }
     gl_Position = projectionMatrix * mvPos;
   }
 `;
@@ -2316,6 +2329,8 @@ const CUBE_FRAG = /* glsl */`
 const cubeUniforms = {
   uSize:    { value: 0.005 },
   uDensity: { value: 1.0 },
+  uOrtho:   { value: 0.0 },   // 真俯瞰(正射)中は1.0に
+  uOrthoPx: { value: 400.0 }, // 正射時の点サイズ係数(uSize×400=ピクセル。UI40→0.04×400=16px)
 };
 
 function makeCubeMaterial() {
@@ -2833,6 +2848,22 @@ function loadTileset(id) {
       const rotQuat = new THREE.Quaternion().setFromUnitVectors(upVec, targetUp);
 
       tiles.group.quaternion.copy(rotQuat);
+
+      // ── 真北方向の導出 ──
+      // ECEFでは +Z が地軸(北極方向)。その地点の接平面に +Z を投影したものが「真北」。
+      // 同じ rotQuat を掛けてワールド座標系での北方向(水平)を得る。
+      // これをコンパスの基準にすると、データ実物の北と一致する。
+      const zAxisEcef = new THREE.Vector3(0, 0, 1);
+      const northEcef = zAxisEcef.clone().sub(upVec.clone().multiplyScalar(zAxisEcef.dot(upVec)));
+      if (northEcef.lengthSq() > 1e-9) {
+        northEcef.normalize().applyQuaternion(rotQuat);
+        // 水平面(XZ)に投影した北方位角を保存(Y成分は無視)
+        // 方位角: 北=(?, ?) を atan2 で表す。NORTH_DIR=-Z基準の方位に変換。
+        topdownState.northYaw = Math.atan2(northEcef.x, -northEcef.z);
+        topdownState.hasGeoNorth = true;
+      } else {
+        topdownState.hasGeoNorth = false;
+      }
 
       const rotatedCenter = center.clone().applyQuaternion(rotQuat);
       // タイル群の境界球中心をワールド原点に揃える(タイルの配置自体は固定)

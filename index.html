@@ -1973,9 +1973,10 @@ function updateCompass() {
   const needle = document.getElementById('compass-needle');
   if (!needle) return;
   const upYaw = topdownState.northUp ? topdownState.northYaw : topdownState.heading;
-  // 北が画面上(upYaw)からどれだけ回転して見えるか。SVG rotateは時計回りが正。
+  // 北が画面上(upYaw)からどれだけ回転して見えるか。
+  // 画面の方位回転とSVG時計回りが逆向きなので符号を反転する。
   const rel = topdownState.northYaw - upYaw;
-  const deg = rel * 180 / Math.PI;
+  const deg = -rel * 180 / Math.PI;
   needle.setAttribute('transform', `rotate(${deg} 40 40)`);
 }
 

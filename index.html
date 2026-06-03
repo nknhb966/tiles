@@ -214,14 +214,18 @@
       pointer-events: none;
     }
 
-    /* 高速移動ボタン群(×10/×30)。PC・スマホ共通。左下ジョイスティックの上に配置。
-       排他選択: 押した方がアクティブ、もう一度押すと等倍に戻る。 */
+    /* 高速移動ボタン群(×10/×30)。PC・スマホ共通。
+       スマホ: 左下ジョイスティックの上。PC: 右下(左下のヘルプと重ならない位置)。 */
     #boost-group {
       position: fixed;
-      left: 24px; bottom: 156px;
+      right: 24px; bottom: 24px;  /* PC既定: 右下 */
       display: flex;
       gap: 6px;
-      z-index: 90;
+      z-index: 95;
+    }
+    /* スマホ時はジョイスティックの上に配置 */
+    body.touch #boost-group {
+      left: 24px; right: auto; bottom: 156px;
     }
     .boost-btn {
       width: 57px;

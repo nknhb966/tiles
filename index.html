@@ -291,7 +291,7 @@
     }
 
     /* 説明パネル表示トグルボタン。ON(表示中)はシアン枠、OFF(非表示)はグレー枠。 */
-    #annotation-toggle {
+    #annotation-toggle, #topdown-toggle {
       width: 260px;
       padding: 8px;
       background: transparent;
@@ -305,12 +305,12 @@
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    #annotation-toggle[aria-pressed="true"] {
+    #annotation-toggle[aria-pressed="true"], #topdown-toggle[aria-pressed="true"] {
       background: rgba(0,200,255,0.12);
       border-color: #00c8ff;
       color: #00c8ff;
     }
-    #annotation-toggle[aria-pressed="false"] {
+    #annotation-toggle[aria-pressed="false"], #topdown-toggle[aria-pressed="false"] {
       background: transparent;
       border-color: rgba(160,180,195,0.5);
       color: rgba(160,180,195,0.8);
@@ -432,7 +432,8 @@
       width: 140px;
       max-width: calc(100vw - 64px);
     }
-    body.touch #controls-body #annotation-toggle {
+    body.touch #controls-body #annotation-toggle,
+    body.touch #controls-body #topdown-toggle {
       width: 140px;
       max-width: calc(100vw - 64px);
     }
@@ -969,6 +970,26 @@
     </div>
   </div>
 
+  <!-- ─────────── 真俯瞰図(トップダウン) ─────────── -->
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>真俯瞰図</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-topdown" aria-label="真俯瞰図の説明">ⓘ</button>
+    </div>
+    <button type="button" id="topdown-toggle" aria-pressed="false">真俯瞰にする</button>
+    <div style="margin-top:8px;">
+      表示範囲 <span id="topdown-range-val" style="font-family:monospace;">200</span> m
+    </div>
+    <input id="topdown-range-slider" type="range" min="10" max="2000" step="10" value="200"
+      style="width:260px; accent-color:#00c8ff;">
+    <div id="info-topdown" class="ctrl-info-body" hidden>
+      今いる場所を中心に、真上から見下ろした地図的な表示に切り替えます(正射投影)。
+      「表示範囲」は画面の短辺に収めるおおよそのメートル数で、縮尺の指定にあたります。
+      値を小さくするほど拡大、大きくするほど広域を表示します。
+      VR表示中は使用できません。
+    </div>
+  </div>
+
   <!-- ─────────── 5. 先読み (PREFETCH) ─────────── -->
   <div class="ctrl-group">
     <div class="ctrl-label">
@@ -1227,6 +1248,18 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0c10);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1e7);
+
+// ── 真俯瞰図(トップダウン)用の正射投影カメラ ──
+// 真上から真下を見下ろす。縮尺=「表示範囲の一辺(m)」でフラスタムを決める。
+// dolly とは独立して scene 直下に配置し、真俯瞰モード中だけこちらでレンダリングする。
+const orthoCamera = new THREE.OrthographicCamera(-50, 50, 50, -50, 0.1, 1e7);
+scene.add(orthoCamera);
+const topdownState = {
+  active: false,                 // 真俯瞰モード中か
+  rangeM: 200,                   // 表示範囲(一辺のメートル数)。縮尺スライダーで変更
+  center: new THREE.Vector3(),   // 俯瞰の中心(モード切替時の dolly 水平位置で固定)
+  camHeight: 0,                  // カメラを置く高さ(中心の上方)
+};
 
 // VR時のカメラリグ（dolly）：カメラをこの中に入れて移動・回転させる
 const dolly = new THREE.Group();
@@ -1773,6 +1806,57 @@ function updateAnnotations(dt) {
   }
 }
 
+// ── 真俯瞰図(トップダウン)モード制御 ───────────────────────
+// 正射投影カメラを中心の真上に置き、真下を見下ろす。
+// 縮尺は「表示範囲の一辺(m)」= rangeM で表し、フラスタムに反映する。
+
+// フラスタム(表示範囲)を rangeM と画面アスペクトから更新
+function updateTopdownFrustum() {
+  const aspect = window.innerWidth / window.innerHeight;
+  const half = topdownState.rangeM / 2;
+  // 画面が横長なら横を広く、縦長なら縦を広く取り、rangeMは「短辺の範囲」とする
+  let hw, hh;
+  if (aspect >= 1) { hh = half; hw = half * aspect; }
+  else             { hw = half; hh = half / aspect; }
+  orthoCamera.left = -hw; orthoCamera.right = hw;
+  orthoCamera.top  =  hh; orthoCamera.bottom = -hh;
+  orthoCamera.updateProjectionMatrix();
+}
+
+// 真俯瞰カメラを中心の真上に配置し、真下を向ける
+function placeTopdownCamera() {
+  const c = topdownState.center;
+  orthoCamera.position.set(c.x, topdownState.camHeight, c.z);
+  // 真下(-Y)を向く。up を -Z にすると「画面上=北(-Z方向)」になり地図的に自然。
+  orthoCamera.up.set(0, 0, -1);
+  orthoCamera.lookAt(c.x, c.y, c.z);
+  orthoCamera.updateMatrixWorld(true);
+}
+
+// 真俯瞰モードに入る
+function enterTopdown() {
+  if (renderer.xr.isPresenting) return; // VR中は不可
+  // 中心 = 現在の dolly の水平位置。高さはタイル全体を見下ろせる十分上方に。
+  topdownState.center.set(dolly.position.x, dolly.position.y, dolly.position.z);
+  // カメラ高さ: 中心から上に大きめ(タイルの上空)。正射なので高さは見た目に影響せず、
+  // near/far に収まればよい。中心+500m上空とする。
+  topdownState.camHeight = dolly.position.y + 500;
+  topdownState.active = true;
+  updateTopdownFrustum();
+  placeTopdownCamera();
+}
+
+// 真俯瞰モードを抜ける(通常の一人称視点へ)
+function exitTopdown() {
+  topdownState.active = false;
+}
+
+// 縮尺(表示範囲)を変更
+function setTopdownRange(m) {
+  topdownState.rangeM = Math.max(10, m);
+  if (topdownState.active) updateTopdownFrustum();
+}
+
 
 // VRボタン
 const vrBtn = VRButton.createButton(renderer);
@@ -2129,6 +2213,7 @@ let currentDataset = null;    // 現在表示中のデータセットID
 let loadingDataset = null;    // ロード進行中のデータセットID
 let cameraInitialized = false;
 let _tilesCameraRegistered = false; // tiles.setCamera を1度だけ呼ぶためのフラグ
+let _orthoCameraRegistered = false; // 真俯瞰用 orthoCamera を tiles に登録済みか
 
 // errorTarget: 小さいほど高詳細。プロファイル/スライダーで上書きされる前のフォールバック値
 // (画質=12 = profile 'high'相当を qualityToErrorTarget(12) で変換した値)。
@@ -2515,6 +2600,16 @@ function updateLoadProgress() {
 
 function loadTileset(id) {
   if (id === currentDataset || id === loadingDataset) return;
+
+  // 真俯瞰モード中なら解除(中心が別データセットにずれるため一人称に戻す)
+  if (topdownState.active) {
+    exitTopdown();
+    const tdBtn = document.getElementById('topdown-toggle');
+    if (tdBtn) {
+      tdBtn.setAttribute('aria-pressed', 'false');
+      tdBtn.textContent = '真俯瞰にする';
+    }
+  }
 
   // 進行中のプリフェッチがあればキャンセル(別データセット切替時)
   if (prefetchState.running) {
@@ -3270,6 +3365,28 @@ document.addEventListener('click', (e) => {
   });
 })();
 
+// ── 真俯瞰図(トップダウン)トグル & 縮尺スライダー ──
+(function setupTopdown() {
+  const btn = document.getElementById('topdown-toggle');
+  const slider = document.getElementById('topdown-range-slider');
+  const rangeVal = document.getElementById('topdown-range-val');
+  if (!btn || !slider) return;
+
+  btn.addEventListener('click', () => {
+    if (renderer.xr.isPresenting) return; // VR中は不可
+    const next = btn.getAttribute('aria-pressed') !== 'true';
+    if (next) enterTopdown(); else exitTopdown();
+    btn.setAttribute('aria-pressed', next ? 'true' : 'false');
+    btn.textContent = next ? '一人称に戻す' : '真俯瞰にする';
+  });
+
+  slider.addEventListener('input', () => {
+    const m = parseInt(slider.value, 10);
+    if (rangeVal) rangeVal.textContent = String(m);
+    setTopdownRange(m);
+  });
+})();
+
 // ── ライセンス詳細パネル開閉 ──
 // クレジット行の ⓘ ボタンで開く、✕ボタンまたはパネル外クリックで閉じる、Escでも閉じる。
 (function setupCreditInfo() {
@@ -3439,6 +3556,7 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  if (topdownState.active) updateTopdownFrustum();
 });
 
 // tilesに登録した「VR用左右目カメラ」の追跡
@@ -3475,6 +3593,12 @@ renderer.setAnimationLoop(() => {
     yawVel = 0;
     targetVel.set(0, 0, 0);
     targetYawVel = 0;
+  } else if (topdownState.active) {
+    // 真俯瞰モード中: 中心を固定するため、一人称の移動/回転入力は無視。
+    velocity.set(0, 0, 0);
+    yawVel = 0;
+    targetVel.set(0, 0, 0);
+    targetYawVel = 0;
   } else {
     targetVel.set(0, 0, 0);
     targetYawVel = 0;
@@ -3505,7 +3629,8 @@ renderer.setAnimationLoop(() => {
   // dollyを動かしたあと、シーン全体のワールド行列を更新
   scene.updateMatrixWorld(true);
 
-  if (tiles) {
+  // 真俯瞰モード中は、一人称カメラ用の tiles 更新を行わない(後段でortho用に処理)
+  if (tiles && !topdownState.active) {
     // カメラ登録は常に PC用 camera ひとつだけ。
     // VR時はサブカメラを直接登録せず、この camera にXRカメラのワールド姿勢を手動コピーする。
     if (_vrEyeCamerasRegistered) {
@@ -3583,8 +3708,29 @@ renderer.setAnimationLoop(() => {
   // アノテーション(説明パネル)のビルボード向き、距離表示制御、球体の脈動
   updateAnnotations(dt);
 
-  // 描画
-  renderer.render(scene, camera);
+  // 描画: 真俯瞰モード中は正射カメラ、それ以外は通常の一人称カメラ
+  if (topdownState.active) {
+    // 真俯瞰のLOD評価用に ortho カメラも tiles に登録(初回のみ)
+    if (tiles && !_orthoCameraRegistered) {
+      tiles.setCamera(orthoCamera);
+      tiles.setResolutionFromRenderer(orthoCamera, renderer);
+      _orthoCameraRegistered = true;
+    }
+    if (tiles) {
+      tiles.setResolutionFromRenderer(orthoCamera, renderer);
+      orthoCamera.updateMatrixWorld(true);
+      tiles.update();
+    }
+    renderer.render(scene, orthoCamera);
+  } else {
+    // 真俯瞰から戻った直後、ortho 登録を解除して通常カメラ評価に戻す
+    if (_orthoCameraRegistered && tiles) {
+      try { tiles.deleteCamera(orthoCamera); } catch (e) {}
+      _orthoCameraRegistered = false;
+      _tilesCameraRegistered = false; // 通常カメラを再登録させる
+    }
+    renderer.render(scene, camera);
+  }
 });
 </script>
 </body>

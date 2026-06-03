@@ -169,6 +169,7 @@
     body.touch #swipe-area.touch-ui    { display: block !important; }
     body.touch #joystick-base.touch-ui { display: block !important; }
     body.touch #vert-buttons.touch-ui  { display: flex  !important; }
+    body.touch #boost-toggle.touch-ui  { display: block !important; }
     body.touch #vr-help { display: none; }
 
     /* UIパネル類のピンチ拡大を阻止。スライダー類は縦スクロール想定なので pan-y、
@@ -212,6 +213,34 @@
       background: rgba(0,200,255,0.5);
       border: 2px solid #00c8ff;
       pointer-events: none;
+    }
+
+    /* スマホ用 高速移動トグル(ジョイスティックの上)。ON中は移動×10。 */
+    #boost-toggle {
+      position: fixed;
+      left: 24px; bottom: 156px;
+      width: 120px;
+      box-sizing: border-box;
+      padding: 8px 0;
+      text-align: center;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(0,200,255,0.5);
+      color: #00c8ff;
+      font-family: sans-serif;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      z-index: 90;
+      touch-action: manipulation;
+      backdrop-filter: blur(6px);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #boost-toggle[aria-pressed="true"] {
+      background: rgba(0,200,255,0.3);
+      border-color: #00c8ff;
+      color: #ffffff;
     }
 
     /* 右下：上昇/下降ボタン */
@@ -584,6 +613,35 @@
     #compass-needle {
       transition: transform 0.15s ease-out;
     }
+
+    /* 真俯瞰モード中の操作説明パネル(画面左下)。モードに入っていることを示す。 */
+    #topdown-mode-panel {
+      position: fixed;
+      left: 16px; bottom: 16px;
+      z-index: 115;
+      max-width: 280px;
+      padding: 12px 16px;
+      background: rgba(0,40,60,0.85);
+      border: 1px solid #00c8ff;
+      border-radius: 6px;
+      color: #cdeef8;
+      font-family: sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 16px rgba(0,200,255,0.25);
+    }
+    #topdown-mode-panel[hidden] { display: none; }
+    #topdown-mode-panel .tmp-title {
+      font-weight: bold;
+      font-size: 14px;
+      color: #00d8ff;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    #topdown-mode-panel .tmp-body b { color: #ff9a3c; }
+    /* スマホでは操作系が異なるので簡略表示 */
+    body.touch #topdown-mode-panel .tmp-body { display: none; }
     .dataset-btn.active {
       background: rgba(0,200,255,0.3);
       border-color: #00c8ff;
@@ -820,7 +878,7 @@
     <b style="color:#ff6b35;">B Button</b> 上昇<br>
     <b style="color:#ff6b35;">X Button</b> 点を小さく<br>
     <b style="color:#ff6b35;">Y Button</b> 点を大きく<br>
-    <b style="color:#ff6b35;">R Grip</b> 押すほど移動/回転が高速(最大5倍)<br>
+    <b style="color:#ff6b35;">R Grip</b> 押すほど移動/回転が高速(最大10倍)<br>
     <b style="color:#ff6b35;">L Grip + X</b> 点を疎に(密度を下げる)<br>
     <b style="color:#ff6b35;">L Grip + Y</b> 点を密に(密度を上げる)
   </div>
@@ -996,11 +1054,11 @@
     <button type="button" id="topdown-toggle" aria-pressed="false">真俯瞰にする</button>
     <div style="margin-top:8px;">
       表示範囲
-      <input id="topdown-range-num" type="number" min="1" max="1000" step="1" value="10"
+      <input id="topdown-range-num" type="number" min="1" max="1000" step="1" value="25"
         style="width:64px; font-family:monospace; background:rgba(0,0,0,0.4); color:#00c8ff;
                border:1px solid rgba(0,200,255,0.4); border-radius:3px; padding:2px 4px;"> m
     </div>
-    <input id="topdown-range-slider" type="range" min="1" max="1000" step="1" value="10"
+    <input id="topdown-range-slider" type="range" min="1" max="1000" step="1" value="25"
       style="width:260px; accent-color:#00c8ff;">
     <div id="info-topdown" class="ctrl-info-body" hidden>
       今いる場所を中心に、真上から見下ろした地図的な表示に切り替えます(正射投影)。
@@ -1133,6 +1191,21 @@
 <div id="vert-buttons" class="touch-ui">
   <div class="vert-btn" id="btn-up">▲</div>
   <div class="vert-btn" id="btn-down">▼</div>
+</div>
+
+<!-- スマホ用 高速移動トグル(ON中は移動量×10)。ジョイスティック上部に配置。 -->
+<div id="boost-toggle" class="touch-ui" aria-pressed="false">⏩ 高速</div>
+
+<!-- 真俯瞰モード中に表示する操作説明パネル。"今モードに入っている"ことを示す。 -->
+<div id="topdown-mode-panel" hidden>
+  <div class="tmp-title">真俯瞰図モード</div>
+  <div class="tmp-body">
+    <b>W A S D</b> 地図を移動<br>
+    <b>← →</b> 向きを回転<br>
+    <b>Ctrl + 移動</b> 高速(×10)<br>
+    <b>Shift + 移動</b> 微調整<br>
+    右上のコンパスで 北↑ / 前方↑ 切替
+  </div>
 </div>
 
 <script type="module">
@@ -1294,7 +1367,7 @@ const orthoCamera = new THREE.OrthographicCamera(-50, 50, 50, -50, 0.1, 1e7);
 scene.add(orthoCamera);
 const topdownState = {
   active: false,                 // 真俯瞰モード中か
-  rangeM: 10,                    // 表示範囲(一辺のメートル数)。縮尺で変更
+  rangeM: 25,                    // 表示範囲(一辺のメートル数)。縮尺で変更
   center: new THREE.Vector3(),   // 俯瞰の中心(WASDで移動可)
   camHeight: 0,                  // カメラを置く高さ(中心の上方)
   heading: 0,                    // 画面の「上」が向くワールド方位(rad)。一人称のyawから引き継ぐ
@@ -1322,10 +1395,12 @@ document.body.appendChild(renderer.domElement);
 const keys = {
   forward: false, back: false, left: false, right: false,
   yawLeft: false, yawRight: false, up: false, down: false,
-  fine: false  // Shift押下中=微調整モード(移動/回転/上下を低速化)
+  fine: false, // Shift押下中=微調整モード(移動/回転/上下を低速化)
+  boost: false // Ctrl押下中=高速モード(移動を10倍)
 };
 window.addEventListener('keydown', (e) => {
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.fine = true;
+  if (e.code === 'ControlLeft' || e.code === 'ControlRight') keys.boost = true;
   switch (e.code) {
     case 'KeyW':       keys.forward  = true; break;
     case 'KeyS':       keys.back     = true; break;
@@ -1339,6 +1414,7 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keyup', (e) => {
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.fine = false;
+  if (e.code === 'ControlLeft' || e.code === 'ControlRight') keys.boost = false;
   switch (e.code) {
     case 'KeyW':       keys.forward  = false; break;
     case 'KeyS':       keys.back     = false; break;
@@ -1361,11 +1437,13 @@ function handlePCInput(dt) {
   const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
   const right   = new THREE.Vector3( Math.cos(yaw), 0, -Math.sin(yaw));
 
-  // Shift押下中は微調整モード: 移動・回転・上下すべて 1/5 の速度に
+  // Shift押下中は微調整(1/5)、Ctrl押下中は高速(×10)。移動・上下に適用。
+  // 回転(turn)は高速化の対象外(速すぎ・酔い防止)。両方押した場合は乗算。
   const f = keys.fine ? 0.2 : 1.0;
-  const move = MOVE_SPEED * f;
-  const turn = TURN_SPEED * f;
-  const vert = VERT_SPEED * f;
+  const b = keys.boost ? 10.0 : 1.0;
+  const move = MOVE_SPEED * f * b;
+  const turn = TURN_SPEED * f;       // 回転は boost を掛けない
+  const vert = VERT_SPEED * f * b;
 
   if (keys.forward) targetVel.addScaledVector(forward,  move);
   if (keys.back)    targetVel.addScaledVector(forward, -move);
@@ -1505,6 +1583,7 @@ const touchStick = { x: 0, y: 0 };
 const swipeDelta = { x: 0 };
 // 上下ボタン状態
 const touchVert = { up: false, down: false };
+let touchBoost = false; // スマホ高速トグル(ON中は移動×10)
 
 // --- 左下：仮想スティック ---
 {
@@ -1604,6 +1683,15 @@ const touchVert = { up: false, down: false };
   };
   setupBtn(document.getElementById('btn-up'),   (on) => { touchVert.up = on; });
   setupBtn(document.getElementById('btn-down'), (on) => { touchVert.down = on; });
+
+  // 高速移動トグル: タップで ON/OFF を切り替え(ON中は移動×10)
+  const boostBtn = document.getElementById('boost-toggle');
+  if (boostBtn) {
+    boostBtn.addEventListener('click', () => {
+      touchBoost = !touchBoost;
+      boostBtn.setAttribute('aria-pressed', touchBoost ? 'true' : 'false');
+    });
+  }
 }
 
 // タッチ入力をtargetVel/targetYawVelへ反映
@@ -1614,9 +1702,12 @@ function handleTouchInput(dt) {
   const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
   const right   = new THREE.Vector3( Math.cos(yaw), 0, -Math.sin(yaw));
 
+  // 高速トグルON中は移動・上下を×10
+  const b = touchBoost ? 10.0 : 1.0;
+
   // touchStick.y: 上=-1, 下=+1 → 前進=-y方向
-  targetVel.addScaledVector(forward, -touchStick.y * MOVE_SPEED);
-  targetVel.addScaledVector(right,    touchStick.x * MOVE_SPEED);
+  targetVel.addScaledVector(forward, -touchStick.y * MOVE_SPEED * b);
+  targetVel.addScaledVector(right,    touchStick.x * MOVE_SPEED * b);
 
   // 右スワイプ：横方向のみヨー回転に使う（縦は無視 = 視点上下は使わない）
   // dtで割って「速度」として扱い、targetYawVelに加算
@@ -1626,8 +1717,8 @@ function handleTouchInput(dt) {
   swipeDelta.x = 0;
 
   // 上昇/下降ボタン
-  if (touchVert.up)   targetVel.y += VERT_SPEED;
-  if (touchVert.down) targetVel.y -= VERT_SPEED;
+  if (touchVert.up)   targetVel.y += VERT_SPEED * b;
+  if (touchVert.down) targetVel.y -= VERT_SPEED * b;
 }
 
 scene.add(new THREE.AmbientLight(0xffffff, 2.5));
@@ -1919,6 +2010,8 @@ function enterTopdown() {
   updateCompass();
   const compass = document.getElementById('topdown-compass');
   if (compass) compass.removeAttribute('hidden');
+  const modePanel = document.getElementById('topdown-mode-panel');
+  if (modePanel) modePanel.removeAttribute('hidden');
 }
 
 // 真俯瞰モードを抜ける(通常の一人称視点へ)
@@ -1934,6 +2027,8 @@ function exitTopdown() {
   }
   const compass = document.getElementById('topdown-compass');
   if (compass) compass.setAttribute('hidden', '');
+  const modePanel = document.getElementById('topdown-mode-panel');
+  if (modePanel) modePanel.setAttribute('hidden', '');
 }
 
 // 縮尺(表示範囲)を変更 (1〜1000m)
@@ -2049,9 +2144,9 @@ renderer.xr.addEventListener('sessionend', () => {
 });
 
 // 移動・回転パラメータ
-const MOVE_SPEED  = 100.0;
+const MOVE_SPEED  = 3.0;
 const TURN_SPEED  = Math.PI * 0.2;
-const VERT_SPEED  = 60.0;
+const VERT_SPEED  = 2.0;
 const DEADZONE    = 0.15;
 
 const clock = new THREE.Clock();
@@ -2064,9 +2159,9 @@ let targetYawVel = 0;
 const SMOOTH = 8.0;
 
 // ── VR 中指トリガー(squeeze) 倍率 ──
-// 右手中指トリガーを押し込むほど、移動/回転が高速になる(最大5倍)。
-// 入力フレームごとに右手の buttons[1].value を読み取って 1.0〜5.0 を算出。
-const SQUEEZE_MAX_BOOST = 5.0; // 満押し時の倍率
+// 右手中指トリガーを押し込むほど、移動/回転が高速になる(最大10倍)。
+// 入力フレームごとに右手の buttons[1].value を読み取って 1.0〜10.0 を算出。
+const SQUEEZE_MAX_BOOST = 10.0; // 満押し時の倍率
 
 // ── 左手中指トリガー + Y/X による POINT DENSITY 増減 ──
 // 1回押すごとに 5% 増減(=スライダー step と同じ)。
@@ -3536,7 +3631,7 @@ document.addEventListener('click', (e) => {
     const next = btn.getAttribute('aria-pressed') !== 'true';
     if (next) enterTopdown(); else exitTopdown();
     btn.setAttribute('aria-pressed', next ? 'true' : 'false');
-    btn.textContent = next ? '一人称に戻す' : '真俯瞰にする';
+    btn.textContent = next ? 'もとの視点に戻す' : '真俯瞰にする';
   });
 
   // スライダーと数値入力を双方向同期。範囲は 1〜1000。
@@ -3778,14 +3873,15 @@ renderer.setAnimationLoop(() => {
     targetVel.set(0, 0, 0);
     targetYawVel = 0;
 
-    // 移動速度は表示範囲に比例(広域なら速く、拡大時はゆっくり)。Shiftで微調整。
+    // 移動速度は表示範囲に比例(広域なら速く、拡大時はゆっくり)。Shift微調整/Ctrl高速。
     const fine = keys.fine ? 0.2 : 1.0;
-    const panSpeed = topdownState.rangeM * 0.5 * fine; // m/秒
+    const boost = keys.boost ? 10.0 : 1.0;
+    const panSpeed = topdownState.rangeM * 0.5 * fine * boost; // m/秒
     let dx = 0, dy = 0;
     if (keys.forward) dy += panSpeed * dt; // W=画面上へ
     if (keys.back)    dy -= panSpeed * dt; // S=画面下へ
-    if (keys.right)   dx += panSpeed * dt; // D=画面右へ
-    if (keys.left)    dx -= panSpeed * dt; // A=画面左へ
+    if (keys.right)   dx -= panSpeed * dt; // D=画面左へ(直感に合わせ反転)
+    if (keys.left)    dx += panSpeed * dt; // A=画面右へ(直感に合わせ反転)
     if (dx !== 0 || dy !== 0) moveTopdownCenter(dx, dy);
 
     // ←→で向き回転(↑↓はステップBで高さ断面に割り当てるため、ここでは未使用)

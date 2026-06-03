@@ -812,7 +812,8 @@
   <div style="color:#c8dde8;">
     <b style="color:#ff6b35;">W A S D</b> 前後左右の移動<br>
     <b style="color:#ff6b35;">← →</b> 視点を回す<br>
-    <b style="color:#ff6b35;">↑ ↓</b> 上昇・下降
+    <b style="color:#ff6b35;">↑ ↓</b> 上昇・下降<br>
+    <b style="color:#ff6b35;">Shift + 上記</b> 微調整(低速)
   </div>
 </div>
 
@@ -1278,9 +1279,11 @@ document.body.appendChild(renderer.domElement);
 // PCキーボード入力状態
 const keys = {
   forward: false, back: false, left: false, right: false,
-  yawLeft: false, yawRight: false, up: false, down: false
+  yawLeft: false, yawRight: false, up: false, down: false,
+  fine: false  // Shift押下中=微調整モード(移動/回転/上下を低速化)
 };
 window.addEventListener('keydown', (e) => {
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.fine = true;
   switch (e.code) {
     case 'KeyW':       keys.forward  = true; break;
     case 'KeyS':       keys.back     = true; break;
@@ -1293,6 +1296,7 @@ window.addEventListener('keydown', (e) => {
   }
 });
 window.addEventListener('keyup', (e) => {
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.fine = false;
   switch (e.code) {
     case 'KeyW':       keys.forward  = false; break;
     case 'KeyS':       keys.back     = false; break;
@@ -1304,21 +1308,32 @@ window.addEventListener('keyup', (e) => {
     case 'ArrowDown':  keys.down     = false; break;
   }
 });
+// フォーカスが外れた時(Alt+Tab等)はkeyupを取り逃すことがあるので全キーを解除。
+// Shiftの押しっぱなし誤検知(微調整モードが固定される)も防ぐ。
+window.addEventListener('blur', () => {
+  for (const k in keys) keys[k] = false;
+});
 
 function handlePCInput(dt) {
   const yaw = dolly.rotation.y;
   const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
   const right   = new THREE.Vector3( Math.cos(yaw), 0, -Math.sin(yaw));
 
-  if (keys.forward) targetVel.addScaledVector(forward,  MOVE_SPEED);
-  if (keys.back)    targetVel.addScaledVector(forward, -MOVE_SPEED);
-  if (keys.right)   targetVel.addScaledVector(right,    MOVE_SPEED);
-  if (keys.left)    targetVel.addScaledVector(right,   -MOVE_SPEED);
+  // Shift押下中は微調整モード: 移動・回転・上下すべて 1/5 の速度に
+  const f = keys.fine ? 0.2 : 1.0;
+  const move = MOVE_SPEED * f;
+  const turn = TURN_SPEED * f;
+  const vert = VERT_SPEED * f;
 
-  if (keys.yawLeft)  targetYawVel += TURN_SPEED;
-  if (keys.yawRight) targetYawVel -= TURN_SPEED;
-  if (keys.up)       targetVel.y += VERT_SPEED;
-  if (keys.down)     targetVel.y -= VERT_SPEED;
+  if (keys.forward) targetVel.addScaledVector(forward,  move);
+  if (keys.back)    targetVel.addScaledVector(forward, -move);
+  if (keys.right)   targetVel.addScaledVector(right,    move);
+  if (keys.left)    targetVel.addScaledVector(right,   -move);
+
+  if (keys.yawLeft)  targetYawVel += turn;
+  if (keys.yawRight) targetYawVel -= turn;
+  if (keys.up)       targetVel.y += vert;
+  if (keys.down)     targetVel.y -= vert;
 }
 
 // ── タッチUI ──

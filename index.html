@@ -215,17 +215,17 @@
     }
 
     /* 高速移動ボタン群(×10/×30)。PC・スマホ共通。
-       スマホ: 左下ジョイスティックの上。PC: 右下(左下のヘルプと重ならない位置)。 */
+       スマホ: 左下ジョイスティックの上。PC: 左下ヘルプパネルの上(左寄せ)。 */
     #boost-group {
       position: fixed;
-      right: 24px; bottom: 24px;  /* PC既定: 右下 */
+      left: 16px; bottom: 500px;  /* PC既定: 左下ヘルプパネルの上 */
       display: flex;
       gap: 6px;
       z-index: 95;
     }
     /* スマホ時はジョイスティックの上に配置 */
     body.touch #boost-group {
-      left: 24px; right: auto; bottom: 156px;
+      left: 24px; bottom: 156px;
     }
     .boost-btn {
       width: 57px;
@@ -330,7 +330,7 @@
     }
 
     /* 説明パネル表示トグルボタン。ON(表示中)はシアン枠、OFF(非表示)はグレー枠。 */
-    #annotation-toggle, #topdown-toggle {
+    #annotation-toggle, #topdown-toggle, #gsi-toggle {
       width: 260px;
       padding: 8px;
       background: transparent;
@@ -344,12 +344,12 @@
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    #annotation-toggle[aria-pressed="true"], #topdown-toggle[aria-pressed="true"] {
+    #annotation-toggle[aria-pressed="true"], #topdown-toggle[aria-pressed="true"], #gsi-toggle[aria-pressed="true"] {
       background: rgba(0,200,255,0.12);
       border-color: #00c8ff;
       color: #00c8ff;
     }
-    #annotation-toggle[aria-pressed="false"], #topdown-toggle[aria-pressed="false"] {
+    #annotation-toggle[aria-pressed="false"], #topdown-toggle[aria-pressed="false"], #gsi-toggle[aria-pressed="false"] {
       background: transparent;
       border-color: rgba(160,180,195,0.5);
       color: rgba(160,180,195,0.8);
@@ -472,7 +472,8 @@
       max-width: calc(100vw - 64px);
     }
     body.touch #controls-body #annotation-toggle,
-    body.touch #controls-body #topdown-toggle {
+    body.touch #controls-body #topdown-toggle,
+    body.touch #controls-body #gsi-toggle {
       width: 140px;
       max-width: calc(100vw - 64px);
     }
@@ -1079,6 +1080,21 @@
       真俯瞰中は WASD で地図をスクロール、← → で向き(画面の上方向)を回転できます。
       右上のコンパスをクリックすると「北が上」⇔「向いていた方向が上」を切り替えます。
       VR表示中は使用できません。
+    </div>
+  </div>
+
+  <!-- ─────────── 地理院地図(地面) ─────────── -->
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>地図(地面)</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-gsi" aria-label="地図の説明">ⓘ</button>
+    </div>
+    <button type="button" id="gsi-toggle" aria-pressed="false">地図を敷く</button>
+    <div id="info-gsi" class="ctrl-info-body" hidden>
+      点群の足元に国土地理院の地図(標準地図)を敷いて、位置の参考にします。
+      点群データの位置から緯度経度を推定して該当地点の地図を表示します。
+      簡易表示のため、地図と点群の位置やスケールには多少のずれがある場合があります。
+      出典: 国土地理院(https://maps.gsi.go.jp/development/ichiran.html)
     </div>
   </div>
 
@@ -1711,6 +1727,29 @@ const touchVert = { up: false, down: false };
   b10.addEventListener('click', () => { boostLevel = (boostLevel === 10) ? 1 : 10; refresh(); });
   b30.addEventListener('click', () => { boostLevel = (boostLevel === 30) ? 1 : 30; refresh(); });
   refresh();
+
+  // PC時: 左下ヘルプパネル(#vr-help)の上端に追従させ、重なりを防ぐ。
+  // スマホ時(body.touch)はCSSの左下固定をそのまま使う。
+  const group = document.getElementById('boost-group');
+  const help = document.getElementById('vr-help');
+  function positionBoostGroup() {
+    if (!group || !help) return;
+    if (document.body.classList.contains('touch')) {
+      group.style.bottom = ''; // CSS(body.touch)に任せる
+      group.style.left = '';
+      return;
+    }
+    const r = help.getBoundingClientRect();
+    // ヘルプ上端の少し上に置く(8px間隔)
+    const bottomPx = window.innerHeight - r.top + 8;
+    group.style.bottom = `${bottomPx}px`;
+    group.style.left = '16px';
+  }
+  positionBoostGroup();
+  window.addEventListener('resize', positionBoostGroup);
+  if ('ResizeObserver' in window && help) {
+    new ResizeObserver(positionBoostGroup).observe(help);
+  }
 })();
 
 // タッチ入力をtargetVel/targetYawVelへ反映
@@ -2099,6 +2138,149 @@ function toggleTopdownNorthUp() {
   topdownState.northUp = !topdownState.northUp;
   placeTopdownCamera();
   updateCompass();
+}
+
+// ── 国土地理院地図(地面)機能 ───────────────────────────
+// 点群の足元に地理院タイル(標準地図)を水平な板として敷く。「地面の参考」用途の簡易版。
+// 点群のECEF中心から緯度経度を逆算し、その地点周辺のタイルを並べる。北方向に合わせて回転。
+// 出典表記つき、トグルで表示/非表示。
+const GSI_TILE_URL = 'https://cyberjapandata.gsi.go.jp/xyz/std'; // 標準地図
+const GSI_ZOOM = 17;            // タイルのズームレベル(17≒1px 1m弱、市街地が見やすい)
+const GSI_GRID = 5;             // 中心まわりに並べるタイル枚数(5×5)
+const gsiState = {
+  group: new THREE.Group(),     // 地図板を入れるグループ
+  built: false,                 // 現在のデータセットで構築済みか
+  visible: false,               // トグル状態
+  lat: 0, lon: 0,               // 点群中心の緯度経度
+};
+scene.add(gsiState.group);
+gsiState.group.visible = false;
+
+// WGS84 楕円体パラメータ
+const WGS84_A = 6378137.0;            // 長半径(m)
+const WGS84_F = 1 / 298.257223563;    // 扁平率
+const WGS84_E2 = WGS84_F * (2 - WGS84_F); // 離心率^2
+
+// ECEF(x,y,z) → 緯度経度(度)。標準的な閉形式(Bowring)に近い反復解法。
+function ecefToLatLon(x, y, z) {
+  const lon = Math.atan2(y, x);
+  const p = Math.sqrt(x * x + y * y);
+  let lat = Math.atan2(z, p * (1 - WGS84_E2));
+  // 数回反復して緯度を収束させる
+  for (let i = 0; i < 5; i++) {
+    const sinLat = Math.sin(lat);
+    const N = WGS84_A / Math.sqrt(1 - WGS84_E2 * sinLat * sinLat);
+    const h = p / Math.cos(lat) - N;
+    lat = Math.atan2(z, p * (1 - WGS84_E2 * N / (N + h)));
+  }
+  return { lat: lat * 180 / Math.PI, lon: lon * 180 / Math.PI };
+}
+
+// 緯度経度 → タイル座標(整数部=タイル番号, 小数部=タイル内位置)
+function lonLatToTileXY(lon, lat, z) {
+  const n = Math.pow(2, z);
+  const x = (lon + 180) / 360 * n;
+  const latRad = lat * Math.PI / 180;
+  const y = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n;
+  return { x, y };
+}
+
+// ズームzでのタイル1枚の地表サイズ(メートル)。緯度に依存(メルカトル)。
+function tileSizeMeters(lat, z) {
+  const n = Math.pow(2, z);
+  const latRad = lat * Math.PI / 180;
+  // 地球円周 × cos(緯度) / タイル数
+  return (2 * Math.PI * WGS84_A * Math.cos(latRad)) / n;
+}
+
+// 現在のデータセットの地図板を構築。center は ECEF座標。
+function buildGsiGround(centerEcef) {
+  clearGsiGround();
+  const { lat, lon } = ecefToLatLon(centerEcef.x, centerEcef.y, centerEcef.z);
+  gsiState.lat = lat; gsiState.lon = lon;
+  console.log(`[地理院地図] 中心 lat=${lat.toFixed(6)}, lon=${lon.toFixed(6)}`);
+
+  const z = GSI_ZOOM;
+  const c = lonLatToTileXY(lon, lat, z);
+  const cxTile = Math.floor(c.x), cyTile = Math.floor(c.y);
+  const tileM = tileSizeMeters(lat, z); // タイル1枚のメートル
+  const half = Math.floor(GSI_GRID / 2);
+
+  const loader = new THREE.TextureLoader();
+  loader.setCrossOrigin('anonymous');
+
+  for (let dx = -half; dx <= half; dx++) {
+    for (let dy = -half; dy <= half; dy++) {
+      const tx = cxTile + dx, ty = cyTile + dy;
+      const url = `${GSI_TILE_URL}/${z}/${tx}/${ty}.png`;
+      const geo = new THREE.PlaneGeometry(tileM, tileM);
+      const mat = new THREE.MeshBasicMaterial({
+        transparent: true, opacity: 0.85, depthWrite: false,
+        color: 0x888888, // テクスチャ読込前の仮色
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      // 板を水平に倒す(PlaneはXY面なのでX軸-90度でXZ面=地面に)
+      mesh.rotation.x = -Math.PI / 2;
+      // タイル中心の、データ中心タイルからのオフセット(メートル)。
+      // タイルXは東(+lon)方向、タイルYは南(-lat)方向に増える。
+      // 中心タイル内での点群位置のズレも考慮。
+      const offEast  = (tx + 0.5 - c.x) * tileM;   // 東向き(+)メートル
+      const offSouth = (ty + 0.5 - c.y) * tileM;   // 南向き(+)メートル
+      // ワールド配置: 北をnorthYaw方向に合わせる。
+      // 北方向ベクトル(水平): (-sin northYaw, 0, -cos northYaw)
+      // 東方向ベクトル: 北を右に90度 (-cos northYaw, 0, sin northYaw)... ではなく東は北の右。
+      const ny = topdownState.northYaw;
+      const northV = new THREE.Vector3(-Math.sin(ny), 0, -Math.cos(ny));
+      const eastV  = new THREE.Vector3(Math.cos(ny), 0, -Math.sin(ny)); // 北を時計回り90度=東
+      const pos = new THREE.Vector3();
+      pos.addScaledVector(eastV, offEast);
+      pos.addScaledVector(northV, -offSouth); // 南が+なので北方向に-
+      mesh.position.copy(pos);
+      // 板自体も北に合わせて回す(テクスチャの上=北になるよう、Y軸まわり)
+      mesh.rotation.y = -ny;
+
+      gsiState.group.add(mesh);
+
+      // テクスチャ非同期読込(成功したら貼る、失敗は仮色のまま)
+      loader.load(url,
+        (tex) => { tex.colorSpace = THREE.SRGBColorSpace; mat.map = tex; mat.color.set(0xffffff); mat.needsUpdate = true; },
+        undefined,
+        () => { /* 読込失敗(タイル無し等)は仮色のまま */ }
+      );
+    }
+  }
+  // 地面の高さ: 点群中心の足元。ワールド原点付近なので y を少し下げて点群に埋もれないように。
+  gsiState.group.position.y = -0.5;
+  gsiState.built = true;
+  gsiState.group.visible = gsiState.visible;
+  applyGsiScale();
+}
+
+function clearGsiGround() {
+  for (let i = gsiState.group.children.length - 1; i >= 0; i--) {
+    const m = gsiState.group.children[i];
+    if (m.geometry) m.geometry.dispose();
+    if (m.material) { if (m.material.map) m.material.map.dispose(); m.material.dispose(); }
+    gsiState.group.remove(m);
+  }
+  gsiState.built = false;
+}
+
+// WORLD SCALE に追従(タイルと同じ dolly中心スケール)
+const _gsiScaleTmp = new THREE.Vector3();
+function applyGsiScale() {
+  // 地図板群はワールド原点付近基準。dolly中心の相似変換を位置とスケールに適用。
+  gsiState.group.scale.setScalar(worldScale);
+  // 原点(0,0,0)基準位置を dolly 中心でスケール
+  _gsiScaleTmp.set(0, gsiState.group.position.y, 0).sub(dolly.position).multiplyScalar(worldScale).add(dolly.position);
+  gsiState.group.position.x = _gsiScaleTmp.x;
+  gsiState.group.position.z = _gsiScaleTmp.z;
+  gsiState.group.position.y = _gsiScaleTmp.y;
+}
+
+function setGsiVisible(v) {
+  gsiState.visible = v;
+  gsiState.group.visible = v;
 }
 
 
@@ -2903,6 +3085,11 @@ function loadTileset(id) {
   }
   // 旧データセットのアノテーションも破棄(新しいものは load-tile-set 完了時に構築)
   clearAnnotations();
+  // 地理院地図も破棄し、トグルOFFに戻す(新データセットの中心が変わるため)
+  clearGsiGround();
+  setGsiVisible(false);
+  { const gb = document.getElementById('gsi-toggle');
+    if (gb) { gb.setAttribute('aria-pressed', 'false'); gb.textContent = '地図を敷く'; } }
 
   loadingDataset = id;
   // データセット切替時はカメラ位置・向きをそのデータセットの初期位置にリセット
@@ -3016,6 +3203,11 @@ function loadTileset(id) {
 
       // このデータセットのアノテーション(説明パネル)を構築
       rebuildAnnotations(id);
+
+      // 地理院地図用に中心ECEF座標を保存(トグルONで構築する)。
+      // 既にトグルがONなら即座に再構築する。
+      gsiState.centerEcef = center.clone();
+      if (gsiState.visible) buildGsiGround(gsiState.centerEcef);
 
       console.log(`タイル ${id} 読込完了 (r=${r.toFixed(1)}m, cam=[${camX},${camY},${camZ}], yaw=${camYaw}°)`);
     }
@@ -3462,6 +3654,8 @@ function applyWorldScale() {
   tiles.group.updateMatrixWorld(true);
   // アノテーション群も同じ dolly中心スケールに追従させる
   applyAnnotationScale();
+  // 地理院地図(地面)も追従
+  if (gsiState.built) applyGsiScale();
 }
 const scaleSlider = document.getElementById('scale-slider');
 const scaleVal    = document.getElementById('scale-val');
@@ -3635,6 +3829,22 @@ document.addEventListener('click', (e) => {
     setAnnotationsVisible(next);
     btn.setAttribute('aria-pressed', next ? 'true' : 'false');
     btn.textContent = next ? '表示中' : '非表示';
+  });
+})();
+
+// ── 地理院地図(地面)トグル ──
+(function setupGsiToggle() {
+  const btn = document.getElementById('gsi-toggle');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const next = btn.getAttribute('aria-pressed') !== 'true';
+    setGsiVisible(next);
+    // ONにした時、未構築なら中心ECEFから構築
+    if (next && !gsiState.built && gsiState.centerEcef) {
+      buildGsiGround(gsiState.centerEcef);
+    }
+    btn.setAttribute('aria-pressed', next ? 'true' : 'false');
+    btn.textContent = next ? '地図を消す' : '地図を敷く';
   });
 })();
 

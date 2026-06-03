@@ -1908,10 +1908,10 @@ function enterTopdown() {
   // 正射投影フラグをシェーダに伝える(点サイズをdepth非依存の固定サイズにする)
   cubeUniforms.uOrtho.value = 1.0;
 
-  // 点サイズを自動調整: 真俯瞰だと見え方が変わるため、見やすい値(4)にセット。
+  // 点サイズを自動調整: 真俯瞰だと見え方が変わるため、見やすい値(1)にセット。
   // 現在のUI値を退避し、真俯瞰中はユーザーが再調整可能。
   topdownState.savedPointUI = sizeSlider.value;
-  sizeSlider.value = '4';
+  sizeSlider.value = '1';
   sizeSlider.dispatchEvent(new Event('input', { bubbles: true }));
 
   updateTopdownFrustum();
@@ -2855,8 +2855,9 @@ function loadTileset(id) {
       const northEcef = zAxisEcef.clone().sub(upVec.clone().multiplyScalar(zAxisEcef.dot(upVec)));
       if (northEcef.lengthSq() > 1e-9) {
         northEcef.normalize().applyQuaternion(rotQuat);
-        // 水平面(XZ)に投影した北方位角を保存(Y成分は無視)。-Z基準(yaw=0が-Z)。
-        topdownState.northYaw = Math.atan2(northEcef.x, -northEcef.z);
+        // 方位角を forward の定義 forward=(-sin yaw,0,-cos yaw) に合わせる。
+        // ある水平ベクトル(vx,0,vz)の方位は yaw=atan2(-vx,-vz)。
+        topdownState.northYaw = Math.atan2(-northEcef.x, -northEcef.z);
         topdownState.hasGeoNorth = true;
         console.log(`[北方位] northYaw=${(topdownState.northYaw*180/Math.PI).toFixed(1)}° ` +
                     `northWorld=(${northEcef.x.toFixed(3)}, ${northEcef.y.toFixed(3)}, ${northEcef.z.toFixed(3)})`);

@@ -568,6 +568,23 @@
       font-weight: bold;
       font-size: 16px;
     }
+
+    /* 真俯瞰モード用コンパス(右上)。クリックで北上/前方上を切替。 */
+    #topdown-compass {
+      position: fixed;
+      top: 64px;
+      right: 16px;
+      z-index: 115;
+      width: 80px;
+      height: 80px;
+      cursor: pointer;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+    }
+    #topdown-compass[hidden] { display: none; }
+    #compass-needle {
+      transform-origin: 40px 40px;
+      transition: transform 0.15s ease-out;
+    }
     .dataset-btn.active {
       background: rgba(0,200,255,0.3);
       border-color: #00c8ff;
@@ -979,14 +996,19 @@
     </div>
     <button type="button" id="topdown-toggle" aria-pressed="false">真俯瞰にする</button>
     <div style="margin-top:8px;">
-      表示範囲 <span id="topdown-range-val" style="font-family:monospace;">200</span> m
+      表示範囲
+      <input id="topdown-range-num" type="number" min="1" max="1000" step="1" value="200"
+        style="width:64px; font-family:monospace; background:rgba(0,0,0,0.4); color:#00c8ff;
+               border:1px solid rgba(0,200,255,0.4); border-radius:3px; padding:2px 4px;"> m
     </div>
-    <input id="topdown-range-slider" type="range" min="10" max="2000" step="10" value="200"
+    <input id="topdown-range-slider" type="range" min="1" max="1000" step="1" value="200"
       style="width:260px; accent-color:#00c8ff;">
     <div id="info-topdown" class="ctrl-info-body" hidden>
       今いる場所を中心に、真上から見下ろした地図的な表示に切り替えます(正射投影)。
-      「表示範囲」は画面の短辺に収めるおおよそのメートル数で、縮尺の指定にあたります。
+      「表示範囲」は画面の短辺に収めるおおよそのメートル数(1〜1000)で、縮尺の指定にあたります。
       値を小さくするほど拡大、大きくするほど広域を表示します。
+      真俯瞰中は WASD で地図をスクロール、← → で向き(画面の上方向)を回転できます。
+      右上のコンパスをクリックすると「北が上」⇔「向いていた方向が上」を切り替えます。
       VR表示中は使用できません。
     </div>
   </div>
@@ -1035,6 +1057,20 @@
 
 <!-- アイドル状態のカウントダウン通知(5秒前から表示)。普段はhidden。 -->
 <div id="idle-notice" hidden>まもなく初期位置に戻ります <span id="idle-countdown">5</span></div>
+
+<!-- 真俯瞰モード用コンパス。クリックで「北が上」⇔「向いていた方向が上」を切替。
+     針(N)は北の方向を指す。真俯瞰モード中のみ表示。 -->
+<div id="topdown-compass" hidden title="クリックで 北が上 / 前方が上 を切替">
+  <svg viewBox="0 0 80 80" width="80" height="80">
+    <circle cx="40" cy="40" r="36" fill="rgba(6,12,18,0.8)" stroke="rgba(0,200,255,0.6)" stroke-width="2"/>
+    <!-- 回転する針グループ(JSで transform を設定) -->
+    <g id="compass-needle">
+      <polygon points="40,10 34,42 46,42" fill="#ff5555"/>
+      <polygon points="40,70 34,42 46,42" fill="#cccccc"/>
+      <text x="40" y="22" text-anchor="middle" fill="#ffffff" font-size="13" font-family="sans-serif" font-weight="bold">N</text>
+    </g>
+  </svg>
+</div>
 
 <!-- ロード進捗オーバーレイ -->
 <!-- 状態: Loading (tileset.json取得中) → Rendering (タイル本体ロード中) → Ready (描画完了) -->
@@ -1257,10 +1293,15 @@ const orthoCamera = new THREE.OrthographicCamera(-50, 50, 50, -50, 0.1, 1e7);
 scene.add(orthoCamera);
 const topdownState = {
   active: false,                 // 真俯瞰モード中か
-  rangeM: 200,                   // 表示範囲(一辺のメートル数)。縮尺スライダーで変更
-  center: new THREE.Vector3(),   // 俯瞰の中心(モード切替時の dolly 水平位置で固定)
+  rangeM: 200,                   // 表示範囲(一辺のメートル数)。縮尺で変更
+  center: new THREE.Vector3(),   // 俯瞰の中心(WASDで移動可)
   camHeight: 0,                  // カメラを置く高さ(中心の上方)
+  heading: 0,                    // 画面の「上」が向くワールド方位(rad)。一人称のyawから引き継ぐ
+  northUp: false,                // true=北(-Z)が常に上 / false=headingが上(向いていた方向)
+  savedPointUI: null,            // 真俯瞰前の点サイズUI値(復帰用)
 };
+// ワールドで北とする方向は -Z(3Dの一般的慣習)。北の方位角=0。
+const NORTH_DIR = new THREE.Vector3(0, 0, -1);
 
 // VR時のカメラリグ（dolly）：カメラをこの中に入れて移動・回転させる
 const dolly = new THREE.Group();
@@ -1838,12 +1879,18 @@ function updateTopdownFrustum() {
   orthoCamera.updateProjectionMatrix();
 }
 
-// 真俯瞰カメラを中心の真上に配置し、真下を向ける
+// 真俯瞰カメラを中心の真上に配置し、真下を向ける。
+// 画面の「上」方向は northUp なら北(-Z)、そうでなければ heading 方向。
+const _topUp = new THREE.Vector3();
 function placeTopdownCamera() {
   const c = topdownState.center;
   orthoCamera.position.set(c.x, topdownState.camHeight, c.z);
-  // 真下(-Y)を向く。up を -Z にすると「画面上=北(-Z方向)」になり地図的に自然。
-  orthoCamera.up.set(0, 0, -1);
+  // 画面上に向けたいワールド方向(水平)を up に設定。
+  // 真下を見るカメラでは、up が「画面の上」に対応する。
+  const upYaw = topdownState.northUp ? 0 : topdownState.heading;
+  // yaw=0 で北(-Z)。yawを増やすと時計回り。up = (sin(yaw), 0, -cos(yaw))
+  _topUp.set(Math.sin(upYaw), 0, -Math.cos(upYaw));
+  orthoCamera.up.copy(_topUp);
   orthoCamera.lookAt(c.x, c.y, c.z);
   orthoCamera.updateMatrixWorld(true);
 }
@@ -1851,25 +1898,88 @@ function placeTopdownCamera() {
 // 真俯瞰モードに入る
 function enterTopdown() {
   if (renderer.xr.isPresenting) return; // VR中は不可
-  // 中心 = 現在の dolly の水平位置。高さはタイル全体を見下ろせる十分上方に。
   topdownState.center.set(dolly.position.x, dolly.position.y, dolly.position.z);
-  // カメラ高さ: 中心から上に大きめ(タイルの上空)。正射なので高さは見た目に影響せず、
-  // near/far に収まればよい。中心+500m上空とする。
-  topdownState.camHeight = dolly.position.y + 500;
+  topdownState.camHeight = dolly.position.y + 500; // 中心の500m上空(正射なので見た目に影響せず)
+  // 画面の「上」= 一人称で向いていた方向(dolly.rotation.y)を引き継ぐ
+  topdownState.heading = dolly.rotation.y;
   topdownState.active = true;
+
+  // 点サイズを自動拡大: 真俯瞰だと点が小さく見えるため。
+  // 現在のUI値を退避し、大きめ(40)にセット。真俯瞰中はユーザーが再調整可能。
+  topdownState.savedPointUI = sizeSlider.value;
+  sizeSlider.value = '40';
+  sizeSlider.dispatchEvent(new Event('input', { bubbles: true }));
+
   updateTopdownFrustum();
   placeTopdownCamera();
+  updateCompass();
+  const compass = document.getElementById('topdown-compass');
+  if (compass) compass.removeAttribute('hidden');
 }
 
 // 真俯瞰モードを抜ける(通常の一人称視点へ)
 function exitTopdown() {
   topdownState.active = false;
+  // 点サイズを一人称用の値に復元
+  if (topdownState.savedPointUI != null) {
+    sizeSlider.value = topdownState.savedPointUI;
+    sizeSlider.dispatchEvent(new Event('input', { bubbles: true }));
+    topdownState.savedPointUI = null;
+  }
+  const compass = document.getElementById('topdown-compass');
+  if (compass) compass.setAttribute('hidden', '');
 }
 
-// 縮尺(表示範囲)を変更
+// 縮尺(表示範囲)を変更 (1〜1000m)
 function setTopdownRange(m) {
-  topdownState.rangeM = Math.max(10, m);
+  topdownState.rangeM = Math.max(1, Math.min(1000, m));
   if (topdownState.active) updateTopdownFrustum();
+}
+
+// 真俯瞰の中心を画面の上下左右方向に移動(WASD)。dt と移動速度を渡す。
+// 画面の「上」は heading(または北)方向。WASD は画面基準で動かす。
+const _tdForward = new THREE.Vector3();
+const _tdRight = new THREE.Vector3();
+function moveTopdownCenter(dx, dy) {
+  // dy: 画面上方向(+)、dx: 画面右方向(+)
+  const upYaw = topdownState.northUp ? 0 : topdownState.heading;
+  // 画面上方向(ワールド水平): (sin upYaw, 0, -cos upYaw)
+  _tdForward.set(Math.sin(upYaw), 0, -Math.cos(upYaw));
+  // 画面右方向: 上方向を-90度回した向き
+  _tdRight.set(Math.cos(upYaw), 0, Math.sin(upYaw));
+  topdownState.center.addScaledVector(_tdForward, dy);
+  topdownState.center.addScaledVector(_tdRight, dx);
+  placeTopdownCamera();
+}
+
+// 真俯瞰の向き(heading)を回転(←→)。一人称に戻ったときの向きにも反映する。
+function rotateTopdownHeading(deltaRad) {
+  topdownState.heading += deltaRad;
+  // 一人称の dolly 向きにも反映(戻ったとき向きが引き継がれる)
+  dolly.rotation.y = topdownState.heading;
+  if (!topdownState.northUp) placeTopdownCamera();
+  updateCompass();
+}
+
+// コンパスの針を更新。針は「北」を指す。
+// northUp時: 画面上=北なので針は真上(回転0)。
+// heading時: 画面上=heading方向。北は画面上から見て -heading の位置。
+function updateCompass() {
+  const needle = document.getElementById('compass-needle');
+  if (!needle) return;
+  // 画面上方向の方位
+  const upYaw = topdownState.northUp ? 0 : topdownState.heading;
+  // 北(方位0)が画面上(upYaw)からどれだけ回転して見えるか。
+  // SVGのrotateは時計回りが正。北の画面上での角度 = -upYaw(rad)→度。
+  const deg = -upYaw * 180 / Math.PI;
+  needle.setAttribute('transform', `rotate(${deg} 40 40)`);
+}
+
+// 北上/前方上 トグル
+function toggleTopdownNorthUp() {
+  topdownState.northUp = !topdownState.northUp;
+  placeTopdownCamera();
+  updateCompass();
 }
 
 
@@ -3380,11 +3490,12 @@ document.addEventListener('click', (e) => {
   });
 })();
 
-// ── 真俯瞰図(トップダウン)トグル & 縮尺スライダー ──
+// ── 真俯瞰図(トップダウン)トグル & 縮尺 & コンパス ──
 (function setupTopdown() {
   const btn = document.getElementById('topdown-toggle');
   const slider = document.getElementById('topdown-range-slider');
-  const rangeVal = document.getElementById('topdown-range-val');
+  const num = document.getElementById('topdown-range-num');
+  const compass = document.getElementById('topdown-compass');
   if (!btn || !slider) return;
 
   btn.addEventListener('click', () => {
@@ -3395,11 +3506,29 @@ document.addEventListener('click', (e) => {
     btn.textContent = next ? '一人称に戻す' : '真俯瞰にする';
   });
 
-  slider.addEventListener('input', () => {
-    const m = parseInt(slider.value, 10);
-    if (rangeVal) rangeVal.textContent = String(m);
+  // スライダーと数値入力を双方向同期。範囲は 1〜1000。
+  function applyRange(m, fromNum) {
+    m = Math.max(1, Math.min(1000, m || 1));
+    slider.value = String(m);
+    if (!fromNum) num.value = String(m);
     setTopdownRange(m);
+  }
+  slider.addEventListener('input', () => applyRange(parseInt(slider.value, 10), false));
+  num.addEventListener('input', () => {
+    const m = parseInt(num.value, 10);
+    if (Number.isFinite(m)) applyRange(m, true);
   });
+  // 数値入力確定時(blur/Enter)に範囲外をクランプ表示に反映
+  num.addEventListener('change', () => {
+    const m = Math.max(1, Math.min(1000, parseInt(num.value, 10) || 1));
+    num.value = String(m);
+    applyRange(m, true);
+  });
+
+  // コンパスクリックで 北が上 ⇔ 前方が上 を切替
+  if (compass) {
+    compass.addEventListener('click', () => toggleTopdownNorthUp());
+  }
 })();
 
 // ── ライセンス詳細パネル開閉 ──
@@ -3609,11 +3738,27 @@ renderer.setAnimationLoop(() => {
     targetVel.set(0, 0, 0);
     targetYawVel = 0;
   } else if (topdownState.active) {
-    // 真俯瞰モード中: 中心を固定するため、一人称の移動/回転入力は無視。
+    // 真俯瞰モード中: WASDで中心を地図スクロール、←→で向き(画面上方向)を回転。
+    // 一人称の dolly 移動/慣性は止める。
     velocity.set(0, 0, 0);
     yawVel = 0;
     targetVel.set(0, 0, 0);
     targetYawVel = 0;
+
+    // 移動速度は表示範囲に比例(広域なら速く、拡大時はゆっくり)。Shiftで微調整。
+    const fine = keys.fine ? 0.2 : 1.0;
+    const panSpeed = topdownState.rangeM * 0.5 * fine; // m/秒
+    let dx = 0, dy = 0;
+    if (keys.forward) dy += panSpeed * dt; // W=画面上へ
+    if (keys.back)    dy -= panSpeed * dt; // S=画面下へ
+    if (keys.right)   dx += panSpeed * dt; // D=画面右へ
+    if (keys.left)    dx -= panSpeed * dt; // A=画面左へ
+    if (dx !== 0 || dy !== 0) moveTopdownCenter(dx, dy);
+
+    // ←→で向き回転(↑↓はステップBで高さ断面に割り当てるため、ここでは未使用)
+    const rotSpeed = TURN_SPEED * fine;
+    if (keys.yawLeft)  rotateTopdownHeading( rotSpeed * dt);
+    if (keys.yawRight) rotateTopdownHeading(-rotSpeed * dt);
   } else {
     targetVel.set(0, 0, 0);
     targetYawVel = 0;

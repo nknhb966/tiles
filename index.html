@@ -582,7 +582,6 @@
     }
     #topdown-compass[hidden] { display: none; }
     #compass-needle {
-      transform-origin: 40px 40px;
       transition: transform 0.15s ease-out;
     }
     .dataset-btn.active {
@@ -997,11 +996,11 @@
     <button type="button" id="topdown-toggle" aria-pressed="false">真俯瞰にする</button>
     <div style="margin-top:8px;">
       表示範囲
-      <input id="topdown-range-num" type="number" min="1" max="1000" step="1" value="200"
+      <input id="topdown-range-num" type="number" min="1" max="1000" step="1" value="10"
         style="width:64px; font-family:monospace; background:rgba(0,0,0,0.4); color:#00c8ff;
                border:1px solid rgba(0,200,255,0.4); border-radius:3px; padding:2px 4px;"> m
     </div>
-    <input id="topdown-range-slider" type="range" min="1" max="1000" step="1" value="200"
+    <input id="topdown-range-slider" type="range" min="1" max="1000" step="1" value="10"
       style="width:260px; accent-color:#00c8ff;">
     <div id="info-topdown" class="ctrl-info-body" hidden>
       今いる場所を中心に、真上から見下ろした地図的な表示に切り替えます(正射投影)。
@@ -1295,7 +1294,7 @@ const orthoCamera = new THREE.OrthographicCamera(-50, 50, 50, -50, 0.1, 1e7);
 scene.add(orthoCamera);
 const topdownState = {
   active: false,                 // 真俯瞰モード中か
-  rangeM: 200,                   // 表示範囲(一辺のメートル数)。縮尺で変更
+  rangeM: 10,                    // 表示範囲(一辺のメートル数)。縮尺で変更
   center: new THREE.Vector3(),   // 俯瞰の中心(WASDで移動可)
   camHeight: 0,                  // カメラを置く高さ(中心の上方)
   heading: 0,                    // 画面の「上」が向くワールド方位(rad)。一人称のyawから引き継ぐ
@@ -1909,10 +1908,10 @@ function enterTopdown() {
   // 正射投影フラグをシェーダに伝える(点サイズをdepth非依存の固定サイズにする)
   cubeUniforms.uOrtho.value = 1.0;
 
-  // 点サイズを自動拡大: 真俯瞰だと点が小さく見えるため。
-  // 現在のUI値を退避し、大きめ(40)にセット。真俯瞰中はユーザーが再調整可能。
+  // 点サイズを自動調整: 真俯瞰だと見え方が変わるため、見やすい値(4)にセット。
+  // 現在のUI値を退避し、真俯瞰中はユーザーが再調整可能。
   topdownState.savedPointUI = sizeSlider.value;
-  sizeSlider.value = '40';
+  sizeSlider.value = '4';
   sizeSlider.dispatchEvent(new Event('input', { bubbles: true }));
 
   updateTopdownFrustum();
@@ -2330,7 +2329,7 @@ const cubeUniforms = {
   uSize:    { value: 0.005 },
   uDensity: { value: 1.0 },
   uOrtho:   { value: 0.0 },   // 真俯瞰(正射)中は1.0に
-  uOrthoPx: { value: 400.0 }, // 正射時の点サイズ係数(uSize×400=ピクセル。UI40→0.04×400=16px)
+  uOrthoPx: { value: 2500.0 }, // 正射時の点サイズ係数(uSize×2500=px。UI4→0.004×2500=10px)
 };
 
 function makeCubeMaterial() {
@@ -2852,17 +2851,18 @@ function loadTileset(id) {
       // ── 真北方向の導出 ──
       // ECEFでは +Z が地軸(北極方向)。その地点の接平面に +Z を投影したものが「真北」。
       // 同じ rotQuat を掛けてワールド座標系での北方向(水平)を得る。
-      // これをコンパスの基準にすると、データ実物の北と一致する。
       const zAxisEcef = new THREE.Vector3(0, 0, 1);
       const northEcef = zAxisEcef.clone().sub(upVec.clone().multiplyScalar(zAxisEcef.dot(upVec)));
       if (northEcef.lengthSq() > 1e-9) {
         northEcef.normalize().applyQuaternion(rotQuat);
-        // 水平面(XZ)に投影した北方位角を保存(Y成分は無視)
-        // 方位角: 北=(?, ?) を atan2 で表す。NORTH_DIR=-Z基準の方位に変換。
+        // 水平面(XZ)に投影した北方位角を保存(Y成分は無視)。-Z基準(yaw=0が-Z)。
         topdownState.northYaw = Math.atan2(northEcef.x, -northEcef.z);
         topdownState.hasGeoNorth = true;
+        console.log(`[北方位] northYaw=${(topdownState.northYaw*180/Math.PI).toFixed(1)}° ` +
+                    `northWorld=(${northEcef.x.toFixed(3)}, ${northEcef.y.toFixed(3)}, ${northEcef.z.toFixed(3)})`);
       } else {
         topdownState.hasGeoNorth = false;
+        console.log('[北方位] 取得できず(極付近?)');
       }
 
       const rotatedCenter = center.clone().applyQuaternion(rotQuat);

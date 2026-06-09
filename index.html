@@ -708,8 +708,11 @@
       margin-bottom: 6px;
     }
     #topdown-mode-panel .tmp-body b { color: #ff9a3c; }
-    /* スマホでは操作系が異なるので簡略表示 */
+    /* PCではタッチ用説明を隠す。スマホではキーボード用を隠しタッチ用を出す。 */
+    .tmp-body-touch { display: none; }
+    .tmp-body-touch b { color: #ff9a3c; }
     body.touch #topdown-mode-panel .tmp-body { display: none; }
+    body.touch #topdown-mode-panel .tmp-body-touch { display: block; }
     .dataset-btn.active {
       background: rgba(0,200,255,0.3);
       border-color: #00c8ff;
@@ -1324,9 +1327,15 @@
   <div class="tmp-body">
     <b>W A S D</b> 地図を移動<br>
     <b>← →</b> 向きを回転<br>
-    <b>×10 / ×30</b> ボタンで高速移動<br>
+    <b>×10 / ×30 / ×100</b> ボタンで高速移動<br>
     <b>Shift + 移動</b> 微調整<br>
-    右上のコンパスで 北↑ / 前方↑ 切替
+    左上のコンパスで 北↑ / 前方↑ 切替
+  </div>
+  <div class="tmp-body-touch">
+    <b>左スティック</b> 地図を移動<br>
+    <b>右をなぞる</b> 向きを回転<br>
+    <b>×10 / ×30 / ×100</b> で高速移動<br>
+    左上のコンパスで 北↑ / 前方↑ 切替
   </div>
 </div>
 
@@ -4489,7 +4498,7 @@ renderer.setAnimationLoop(() => {
     targetVel.set(0, 0, 0);
     targetYawVel = 0;
   } else if (topdownState.active) {
-    // 真俯瞰モード中: WASDで中心を地図スクロール、←→で向き(画面上方向)を回転。
+    // 真俯瞰モード中: WASD/ジョイスティックで中心を地図スクロール、←→/スワイプで向き回転。
     // 一人称の dolly 移動/慣性は止める。
     velocity.set(0, 0, 0);
     yawVel = 0;
@@ -4506,12 +4515,23 @@ renderer.setAnimationLoop(() => {
     if (keys.back    || keys.down) dy -= panSpeed * dt; // S/↓=画面下へ
     if (keys.right)   dx -= panSpeed * dt; // D=画面左へ(直感に合わせ反転)
     if (keys.left)    dx += panSpeed * dt; // A=画面右へ(直感に合わせ反転)
+
+    // スマホ: ジョイスティックで地図スクロール(キーと同じ向き・速度)。
+    // touchStick.y: 上=-1(前/画面上へ), touchStick.x: 右=+1
+    if (isTouchDevice) {
+      dy += (-touchStick.y) * panSpeed * dt; // 上倒し=画面上へ
+      dx += (-touchStick.x) * panSpeed * dt; // 右倒し=画面左へ(キーのD反転に合わせる)
+    }
     if (dx !== 0 || dy !== 0) moveTopdownCenter(dx, dy);
 
-    // ←→で向き回転
+    // ←→で向き回転。スマホは右スワイプ横方向で回転。
     const rotSpeed = TURN_SPEED * fine;
     if (keys.yawLeft)  rotateTopdownHeading( rotSpeed * dt);
     if (keys.yawRight) rotateTopdownHeading(-rotSpeed * dt);
+    if (isTouchDevice && swipeDelta.x !== 0) {
+      rotateTopdownHeading(-swipeDelta.x * SWIPE_YAW_SENS);
+      swipeDelta.x = 0;
+    }
   } else {
     targetVel.set(0, 0, 0);
     targetYawVel = 0;

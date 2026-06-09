@@ -708,11 +708,9 @@
       margin-bottom: 6px;
     }
     #topdown-mode-panel .tmp-body b { color: #ff9a3c; }
-    /* PCではタッチ用説明を隠す。スマホではキーボード用を隠しタッチ用を出す。 */
-    .tmp-body-touch { display: none; }
-    .tmp-body-touch b { color: #ff9a3c; }
-    body.touch #topdown-mode-panel .tmp-body { display: none; }
-    body.touch #topdown-mode-panel .tmp-body-touch { display: block; }
+    /* スマホでは真俯瞰パネルを表示しない(左スティックと重なるため)。
+       タッチ用説明も不要。操作は左スティック/右スワイプ。 */
+    body.touch #topdown-mode-panel { display: none !important; }
     .dataset-btn.active {
       background: rgba(0,200,255,0.3);
       border-color: #00c8ff;
@@ -1329,12 +1327,6 @@
     <b>← →</b> 向きを回転<br>
     <b>×10 / ×30 / ×100</b> ボタンで高速移動<br>
     <b>Shift + 移動</b> 微調整<br>
-    左上のコンパスで 北↑ / 前方↑ 切替
-  </div>
-  <div class="tmp-body-touch">
-    <b>左スティック</b> 地図を移動<br>
-    <b>右をなぞる</b> 向きを回転<br>
-    <b>×10 / ×30 / ×100</b> で高速移動<br>
     左上のコンパスで 北↑ / 前方↑ 切替
   </div>
 </div>

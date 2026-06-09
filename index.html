@@ -2175,6 +2175,8 @@ function enterTopdown() {
   updateTopdownFrustum();
   placeTopdownCamera();
   updateCompass();
+  // 真俯瞰では基準格子は不要なので非表示にする
+  grid.visible = false;
   const compass = document.getElementById('topdown-compass');
   if (compass) compass.removeAttribute('hidden');
   const modePanel = document.getElementById('topdown-mode-panel');
@@ -2195,6 +2197,8 @@ function exitTopdown() {
   if (compass) compass.setAttribute('hidden', '');
   const modePanel = document.getElementById('topdown-mode-panel');
   if (modePanel) modePanel.setAttribute('hidden', '');
+  // 一人称に戻ったら基準格子を再表示
+  grid.visible = true;
 }
 
 // 縮尺(表示範囲)を変更 (1〜1000m)

@@ -654,6 +654,33 @@
       line-height: 1.4;
     }
     #gsi-attribution[hidden] { display: none; }
+
+    /* 真俯瞰モードの縮尺バー(右下、出典の上に配置) */
+    #topdown-scalebar {
+      position: fixed;
+      right: 12px; bottom: 56px;
+      z-index: 110;
+      text-align: center;
+      pointer-events: none;
+      user-select: none;
+    }
+    #topdown-scalebar[hidden] { display: none; }
+    #scalebar-label {
+      color: #fff;
+      font-family: sans-serif;
+      font-size: 12px;
+      font-weight: bold;
+      text-shadow: 0 0 4px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.9);
+      margin-bottom: 2px;
+    }
+    #scalebar-line {
+      height: 8px;
+      border: 2px solid #fff;
+      border-top: none;
+      box-shadow: 0 0 4px rgba(0,0,0,0.9);
+      box-sizing: border-box;
+      /* 幅は JS で設定 */
+    }
     /* 平面表示時、地形の細かさをグレーアウト(操作不可) */
     #gsi-detail-wrap.disabled {
       opacity: 0.4;
@@ -1230,6 +1257,12 @@
 
 <!-- 地理院地図 表示中の出典表記(規約対応: 出典明示+加工明記)。地図ON時のみ表示。 -->
 <div id="gsi-attribution" hidden>地理院タイル（標準地図・標高タイル（基盤地図情報数値標高モデル））を加工して作成<br>出典：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer">国土地理院</a></div>
+
+<!-- 真俯瞰モードの縮尺バー(右下、出典の上)。キリの良い距離を示す地図式スケール。 -->
+<div id="topdown-scalebar" hidden>
+  <div id="scalebar-label">100 m</div>
+  <div id="scalebar-line"></div>
+</div>
 
 <!-- モデル高さ調整モード(?heightadjust=1)のパネル。点群を上下させCSVのheightAdjust値を測る。 -->
 <div id="heightadjust-panel" hidden>
@@ -2181,6 +2214,7 @@ function enterTopdown() {
   if (compass) compass.removeAttribute('hidden');
   const modePanel = document.getElementById('topdown-mode-panel');
   if (modePanel) modePanel.removeAttribute('hidden');
+  updateScaleBar(); // 縮尺バー表示
 }
 
 // 真俯瞰モードを抜ける(通常の一人称視点へ)
@@ -2199,12 +2233,43 @@ function exitTopdown() {
   if (modePanel) modePanel.setAttribute('hidden', '');
   // 一人称に戻ったら基準格子を再表示
   grid.visible = true;
+  const scalebar = document.getElementById('topdown-scalebar');
+  if (scalebar) scalebar.setAttribute('hidden', '');
 }
 
-// 縮尺(表示範囲)を変更 (1〜1000m)
+// 縮尺(表示範囲)を変更 (1〜100000m)
 function setTopdownRange(m) {
   topdownState.rangeM = Math.max(1, Math.min(100000, m));
-  if (topdownState.active) updateTopdownFrustum();
+  if (topdownState.active) { updateTopdownFrustum(); updateScaleBar(); }
+}
+
+// 真俯瞰の縮尺バーを更新。キリの良い距離(1,2,5×10^n)を選び、対応する幅のバーを描く。
+function updateScaleBar() {
+  const bar = document.getElementById('topdown-scalebar');
+  const label = document.getElementById('scalebar-label');
+  const line = document.getElementById('scalebar-line');
+  if (!bar || !label || !line) return;
+  if (!topdownState.active) { bar.setAttribute('hidden', ''); return; }
+  bar.removeAttribute('hidden');
+
+  // 短辺(px)が rangeM メートルに対応。worldScale で見かけが拡縮される。
+  const shortPx = Math.min(window.innerWidth, window.innerHeight);
+  // 1実メートルあたりの画面ピクセル数
+  const pxPerMeter = (shortPx / topdownState.rangeM) * worldScale;
+
+  // 目標バー長(画面短辺の約1/5)に対応するメートルを求め、キリの良い値に丸める
+  const targetPx = shortPx * 0.2;
+  const roughM = targetPx / pxPerMeter;
+  // 1,2,5×10^n から roughM 以下で最大のキリの良い値を選ぶ
+  const pow = Math.pow(10, Math.floor(Math.log10(roughM)));
+  const candidates = [1, 2, 5, 10].map(v => v * pow);
+  let niceM = candidates[0];
+  for (const c of candidates) { if (c <= roughM) niceM = c; }
+
+  const barPx = niceM * pxPerMeter;
+  line.style.width = `${barPx}px`;
+  // 表示単位: 1000m以上はkm表記
+  label.textContent = (niceM >= 1000) ? `${(niceM/1000)} km` : `${niceM} m`;
 }
 
 // 真俯瞰の中心を画面の上下左右方向に移動(WASD)。dt と移動速度を渡す。
@@ -3967,6 +4032,7 @@ scaleSlider.addEventListener('input', () => {
   worldScale = parseFloat(scaleSlider.value);
   scaleVal.textContent = worldScale.toFixed(1);
   applyWorldScale();
+  if (topdownState.active) updateScaleBar(); // 倍率変更で縮尺バーも更新
 });
 
 // 画質スライダー(1〜20) → errorTarget(8〜80) を非線形(指数)で変換。
@@ -4456,7 +4522,7 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  if (topdownState.active) updateTopdownFrustum();
+  if (topdownState.active) { updateTopdownFrustum(); updateScaleBar(); }
 });
 
 // tilesに登録した「VR用左右目カメラ」の追跡

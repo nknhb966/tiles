@@ -1264,18 +1264,20 @@
   <div id="scalebar-line"></div>
 </div>
 
-<!-- モデル高さ調整モード(?heightadjust=1)のパネル。点群を上下させCSVのheightAdjust値を測る。 -->
+<!-- モデル位置調整モード(?heightadjust=1)のパネル。点群を動かしCSVの補正値を測る。 -->
 <div id="heightadjust-panel" hidden>
-  <div style="font-weight:bold; color:#ffd24a; margin-bottom:4px;">モデル高さ調整モード</div>
+  <div style="font-weight:bold; color:#ffd24a; margin-bottom:4px;">モデル位置調整モード</div>
   <div style="margin-bottom:6px;">
-    地図を表示し、横から見て点群の地面が地図地形と合う位置を探します。
+    地図を表示し、点群が地図と合う位置を探します(高さは横から確認)。
   </div>
-  <div><b>[</b> / <b>]</b> : 下げる / 上げる (±0.1m)</div>
-  <div><b>Shift + [ / ]</b> : 微調整 (±0.01m)</div>
-  <div><b>×10 / ×30 ボタン</b>: [ ] の移動量を10/30倍</div>
+  <div><b>[</b> / <b>]</b> : 高さ Y 下げ / 上げ</div>
+  <div><b>;</b> / <b>:</b> : 東西 X 減 / 増</div>
+  <div><b>,</b> / <b>.</b> : 南北 Z 減 / 増</div>
+  <div><b>Shift + 各キー</b> : 微調整 (±0.01m)</div>
+  <div><b>×10 / ×30 / ×100</b> : 移動量を倍化</div>
   <div style="margin-top:6px;">
     現在のモデル: <span id="ha-id" style="color:#9ff;">-</span><br>
-    heightAdjust = <span id="ha-val" style="color:#fff; font-size:15px; user-select:all;">0.00</span> m
+    <span id="ha-val" style="color:#fff; font-size:13px; user-select:all;">X=0.00  Y=0.00  Z=0.00</span>
   </div>
   <div style="margin-top:4px; color:#9f9;">
     Y キー: この値を含む datasets.csv 行をコピー
@@ -1388,11 +1390,11 @@ let DATASETS = [];
 // 外部CSV(datasets.csv)が読めない場合に使う組み込みフォールバック。
 // 検証用・オフライン時でもアプリが動くよう、HTML内にデータを持つ。
 const FALLBACK_DATASETS = [
-  { id: '1881', label: '武生公会堂記念館', xOffset: -2, yOffset: -3, zOffset: -8,  yawOffset: 180, heightAdjust: 0 },
-  { id: '1882', label: '越前市役所',       xOffset:  4, yOffset: -3, zOffset: -11, yawOffset: -90, heightAdjust: 0 },
-  { id: '1886', label: '大瀧神社',         xOffset: 10, yOffset: -10, zOffset: -9, yawOffset: 120, heightAdjust: 0 },
-  { id: '1889', label: '蔵の辻',           xOffset:  3, yOffset: -7, zOffset:  0,  yawOffset: 180, heightAdjust: 0 },
-  { id: '2339', label: '権現山',           xOffset:  0, yOffset:  0, zOffset:  0,  yawOffset: 180, heightAdjust: 0 },
+  { id: '1881', label: '武生公会堂記念館', xOffset: -2, yOffset: -3, zOffset: -8,  yawOffset: 180, heightAdjust: 0, xAdjust: 0, zAdjust: 0 },
+  { id: '1882', label: '越前市役所',       xOffset:  4, yOffset: -3, zOffset: -11, yawOffset: -90, heightAdjust: 0, xAdjust: 0, zAdjust: 0 },
+  { id: '1886', label: '大瀧神社',         xOffset: 10, yOffset: -10, zOffset: -9, yawOffset: 120, heightAdjust: 12.8, xAdjust: -14.10, zAdjust: -13.60 },
+  { id: '1889', label: '蔵の辻',           xOffset:  3, yOffset: -7, zOffset:  0,  yawOffset: 180, heightAdjust: 0, xAdjust: 0, zAdjust: 0 },
+  { id: '2339', label: '権現山',           xOffset:  0, yOffset:  0, zOffset:  0,  yawOffset: 180, heightAdjust: 0, xAdjust: 0, zAdjust: 0 },
 ];
 // アノテーション(説明パネル)定義。{datasetId, x, y, z, title, body, radius, dist} の配列。
 let ANNOTATIONS = [];
@@ -1410,6 +1412,8 @@ function parseDatasetsCSV(text) {
   const iId = idx('id'), iLabel = idx('label');
   const iX = idx('xOffset'), iY = idx('yOffset'), iZ = idx('zOffset'), iYaw = idx('yawOffset');
   const iH = idx('heightAdjust'); // モデル高さ調整(m)。地図地形に地面を合わせるための上下量。
+  const iXA = idx('xAdjust');     // モデル水平補正X(m)。地図に前後左右を合わせる。
+  const iZA = idx('zAdjust');     // モデル水平補正Z(m)。
   if (iId < 0) {
     console.warn('CSV: id列が見つかりません');
     return [];
@@ -1428,6 +1432,8 @@ function parseDatasetsCSV(text) {
       zOffset:   iZ      >= 0 ? num(cols[iZ])   : 0,
       yawOffset: iYaw    >= 0 ? num(cols[iYaw]) : 0,
       heightAdjust: iH   >= 0 ? num(cols[iH])   : 0,
+      xAdjust:   iXA     >= 0 ? num(cols[iXA])  : 0,
+      zAdjust:   iZA     >= 0 ? num(cols[iZA])  : 0,
     };
   }).filter(d => d.id);
 }
@@ -2100,7 +2106,9 @@ function applyAnnotationScale() {
   for (const it of annotationItems) {
     _annScaleTmp.copy(it.pos).sub(dolly.position).multiplyScalar(worldScale).add(dolly.position);
     it.group.position.copy(_annScaleTmp);
+    it.group.position.x += currentXAdjust;
     it.group.position.y += currentHeightAdjust;
+    it.group.position.z += currentZAdjust;
     it.group.scale.setScalar(worldScale);
   }
 }
@@ -3518,12 +3526,14 @@ function loadTileset(id) {
       const camZ   = ds ? ds.zOffset   : (r * 0.4);
       const camYaw = ds ? ds.yawOffset : 0;
 
-      // モデル高さ調整を反映(点群・アノテーション・カメラ初期位置を一体で上下)
+      // モデル位置調整を反映(点群・アノテーション・カメラ初期位置を一体で動かす)
       currentHeightAdjust = ds ? (ds.heightAdjust || 0) : 0;
+      currentXAdjust = ds ? (ds.xAdjust || 0) : 0;
+      currentZAdjust = ds ? (ds.zAdjust || 0) : 0;
 
       // 切替時/初回とも、対象データセットのCSV値に従ってカメラを配置
       if (!cameraInitialized) {
-        dolly.position.set(camX, camY + currentHeightAdjust, camZ);
+        dolly.position.set(camX + currentXAdjust, camY + currentHeightAdjust, camZ + currentZAdjust);
         // dollyの向きはY軸まわり(yaw)のみを設定。pitch/rollはゼロ。
         dolly.rotation.set(0, THREE.MathUtils.degToRad(camYaw), 0);
         cameraInitialized = true;
@@ -3890,7 +3900,7 @@ if (DEBUG_MODE) {
       const id = currentDataset ?? loadingDataset;
       const ds = id != null ? getDataset(id) : null;
       if (ds) {
-        dolly.position.set(ds.xOffset, ds.yOffset + (ds.heightAdjust || 0), ds.zOffset);
+        dolly.position.set(ds.xOffset + (ds.xAdjust || 0), ds.yOffset + (ds.heightAdjust || 0), ds.zOffset + (ds.zAdjust || 0));
         dolly.rotation.set(0, THREE.MathUtils.degToRad(ds.yawOffset), 0);
         refreshDebug();
       }
@@ -4008,17 +4018,21 @@ densitySlider.addEventListener('input', () => {
 let worldScale = 1.0;
 const tilesBasePosition = new THREE.Vector3();
 const _scaleTmp = new THREE.Vector3();
-// モデル高さ調整(m)。地図地形に点群の地面を合わせる上下量。CSVのheightAdjustで設定。
-// 点群・アノテーション・カメラ初期位置を一体で上下させ、地図(地面)は固定する。
-let currentHeightAdjust = 0;
+// モデル位置調整(m)。地図に点群を合わせる補正量。CSVの heightAdjust/xAdjust/zAdjust で設定。
+// 点群・アノテーション・カメラ初期位置を一体で動かし、地図(地面)は固定する。
+let currentHeightAdjust = 0; // Y(高さ)
+let currentXAdjust = 0;      // X(東西)
+let currentZAdjust = 0;      // Z(南北)
 function applyWorldScale() {
   if (!tiles || !tiles.group) return;
   tiles.group.scale.setScalar(worldScale);
   // dolly中心の相似変換: new = dolly + s * (base - dolly)
   _scaleTmp.copy(tilesBasePosition).sub(dolly.position).multiplyScalar(worldScale).add(dolly.position);
   tiles.group.position.copy(_scaleTmp);
-  // モデル高さ調整を加算(スケールとは独立した一定のワールドYオフセット)
+  // モデル位置調整を加算(スケールとは独立した一定のワールドオフセット)
+  tiles.group.position.x += currentXAdjust;
   tiles.group.position.y += currentHeightAdjust;
+  tiles.group.position.z += currentZAdjust;
   // matrixWorld を即時更新して、tiles.update() の LOD評価に反映させる
   tiles.group.updateMatrixWorld(true);
   // アノテーション群も同じ dolly中心スケールに追従させる
@@ -4201,34 +4215,40 @@ document.addEventListener('click', (e) => {
 
   function refresh() {
     if (haId) haId.textContent = currentDataset ?? loadingDataset ?? '-';
-    if (haVal) haVal.textContent = currentHeightAdjust.toFixed(2);
+    if (haVal) haVal.textContent =
+      `X=${currentXAdjust.toFixed(2)}  Y=${currentHeightAdjust.toFixed(2)}  Z=${currentZAdjust.toFixed(2)}`;
   }
   setInterval(refresh, 100);
 
   window.addEventListener('keydown', (e) => {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    // ステップ量: 基本0.1m。×10/×30ボタンで倍率、Shiftで微調整(0.01m)。
+    // ステップ量: 基本0.1m。×10/×30/×100ボタンで倍率、Shiftで微調整(0.01m)。
     let step;
     if (e.shiftKey) step = 0.01;            // 微調整
-    else step = 0.1 * boostLevel;           // 通常0.1m、×10で1m、×30で3m
-    // [ ] の判定: e.key(配列に従う実際の文字)を最優先。
-    // フォールバックで物理キー e.code も見る(e.keyが取れない環境向け)。
+    else step = 0.1 * boostLevel;           // 通常0.1m、×10で1m、×30で3m、×100で10m
     const k = e.key;
-    const isLeft  = (k === '[') || (k === '' && e.code === 'BracketLeft');
-    const isRight = (k === ']') || (k === '' && e.code === 'BracketRight');
-    if (isLeft) {                            // [ = 下げる
-      currentHeightAdjust -= step;
-      applyWorldScale(); refresh();
-    } else if (isRight) {                     // ] = 上げる
-      currentHeightAdjust += step;
-      applyWorldScale(); refresh();
-    } else if (k === 'y' || k === 'Y' || e.code === 'KeyY') { // Y = CSV行コピー
+    // 各軸キーの判定(e.key優先、フォールバックで e.code)。日本語配列対応。
+    // [ ] = Y(高さ) 下/上, ; : = X 減/増, , . = Z 減/増
+    const yDown  = (k === '[') || (k === '' && e.code === 'BracketLeft');
+    const yUp    = (k === ']') || (k === '' && e.code === 'BracketRight');
+    const xMinus = (k === ';') || (k === '' && e.code === 'Semicolon');
+    const xPlus  = (k === ':') || (k === '' && e.code === 'Quote');   // : は Shift+; (JISでは別キーのことも)
+    const zMinus = (k === ',') || (k === '<') || (k === '' && e.code === 'Comma');
+    const zPlus  = (k === '.') || (k === '>') || (k === '' && e.code === 'Period');
+    if (yDown)       { currentHeightAdjust -= step; applyWorldScale(); refresh(); }
+    else if (yUp)    { currentHeightAdjust += step; applyWorldScale(); refresh(); }
+    else if (xMinus) { currentXAdjust -= step; applyWorldScale(); refresh(); }
+    else if (xPlus)  { currentXAdjust += step; applyWorldScale(); refresh(); }
+    else if (zMinus) { currentZAdjust -= step; applyWorldScale(); refresh(); }
+    else if (zPlus)  { currentZAdjust += step; applyWorldScale(); refresh(); }
+    else if (k === 'y' || k === 'Y' || e.code === 'KeyY') { // Y = CSV行コピー(全補正込み)
       const id = currentDataset ?? loadingDataset;
       const ds = id != null ? getDataset(id) : null;
       if (ds) {
-        const line = `${ds.id},${ds.label},${ds.xOffset},${ds.yOffset},${ds.zOffset},${ds.yawOffset},${currentHeightAdjust.toFixed(2)}`;
+        const line = `${ds.id},${ds.label},${ds.xOffset},${ds.yOffset},${ds.zOffset},${ds.yawOffset},` +
+          `${currentHeightAdjust.toFixed(2)},${currentXAdjust.toFixed(2)},${currentZAdjust.toFixed(2)}`;
         navigator.clipboard?.writeText(line);
-        console.log('datasets.csv行をコピー(heightAdjust込み):', line);
+        console.log('datasets.csv行をコピー(補正込み):', line);
       }
     }
   });
@@ -4404,7 +4424,7 @@ document.addEventListener('click', (e) => {
     const ds = currentDataset ? getDataset(currentDataset) : null;
     if (!ds) return null;
     return {
-      x: ds.xOffset, y: ds.yOffset + (ds.heightAdjust || 0), z: ds.zOffset,
+      x: ds.xOffset + (ds.xAdjust || 0), y: ds.yOffset + (ds.heightAdjust || 0), z: ds.zOffset + (ds.zAdjust || 0),
       yawRad: THREE.MathUtils.degToRad(ds.yawOffset || 0),
     };
   }

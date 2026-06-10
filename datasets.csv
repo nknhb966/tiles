@@ -1,6 +1,18 @@
-id,label,xOffset,yOffset,zOffset,yawOffset,heightAdjust
-1881,武生公会堂記念館,-2,-3,-8,180,0
-1882,越前市役所,4,-3,-11,-90,0
-1886,大瀧神社,10,-10,-9,120,0
-1889,蔵の辻,3,-7,0,180,0
-2339,権現山,0,0,0,180,0
+# データセット定義ファイル
+# 列の意味:
+#   id           : タイルセットID(TILESET_BASE/{id}/tileset.json を読む)
+#   label        : 切替ボタンに表示する名前
+#   xOffset      : カメラ初期位置 X(m)
+#   yOffset      : カメラ初期位置 Y(m, 目線の高さ)
+#   zOffset      : カメラ初期位置 Z(m)
+#   yawOffset    : カメラ初期の向き(度)
+#   heightAdjust : モデル高さ補正 Y(m)。地図に点群の高さを合わせる。
+#   xAdjust      : モデル水平補正 X(m, 東西)。地図に点群の前後左右を合わせる。
+#   zAdjust      : モデル水平補正 Z(m, 南北)。
+#                  ?heightadjust=1 モードで [ ] ; : , . キーで測り、ここに貼る。
+id,label,xOffset,yOffset,zOffset,yawOffset,heightAdjust,xAdjust,zAdjust
+1881,武生公会堂記念館,-2,-3,-8,180,0,0,0
+1882,越前市役所,4,-3,-11,-90,0,0,0
+1886,大瀧神社,10,-10,-9,120,0,0,0
+1889,蔵の辻,3,-7,0,180,0,0,0
+2339,権現山,0,0,0,180,0,0,0

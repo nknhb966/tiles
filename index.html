@@ -1213,14 +1213,6 @@
     </div>
     <button type="button" id="gsi-toggle" aria-pressed="false">地図を表示</button>
     <button type="button" id="gsi-solid-toggle" aria-pressed="true" style="margin-top:6px;">立体表示</button>
-    <div style="margin-top:8px;">
-      地図の精細さ
-      <select id="gsi-detail-select" style="font-family:monospace; background:rgba(0,0,0,0.4); color:#00c8ff;
-              border:1px solid rgba(0,200,255,0.4); border-radius:3px; padding:2px 4px;">
-        <option value="std" selected>標準(広範囲)</option>
-        <option value="high">高精細(狭め)</option>
-      </select>
-    </div>
     <div id="gsi-detail-wrap">
       <div style="margin-top:8px;">
         地形の細かさ <span id="gsi-detail-val" style="font-family:monospace;">標準</span>
@@ -1230,7 +1222,7 @@
     </div>
     <div id="info-gsi" class="ctrl-info-body" hidden>
       点群の周辺地形を国土地理院の標高・地図タイルから再現して敷きます。
-      「地図の精細さ」で標準(広範囲・軽い)と高精細(狭め・精細)を切り替えます。
+      真俯瞰図では表示範囲を拡大するほど地図が自動的に精細になります(一人称では標準)。
       「立体表示」で起伏のある地形、「平面表示」で平らな地図に切り替えます。
       「地形の細かさ」を下げると頂点が減り、動作が軽くなります(カクつく場合は下げてください)。
       簡易表示のため、地図と点群の位置・スケールには多少のずれがある場合があります。
@@ -2299,6 +2291,11 @@ function enterTopdown() {
   if (modePanel) modePanel.removeAttribute('hidden');
   updateScaleBar(); // 縮尺バー表示
   updateSlicePanel();
+  // 地図表示中なら、真俯瞰の表示範囲に応じた精細度で再取得(一人称より精細になりうる)
+  if (gsiState.visible && gsiState.centerEcef &&
+      decideGsiParams().zoom !== gsiState.builtZoom) {
+    buildGsiGround(gsiState.centerEcef);
+  }
 }
 
 // 断面クリップのuniformを現在の状態から更新
@@ -2345,12 +2342,37 @@ function exitTopdown() {
   cubeUniforms.uClipY.value = 1e9;
   const slicePanel = document.getElementById('slice-panel');
   if (slicePanel) slicePanel.setAttribute('hidden', '');
+  // 一人称に戻ったら、地図表示中なら標準ズーム(14)で敷き直す
+  if (gsiState.visible && gsiState.centerEcef &&
+      decideGsiParams().zoom !== gsiState.builtZoom) {
+    buildGsiGround(gsiState.centerEcef);
+  }
 }
 
 // 縮尺(表示範囲)を変更 (1〜100000m)
+let _gsiRebuildTimer = null;
 function setTopdownRange(m) {
   topdownState.rangeM = Math.max(1, Math.min(100000, m));
-  if (topdownState.active) { updateTopdownFrustum(); updateScaleBar(); }
+  if (topdownState.active) {
+    updateTopdownFrustum();
+    updateScaleBar();
+    // 地図表示中、表示範囲の帯が変わって適切ズームが変わったら再取得。
+    // スライダー連続操作中の多重取得を避けるためデバウンス(400ms)。
+    if (gsiState.visible && gsiState.centerEcef) {
+      const want = decideGsiParams().zoom;
+      if (want !== gsiState.builtZoom) {
+        if (_gsiRebuildTimer) clearTimeout(_gsiRebuildTimer);
+        _gsiRebuildTimer = setTimeout(() => {
+          _gsiRebuildTimer = null;
+          // 再判定(操作が続いて別の帯になっている可能性)
+          if (topdownState.active && gsiState.visible &&
+              decideGsiParams().zoom !== gsiState.builtZoom) {
+            buildGsiGround(gsiState.centerEcef);
+          }
+        }, 400);
+      }
+    }
+  }
 }
 
 // 真俯瞰の縮尺バーを更新。キリの良い距離(1,2,5×10^n)を選び、対応する幅のバーを描く。
@@ -2434,12 +2456,6 @@ function toggleTopdownNorthUp() {
 // 出典: 国土地理院(地理院タイルを加工して作成)。トグルで表示/非表示。
 const GSI_STD_URL = 'https://cyberjapandata.gsi.go.jp/xyz/std';     // 標準地図(テクスチャ)
 const GSI_DEM_URL = 'https://cyberjapandata.gsi.go.jp/xyz/dem_png'; // 標高タイル(PNG符号化)
-// 地図の精細さプリセット: zoom=地図ズーム, grid=タイル枚数(片側), demZoom=標高ズーム。
-//   標準: ズーム14・7×7(約17km, 軽い) / 高精細: ズーム15・9×9(約11km, 精細)
-const GSI_PRESETS = {
-  std:  { mapZoom: 14, grid: 7, demZoom: 14, label: '標準' },
-  high: { mapZoom: 15, grid: 9, demZoom: 14, label: '高精細' },
-};
 const gsiState = {
   group: new THREE.Group(),     // 地形メッシュを入れるグループ
   built: false,                 // 現在のデータセットで構築済みか
@@ -2449,6 +2465,7 @@ const gsiState = {
   exaggeration: 1.0,            // 高さ誇張倍率(1.0固定: 実標高どおり)
   baseElev: 0,                  // 中心の地理院標高(点群地面に合わせる基準)
   detail: 'std',                // 地図精細さ('std'/'high')
+  builtZoom: 0,                 // 現在構築中の地図ズーム(真俯瞰の帯またぎ検出用)
   // 高さ書き換え用に保持するデータ(タイル再取得なしで頂点数変更/平面立体切替を行う)
   bigElev: null,                // 結合標高グリッド(Float32Array)
   bigW: 0,                      // 結合グリッドの一辺ピクセル数
@@ -2538,6 +2555,24 @@ function sampleElev(elev, u, v) {
   return elev[py * 256 + px];
 }
 
+// 地図の構築パラメータ(ズーム・カバー半径)を決める。
+// 一人称: ズーム14固定・広め。真俯瞰: 表示範囲(rangeM)の帯でズーム14/15/16を自動選択。
+function decideGsiParams() {
+  if (!topdownState.active) {
+    // 一人称(もとの視点): 標準ズーム14、点群周辺を広めにカバー(約8.5km半径)。
+    return { zoom: 14, coverRadiusM: 8500 };
+  }
+  // 真俯瞰: 表示範囲の帯でズームを決める。
+  const r = topdownState.rangeM;
+  let zoom;
+  if (r >= 800)      zoom = 14; // 広域
+  else if (r >= 200) zoom = 15; // 中間
+  else               zoom = 16; // 拡大
+  // カバー半径: 表示範囲の対角を覆い、スクロール用に少し余裕(×1.5)。最低でも画面範囲。
+  const coverRadiusM = Math.max(r * 1.5, r * 0.71 * 1.2);
+  return { zoom, coverRadiusM };
+}
+
 // 地形メッシュを構築(非同期)。標高タイルで起伏、地図タイルをテクスチャに。
 async function buildGsiGround(centerEcef) {
   clearGsiGround();
@@ -2545,14 +2580,19 @@ async function buildGsiGround(centerEcef) {
   gsiState.lat = lat; gsiState.lon = lon;
   console.log(`[地理院地図] 中心 lat=${lat.toFixed(6)}, lon=${lon.toFixed(6)}`);
 
-  const preset = GSI_PRESETS[gsiState.detail] || GSI_PRESETS.std;
-  const z = preset.mapZoom;     // 地図・標高とも同じズーム(高精細時はズーム15)
+  // ズーム・カバー範囲を決定(真俯瞰なら表示範囲に応じて自動)
+  const params = decideGsiParams();
+  const z = params.zoom;
+  gsiState.builtZoom = z; // 帯またぎ検出用に記録
   const c = lonLatToTileXY(lon, lat, z);
   const cxTile = Math.floor(c.x), cyTile = Math.floor(c.y);
   const tileM = tileSizeMeters(lat, z);
-  const half = Math.floor(preset.grid / 2);
+  // カバー半径を満たす片側タイル数を計算。中心タイル+両側 half 枚。
+  // half = ceil(coverRadiusM / tileM)。枚数上限で重さを制限(片側最大8=17×17)。
+  let half = Math.ceil(params.coverRadiusM / tileM);
+  half = Math.max(2, Math.min(8, half)); // 片側2〜8枚(5×5〜17×17)
+  const N = half * 2 + 1;       // タイル枚数(奇数)
   const exa = gsiState.exaggeration;
-  const N = preset.grid;        // タイル枚数(片側*2+1)
   const totalM = tileM * N;     // 全体の地表サイズ(m)
 
   // ── 1. 標高タイルを1つの大きなグリッドに結合 ──
@@ -2638,7 +2678,7 @@ async function buildGsiGround(centerEcef) {
   gsiState.group.visible = gsiState.visible;
   applyGsiScale();
 
-  console.log(`[地理院地図] 標高タイル取得 成功${demOkCount}/失敗${demNgCount}, 全体${totalM.toFixed(0)}m`);
+  console.log(`[地理院地図] ズーム${z}, ${N}×${N}枚, 標高取得 成功${demOkCount}/失敗${demNgCount}, 全体${totalM.toFixed(0)}m`);
 }
 
 // 保持した標高データ(bigElev)から地形メッシュを(再)生成する。
@@ -4441,17 +4481,6 @@ document.addEventListener('click', (e) => {
       const lv = parseInt(detailSlider.value, 10);
       gsiState.step = STEP_MAP[lv] || 6;
       if (gsiState.built) rebuildGsiMesh();
-    });
-  }
-
-  // 地図の精細さ選択: 変更したら、表示中ならタイルを再取得して再構築。
-  const detailSelect = document.getElementById('gsi-detail-select');
-  if (detailSelect) {
-    detailSelect.addEventListener('change', () => {
-      gsiState.detail = detailSelect.value;
-      if (gsiState.visible && gsiState.centerEcef) {
-        buildGsiGround(gsiState.centerEcef); // ズーム/枚数が変わるので再取得
-      }
     });
   }
 })();

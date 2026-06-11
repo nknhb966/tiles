@@ -330,7 +330,7 @@
     }
 
     /* 説明パネル表示トグルボタン。ON(表示中)はシアン枠、OFF(非表示)はグレー枠。 */
-    #annotation-toggle, #topdown-toggle, #gsi-toggle, #gsi-solid-toggle {
+    #annotation-toggle, #topdown-toggle, #gsi-toggle, #gsi-solid-toggle, #slice-toggle {
       width: 260px;
       padding: 8px;
       background: transparent;
@@ -344,12 +344,12 @@
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    #annotation-toggle[aria-pressed="true"], #topdown-toggle[aria-pressed="true"], #gsi-toggle[aria-pressed="true"], #gsi-solid-toggle[aria-pressed="true"] {
+    #annotation-toggle[aria-pressed="true"], #topdown-toggle[aria-pressed="true"], #gsi-toggle[aria-pressed="true"], #gsi-solid-toggle[aria-pressed="true"], #slice-toggle[aria-pressed="true"] {
       background: rgba(0,200,255,0.12);
       border-color: #00c8ff;
       color: #00c8ff;
     }
-    #annotation-toggle[aria-pressed="false"], #topdown-toggle[aria-pressed="false"], #gsi-toggle[aria-pressed="false"], #gsi-solid-toggle[aria-pressed="false"] {
+    #annotation-toggle[aria-pressed="false"], #topdown-toggle[aria-pressed="false"], #gsi-toggle[aria-pressed="false"], #gsi-solid-toggle[aria-pressed="false"], #slice-toggle[aria-pressed="false"] {
       background: transparent;
       border-color: rgba(160,180,195,0.5);
       color: rgba(160,180,195,0.8);
@@ -474,7 +474,8 @@
     body.touch #controls-body #annotation-toggle,
     body.touch #controls-body #topdown-toggle,
     body.touch #controls-body #gsi-toggle,
-    body.touch #controls-body #gsi-solid-toggle {
+    body.touch #controls-body #gsi-solid-toggle,
+    body.touch #controls-body #slice-toggle {
       width: 140px;
       max-width: calc(100vw - 64px);
     }
@@ -665,6 +666,26 @@
       user-select: none;
     }
     #topdown-scalebar[hidden] { display: none; }
+
+    /* 断面表示のクリップ高さパネル(画面上部中央) */
+    #slice-panel {
+      position: fixed;
+      top: 12px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 110;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      font-family: sans-serif;
+      font-size: 13px;
+      text-align: center;
+      padding: 6px 14px;
+      border-radius: 4px;
+      border: 1px solid rgba(0,200,255,0.5);
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+      line-height: 1.5;
+    }
+    #slice-panel[hidden] { display: none; }
     #scalebar-label {
       color: #fff;
       font-family: sans-serif;
@@ -1160,12 +1181,14 @@
     </div>
     <input id="topdown-range-slider" type="range" min="1" max="1000" step="1" value="25"
       style="width:260px; accent-color:#00c8ff;">
+    <button type="button" id="slice-toggle" aria-pressed="false" style="margin-top:8px;">断面表示</button>
     <div id="info-topdown" class="ctrl-info-body" hidden>
       今いる場所を中心に、真上から見下ろした地図的な表示に切り替えます(正射投影)。
       「表示範囲」は画面の短辺に収めるおおよそのメートル数(1〜1000)で、縮尺の指定にあたります。
       値を小さくするほど拡大、大きくするほど広域を表示します。
       真俯瞰中は WASD で地図をスクロール、← → で向き(画面の上方向)を回転できます。
-      右上のコンパスをクリックすると「北が上」⇔「向いていた方向が上」を切り替えます。
+      左上のコンパスをクリックすると「北が上」⇔「向いていた方向が上」を切り替えます。
+      「断面表示」をONにすると、上下キー(↑↓)でクリップ面を上下し、その高さより下だけを表示します。
       VR表示中は使用できません。
     </div>
   </div>
@@ -1262,6 +1285,12 @@
 <div id="topdown-scalebar" hidden>
   <div id="scalebar-label">100 m</div>
   <div id="scalebar-line"></div>
+</div>
+
+<!-- 断面表示中のクリップ高さ表示(真俯瞰の断面ON時のみ)。 -->
+<div id="slice-panel" hidden>
+  断面の高さ: <span id="slice-val">0.0</span> m<br>
+  <span style="color:#9ff;">↑ / ↓</span> で断面を上下
 </div>
 
 <!-- モデル位置調整モード(?heightadjust=1)のパネル。点群を動かしCSVの補正値を測る。 -->
@@ -1392,7 +1421,7 @@ let DATASETS = [];
 const FALLBACK_DATASETS = [
   { id: '1881', label: '武生公会堂記念館', xOffset: -2, yOffset: -3, zOffset: -8,  yawOffset: 180, heightAdjust: 0, xAdjust: 0, zAdjust: 0 },
   { id: '1882', label: '越前市役所',       xOffset:  4, yOffset: -3, zOffset: -11, yawOffset: -90, heightAdjust: 0, xAdjust: 0, zAdjust: 0 },
-  { id: '1886', label: '大瀧神社',         xOffset: 10, yOffset: -10, zOffset: -9, yawOffset: 120, heightAdjust: 12.8, xAdjust: -14.10, zAdjust: -13.60 },
+  { id: '1886', label: '大瀧神社',         xOffset: 10, yOffset: -10, zOffset: -9, yawOffset: 120, heightAdjust: 0, xAdjust: 0, zAdjust: 0 },
   { id: '1889', label: '蔵の辻',           xOffset:  3, yOffset: -7, zOffset:  0,  yawOffset: 180, heightAdjust: 0, xAdjust: 0, zAdjust: 0 },
   { id: '2339', label: '権現山',           xOffset:  0, yOffset:  0, zOffset:  0,  yawOffset: 180, heightAdjust: 0, xAdjust: 0, zAdjust: 0 },
 ];
@@ -1551,6 +1580,10 @@ const topdownState = {
   savedPointUI: null,            // 真俯瞰前の点サイズUI値(復帰用)
   northYaw: 0,                   // データから導出した真北の方位角(rad)。-Z基準。
   hasGeoNorth: false,            // 地理参照から北を取得できたか
+  sliceOn: false,                // 断面表示ON/OFF
+  sliceY: 0,                     // 断面クリップ高さ(ワールドY)
+  sliceTopY: 0,                  // 点群の上端Y(断面の初期値・上限)
+  sliceBottomY: 0,               // 点群の下端Y(断面の下限)
 };
 
 // VR時のカメラリグ（dolly）：カメラをこの中に入れて移動・回転させる
@@ -2216,6 +2249,23 @@ function enterTopdown() {
   updateTopdownFrustum();
   placeTopdownCamera();
   updateCompass();
+
+  // 断面表示用に点群の上端・下端Y(ワールド)を取得。
+  // 境界ボックスを worldScale 等の適用後の matrixWorld で変換して実Y範囲を求める。
+  if (tiles) {
+    const box = new THREE.Box3();
+    if (tiles.getBoundingBox(box)) {
+      tiles.group.updateMatrixWorld(true);
+      box.applyMatrix4(tiles.group.matrixWorld);
+      topdownState.sliceTopY = box.max.y;
+      topdownState.sliceBottomY = box.min.y;
+      // 断面の初期高さは上端(全体が見える)
+      topdownState.sliceY = box.max.y;
+    }
+  }
+  // 断面状態をシェーダへ反映(トグルOFFなら無効)
+  applySliceUniforms();
+
   // 真俯瞰では基準格子は不要なので非表示にする
   grid.visible = false;
   const compass = document.getElementById('topdown-compass');
@@ -2223,6 +2273,28 @@ function enterTopdown() {
   const modePanel = document.getElementById('topdown-mode-panel');
   if (modePanel) modePanel.removeAttribute('hidden');
   updateScaleBar(); // 縮尺バー表示
+  updateSlicePanel();
+}
+
+// 断面クリップのuniformを現在の状態から更新
+function applySliceUniforms() {
+  const on = topdownState.active && topdownState.sliceOn;
+  cubeUniforms.uClipEnabled.value = on ? 1.0 : 0.0;
+  cubeUniforms.uClipY.value = on ? topdownState.sliceY : 1e9;
+}
+
+// 断面パネル(現在のクリップ高さ表示)を更新
+function updateSlicePanel() {
+  const panel = document.getElementById('slice-panel');
+  if (!panel) return;
+  if (topdownState.active && topdownState.sliceOn) {
+    panel.removeAttribute('hidden');
+    const rel = topdownState.sliceY - topdownState.sliceBottomY; // 下端からの高さ
+    const valEl = document.getElementById('slice-val');
+    if (valEl) valEl.textContent = rel.toFixed(1);
+  } else {
+    panel.setAttribute('hidden', '');
+  }
 }
 
 // 真俯瞰モードを抜ける(通常の一人称視点へ)
@@ -2243,6 +2315,11 @@ function exitTopdown() {
   grid.visible = true;
   const scalebar = document.getElementById('topdown-scalebar');
   if (scalebar) scalebar.setAttribute('hidden', '');
+  // 断面クリップを解除(全点表示に戻す)
+  cubeUniforms.uClipEnabled.value = 0.0;
+  cubeUniforms.uClipY.value = 1e9;
+  const slicePanel = document.getElementById('slice-panel');
+  if (slicePanel) slicePanel.setAttribute('hidden', '');
 }
 
 // 縮尺(表示範囲)を変更 (1〜100000m)
@@ -2890,6 +2967,8 @@ const CUBE_VERT = /* glsl */`
   uniform float uDensity; // 0.0〜1.0 (POINT DENSITY: 描画する点の割合)
   uniform float uOrtho;   // 1.0=正射投影(真俯瞰), 0.0=透視投影
   uniform float uOrthoPx; // 正射時の点サイズ係数(uSize×この値=ピクセル)
+  uniform float uClipEnabled; // 1.0=断面表示ON(uClipYより上を隠す)
+  uniform float uClipY;       // クリップ高さ(ワールドY)。これより上の点を破棄。
   varying vec3 vColor;
 
   // 位置座標から決定論的な疑似乱数を生成(同座標→同値, フレーム間ちらつきなし)。
@@ -2908,6 +2987,16 @@ const CUBE_VERT = /* glsl */`
       gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // クリップ空間外
       gl_PointSize = 0.0;
       return;
+    }
+
+    // 断面表示: ワールドY座標が uClipY より上なら破棄(クリップ面より下だけ残す)
+    if (uClipEnabled > 0.5) {
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      if (worldPos.y > uClipY) {
+        gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+        gl_PointSize = 0.0;
+        return;
+      }
     }
 
     vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
@@ -2967,6 +3056,8 @@ const cubeUniforms = {
   uDensity: { value: 1.0 },
   uOrtho:   { value: 0.0 },   // 真俯瞰(正射)中は1.0に
   uOrthoPx: { value: 2500.0 }, // 正射時の点サイズ係数(uSize×2500=px。UI4→0.004×2500=10px)
+  uClipEnabled: { value: 0.0 }, // 断面表示ON/OFF
+  uClipY:       { value: 1e9 }, // クリップ高さ(ワールドY)。初期は大きく(全表示)。
 };
 
 function makeCubeMaterial() {
@@ -3386,6 +3477,10 @@ function loadTileset(id) {
       tdBtn.textContent = '真俯瞰にする';
     }
   }
+  // 断面表示もOFFに戻す
+  topdownState.sliceOn = false;
+  { const sb = document.getElementById('slice-toggle');
+    if (sb) sb.setAttribute('aria-pressed', 'false'); }
 
   // 進行中のプリフェッチがあればキャンセル(別データセット切替時)
   if (prefetchState.running) {
@@ -4371,6 +4466,19 @@ document.addEventListener('click', (e) => {
   if (compass) {
     compass.addEventListener('click', () => toggleTopdownNorthUp());
   }
+
+  // 断面表示トグル: ONで点群をクリップ面より下だけ表示。↑↓でクリップ面を上下。
+  const sliceBtn = document.getElementById('slice-toggle');
+  if (sliceBtn) {
+    sliceBtn.addEventListener('click', () => {
+      topdownState.sliceOn = !topdownState.sliceOn;
+      sliceBtn.setAttribute('aria-pressed', topdownState.sliceOn ? 'true' : 'false');
+      // ONにした時、クリップ高さを上端に初期化(全体が見える状態から)
+      if (topdownState.sliceOn) topdownState.sliceY = topdownState.sliceTopY;
+      applySliceUniforms();
+      updateSlicePanel();
+    });
+  }
 })();
 
 // ── ライセンス詳細パネル開閉 ──
@@ -4592,9 +4700,29 @@ renderer.setAnimationLoop(() => {
     const boost = boostLevel;
     const panSpeed = MOVE_SPEED * fine * boost; // m/秒(一人称と同じ基本速度)
     let dx = 0, dy = 0;
-    // WASD と 矢印↑↓ の両方で地図スクロール(全モードでキーを統一)
-    if (keys.forward || keys.up)   dy += panSpeed * dt; // W/↑=画面上へ
-    if (keys.back    || keys.down) dy -= panSpeed * dt; // S/↓=画面下へ
+
+    // 断面表示ON時は ↑↓ をクリップ面の上下に使う(前後移動は W/S のみ)。
+    // OFF時は ↑↓ も前後移動(従来どおり)。
+    if (topdownState.sliceOn) {
+      const sliceSpeed = MOVE_SPEED * fine * boost; // m/秒
+      let moved = false;
+      if (keys.up)   { topdownState.sliceY += sliceSpeed * dt; moved = true; }
+      if (keys.down) { topdownState.sliceY -= sliceSpeed * dt; moved = true; }
+      if (moved) {
+        // 点群の上下端の範囲にクランプ
+        topdownState.sliceY = Math.max(topdownState.sliceBottomY,
+                              Math.min(topdownState.sliceTopY, topdownState.sliceY));
+        applySliceUniforms();
+        updateSlicePanel();
+      }
+      // W/S は前後移動(↑↓は断面に使うので除外)
+      if (keys.forward) dy += panSpeed * dt;
+      if (keys.back)    dy -= panSpeed * dt;
+    } else {
+      // WASD と 矢印↑↓ の両方で地図スクロール
+      if (keys.forward || keys.up)   dy += panSpeed * dt; // W/↑=画面上へ
+      if (keys.back    || keys.down) dy -= panSpeed * dt; // S/↓=画面下へ
+    }
     if (keys.right)   dx -= panSpeed * dt; // D=画面左へ(直感に合わせ反転)
     if (keys.left)    dx += panSpeed * dt; // A=画面右へ(直感に合わせ反転)
 

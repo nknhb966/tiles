@@ -1182,6 +1182,18 @@
     <input id="topdown-range-slider" type="range" min="1" max="1000" step="1" value="25"
       style="width:260px; accent-color:#00c8ff;">
     <button type="button" id="slice-toggle" aria-pressed="false" style="margin-top:8px;">断面表示</button>
+    <div style="margin-top:8px;">
+      画像の精細さ
+      <select id="export-scale" style="font-family:monospace; background:rgba(0,0,0,0.4); color:#00c8ff;
+              border:1px solid rgba(0,200,255,0.4); border-radius:3px; padding:2px 4px;">
+        <option value="2">2倍</option>
+        <option value="4" selected>4倍</option>
+      </select>
+    </div>
+    <button type="button" id="export-png-btn" style="margin-top:6px; width:260px; padding:8px;
+      background:transparent; border:1px solid rgba(0,200,255,0.6); color:#00c8ff;
+      font-family:inherit; font-size:13px; font-weight:bold; letter-spacing:1px;
+      border-radius:3px; cursor:pointer;">真俯瞰図を画像保存(PNG)</button>
     <div id="info-topdown" class="ctrl-info-body" hidden>
       今いる場所を中心に、真上から見下ろした地図的な表示に切り替えます(正射投影)。
       「表示範囲」は画面の短辺に収めるおおよそのメートル数(1〜1000)で、縮尺の指定にあたります。
@@ -1593,7 +1605,7 @@ dolly.position.set(0, 2, 10);
 dolly.add(camera);
 scene.add(dolly);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
@@ -4486,7 +4498,175 @@ document.addEventListener('click', (e) => {
       updateSlicePanel();
     });
   }
+
+  // 真俯瞰図の高解像度PNG書き出し
+  const exportBtn = document.getElementById('export-png-btn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      if (!topdownState.active) {
+        alert('真俯瞰モードのときに保存できます。先に「真俯瞰にする」を押してください。');
+        return;
+      }
+      const scaleSel = document.getElementById('export-scale');
+      const factor = scaleSel ? parseInt(scaleSel.value, 10) : 4;
+      exportTopdownPNG(factor);
+    });
+  }
 })();
+
+// 真俯瞰図を高解像度PNGで書き出す。
+// レンダラーを factor 倍に拡大して描画→canvas取得→縮尺バー・方位・出典を焼き込み→DL。
+function exportTopdownPNG(factor) {
+  const baseW = window.innerWidth, baseH = window.innerHeight;
+  const outW = baseW * factor, outH = baseH * factor;
+
+  // --- 1. レンダラーを高解像度化して真俯瞰を描画 ---
+  const savedPixelRatio = renderer.getPixelRatio();
+  const savedSize = new THREE.Vector2();
+  renderer.getSize(savedSize);
+  const savedOrthoPx = cubeUniforms.uOrthoPx.value;
+
+  renderer.setPixelRatio(1);
+  renderer.setSize(outW, outH, false);
+  // 点サイズは解像度に比例して拡大(高解像度でも点が同じ見た目になるよう)
+  cubeUniforms.uOrthoPx.value = savedOrthoPx * factor;
+  // アスペクト維持のためフラスタムを出力サイズで再計算
+  const aspect = outW / outH;
+  const halfR = topdownState.rangeM / 2;
+  let hw, hh;
+  if (aspect >= 1) { hh = halfR; hw = halfR * aspect; }
+  else             { hw = halfR; hh = halfR / aspect; }
+  orthoCamera.left = -hw; orthoCamera.right = hw;
+  orthoCamera.top = hh; orthoCamera.bottom = -hh;
+  orthoCamera.updateProjectionMatrix();
+
+  renderer.render(scene, orthoCamera);
+
+  // --- 2. WebGLのcanvasを2D canvasにコピーし、注記を描き込む ---
+  const out = document.createElement('canvas');
+  out.width = outW; out.height = outH;
+  const ctx = out.getContext('2d');
+  ctx.drawImage(renderer.domElement, 0, 0, outW, outH);
+
+  // 注記類を factor 倍スケールで描き込む
+  drawExportOverlays(ctx, outW, outH, factor);
+
+  // --- 3. レンダラーを元に戻す ---
+  renderer.setPixelRatio(savedPixelRatio);
+  renderer.setSize(savedSize.x, savedSize.y, false);
+  cubeUniforms.uOrthoPx.value = savedOrthoPx;
+  updateTopdownFrustum();
+  renderer.render(scene, orthoCamera);
+
+  // --- 4. PNGダウンロード ---
+  out.toBlob((blob) => {
+    if (!blob) { alert('画像の生成に失敗しました。'); return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    a.href = url;
+    a.download = `真俯瞰図_${ts}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, 'image/png');
+}
+
+// エクスポート画像に縮尺バー・方位・出典を描き込む。s=拡大係数。
+function drawExportOverlays(ctx, W, H, s) {
+  ctx.save();
+
+  // --- 縮尺バー(右下) ---
+  const shortPx = Math.min(W, H);
+  const pxPerMeter = (shortPx / topdownState.rangeM) * worldScale;
+  const targetPx = shortPx * 0.2;
+  const roughM = targetPx / pxPerMeter;
+  const pow = Math.pow(10, Math.floor(Math.log10(roughM)));
+  let niceM = pow;
+  for (const c of [1, 2, 5, 10].map(v => v * pow)) { if (c <= roughM) niceM = c; }
+  const barPx = niceM * pxPerMeter;
+  const label = (niceM >= 1000) ? `${niceM/1000} km` : `${niceM} m`;
+
+  const margin = 16 * s;
+  const barX2 = W - margin;
+  const barX1 = barX2 - barPx;
+  const barY = H - margin - 10 * s;
+  ctx.lineWidth = 3 * s;
+  ctx.strokeStyle = '#fff';
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${13 * s}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,0.9)';
+  ctx.shadowBlur = 4 * s;
+  // バー(コの字)
+  ctx.beginPath();
+  ctx.moveTo(barX1, barY - 8 * s);
+  ctx.lineTo(barX1, barY);
+  ctx.lineTo(barX2, barY);
+  ctx.lineTo(barX2, barY - 8 * s);
+  ctx.stroke();
+  ctx.fillText(label, (barX1 + barX2) / 2, barY - 12 * s);
+
+  // --- 方位(北マーク, 左上) ---
+  // 画面上方向 upYaw に対し、北は (northYaw - upYaw) の向き。SVGコンパスと同じ符号。
+  const upYaw = topdownState.northUp ? topdownState.northYaw : topdownState.heading;
+  const rel = topdownState.northYaw - upYaw;
+  const deg = -rel; // 画面上向きから時計回り
+  const cx = margin + 30 * s, cy = margin + 30 * s, r = 26 * s;
+  ctx.shadowBlur = 4 * s;
+  // 円
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(6,12,18,0.8)';
+  ctx.fill();
+  ctx.lineWidth = 2 * s;
+  ctx.strokeStyle = 'rgba(0,200,255,0.7)';
+  ctx.stroke();
+  // 北を指す針(degだけ回転)
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(deg);
+  ctx.shadowBlur = 0;
+  ctx.beginPath(); // 上半分(赤)
+  ctx.moveTo(0, -r * 0.7);
+  ctx.lineTo(-r * 0.18, 0);
+  ctx.lineTo(r * 0.18, 0);
+  ctx.closePath();
+  ctx.fillStyle = '#ff5555';
+  ctx.fill();
+  ctx.beginPath(); // 下半分(灰)
+  ctx.moveTo(0, r * 0.7);
+  ctx.lineTo(-r * 0.18, 0);
+  ctx.lineTo(r * 0.18, 0);
+  ctx.closePath();
+  ctx.fillStyle = '#cccccc';
+  ctx.fill();
+  // N文字
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${12 * s}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('N', 0, -r * 0.45);
+  ctx.restore();
+
+  // --- 出典(左下。地図表示時のみ。規約対応で必須) ---
+  if (gsiState.visible) {
+    ctx.shadowColor = 'rgba(0,0,0,0.95)';
+    ctx.shadowBlur = 4 * s;
+    ctx.fillStyle = '#fff';
+    ctx.font = `${11 * s}px sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    const tx = margin;
+    let ty = H - margin + 4 * s;
+    ctx.fillText('出典：国土地理院（https://maps.gsi.go.jp/development/ichiran.html）', tx, ty);
+    ty -= 14 * s;
+    ctx.fillText('地理院タイル（標準地図・標高タイル（基盤地図情報数値標高モデル））を加工して作成', tx, ty);
+  }
+
+  ctx.restore();
+}
 
 // ── ライセンス詳細パネル開閉 ──
 // クレジット行の ⓘ ボタンで開く、✕ボタンまたはパネル外クリックで閉じる、Escでも閉じる。

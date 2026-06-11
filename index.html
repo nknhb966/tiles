@@ -1582,8 +1582,9 @@ const topdownState = {
   hasGeoNorth: false,            // 地理参照から北を取得できたか
   sliceOn: false,                // 断面表示ON/OFF
   sliceY: 0,                     // 断面クリップ高さ(ワールドY)
-  sliceTopY: 0,                  // 点群の上端Y(断面の初期値・上限)
+  sliceTopY: 0,                  // 点群の上端Y(断面の上限)
   sliceBottomY: 0,               // 点群の下端Y(断面の下限)
+  eyeY: 0,                       // 真俯瞰に入る前の目線の高さ(断面の初期クリップ高さ)
 };
 
 // VR時のカメラリグ（dolly）：カメラをこの中に入れて移動・回転させる
@@ -2232,6 +2233,8 @@ function placeTopdownCamera() {
 // 真俯瞰モードに入る
 function enterTopdown() {
   if (renderer.xr.isPresenting) return; // VR中は不可
+  // 真俯瞰に入る前の目線の高さ(ワールドY)を保存。断面の初期クリップ高さに使う。
+  topdownState.eyeY = dolly.position.y;
   topdownState.center.set(dolly.position.x, dolly.position.y, dolly.position.z);
   topdownState.camHeight = dolly.position.y + 500; // 中心の500m上空(正射なので見た目に影響せず)
   // 画面の「上」= 一人称で向いていた方向(dolly.rotation.y)を引き継ぐ
@@ -2259,10 +2262,11 @@ function enterTopdown() {
       box.applyMatrix4(tiles.group.matrixWorld);
       topdownState.sliceTopY = box.max.y;
       topdownState.sliceBottomY = box.min.y;
-      // 断面の初期高さは上端(全体が見える)
-      topdownState.sliceY = box.max.y;
     }
   }
+  // 断面の初期高さは「真俯瞰に入る前の目線の高さ」。点群範囲にクランプ。
+  topdownState.sliceY = Math.max(topdownState.sliceBottomY,
+                        Math.min(topdownState.sliceTopY, topdownState.eyeY));
   // 断面状態をシェーダへ反映(トグルOFFなら無効)
   applySliceUniforms();
 
@@ -4473,8 +4477,11 @@ document.addEventListener('click', (e) => {
     sliceBtn.addEventListener('click', () => {
       topdownState.sliceOn = !topdownState.sliceOn;
       sliceBtn.setAttribute('aria-pressed', topdownState.sliceOn ? 'true' : 'false');
-      // ONにした時、クリップ高さを上端に初期化(全体が見える状態から)
-      if (topdownState.sliceOn) topdownState.sliceY = topdownState.sliceTopY;
+      // ONにした時、クリップ高さを目線の高さに初期化(点群範囲にクランプ)
+      if (topdownState.sliceOn) {
+        topdownState.sliceY = Math.max(topdownState.sliceBottomY,
+                              Math.min(topdownState.sliceTopY, topdownState.eyeY));
+      }
       applySliceUniforms();
       updateSlicePanel();
     });

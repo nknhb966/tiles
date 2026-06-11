@@ -1221,13 +1221,14 @@
         style="width:260px; accent-color:#00c8ff;">
     </div>
     <div style="margin-top:8px;">
-      地図の精細さ <span id="gsi-zoom-val" style="font-family:monospace;">自動</span>
+      地図の精細さ(一人称) <span id="gsi-zoom-val" style="font-family:monospace;">基準</span>
     </div>
     <input id="gsi-zoom-slider" type="range" min="0" max="4" step="1" value="0"
       style="width:260px; accent-color:#00c8ff;">
     <div id="info-gsi" class="ctrl-info-body" hidden>
       点群の周辺地形を国土地理院の標高・地図タイルから再現して敷きます。
-      「地図の精細さ」は自動(真俯瞰の表示範囲に連動)またはズーム14〜17を手動指定できます。
+      真俯瞰図では常に最も精細(ズーム17)で表示し、移動に追従して読み込みます。
+      一人称(もとの視点)では「地図の精細さ」スライダーで基準(ズーム14)〜ズーム17を選べます。
       数字が大きいほど精細ですが、範囲が狭くなり取得が重くなります。
       「立体表示」で起伏のある地形、「平面表示」で平らな地図に切り替えます。
       「地形の細かさ」を下げると頂点が減り、動作が軽くなります(カクつく場合は下げてください)。
@@ -1884,6 +1885,47 @@ const touchVert = { up: false, down: false };
   };
   area.addEventListener('pointerup', endSwipe);
   area.addEventListener('pointercancel', endSwipe);
+
+  // 真俯瞰中の2本指ピンチで表示範囲(rangeM)を変更。
+  // ピンチアウト(広げる)で拡大(範囲を狭く)、ピンチイン(つまむ)で広域(範囲を広く)。
+  let pinchPrevDist = null;
+  area.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      pinchPrevDist = touchDist(e.touches);
+      e.preventDefault();
+    }
+  }, { passive: false });
+  area.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && pinchPrevDist != null && topdownState.active) {
+      const d = touchDist(e.touches);
+      if (pinchPrevDist > 0) {
+        const ratio = d / pinchPrevDist;
+        // 指が広がる(ratio>1)→範囲を縮小(拡大表示)。範囲は逆数で変化。
+        let next = topdownState.rangeM / ratio;
+        next = Math.max(1, Math.min(100000, next));
+        setTopdownRange(next);
+        // スライダー・数値入力も同期
+        const rs = document.getElementById('topdown-range-slider');
+        const rn = document.getElementById('topdown-range-num');
+        if (rs) rs.value = String(Math.min(1000, Math.round(next)));
+        if (rn) rn.value = String(Math.round(next));
+      }
+      pinchPrevDist = d;
+      e.preventDefault();
+    }
+  }, { passive: false });
+  const endPinch = (e) => {
+    if (e.touches.length < 2) pinchPrevDist = null;
+  };
+  area.addEventListener('touchend', endPinch);
+  area.addEventListener('touchcancel', endPinch);
+}
+
+// 2本指タッチ間の距離
+function touchDist(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
 }
 
 // --- 右下：上昇/下降ボタン ---
@@ -2424,6 +2466,31 @@ function moveTopdownCenter(dx, dy) {
   topdownState.center.addScaledVector(_tdForward, dy);
   topdownState.center.addScaledVector(_tdRight, dx);
   placeTopdownCamera();
+  maybeRebuildGsiForScroll();
+}
+
+// 真俯瞰スクロールで地図の敷き直しが必要か判定し、必要なら再構築。
+// 地図中心(builtOffX,Z)から表示中心が離れ、地図の端に近づいたら新しい中心で敷き直す。
+let _gsiScrollTimer = null;
+function maybeRebuildGsiForScroll() {
+  if (!gsiState.visible || !gsiState.centerEcef || !gsiState.built) return;
+  // 表示中心のワールド水平位置(点群中心=原点 からのオフセット)
+  const cx = topdownState.center.x, cz = topdownState.center.z;
+  const dxm = cx - gsiState.builtOffX;
+  const dzm = cz - gsiState.builtOffZ;
+  const dist = Math.hypot(dxm, dzm);
+  // 地図の半径(totalM/2)の手前(60%)を超えたら敷き直す
+  const threshold = (gsiState.totalM * 0.5) * 0.6;
+  if (dist > threshold) {
+    if (_gsiScrollTimer) clearTimeout(_gsiScrollTimer);
+    _gsiScrollTimer = setTimeout(() => {
+      _gsiScrollTimer = null;
+      if (topdownState.active && gsiState.visible && gsiState.centerEcef) {
+        // 現在の表示中心に地図中心を合わせて再構築
+        buildGsiGround(gsiState.centerEcef, topdownState.center.x, topdownState.center.z);
+      }
+    }, 250);
+  }
 }
 
 // 真俯瞰の向き(heading)を回転(←→)。一人称に戻ったときの向きにも反映する。
@@ -2473,6 +2540,7 @@ const gsiState = {
   detail: 'std',                // 地図精細さ('std'/'high')
   builtZoom: 0,                 // 現在構築中の地図ズーム(真俯瞰の帯またぎ検出用)
   zoomMode: 'auto',             // 'auto'=表示範囲連動 / 14〜17=手動固定ズーム
+  builtOffX: 0, builtOffZ: 0,   // 地図構築時の点群中心からのワールドオフセット(スクロール追従)
   // 高さ書き換え用に保持するデータ(タイル再取得なしで頂点数変更/平面立体切替を行う)
   bigElev: null,                // 結合標高グリッド(Float32Array)
   bigW: 0,                      // 結合グリッドの一辺ピクセル数
@@ -2563,41 +2631,47 @@ function sampleElev(elev, u, v) {
 }
 
 // 地図の構築パラメータ(ズーム・カバー半径)を決める。
-// zoomMode が 'auto' 以外(14〜17)なら手動固定。'auto' は表示範囲に応じて自動。
-// 一人称(真俯瞰OFF)は常にズーム14固定・広め。
+// 真俯瞰中: 常にズーム17(最も精細)。一人称: zoomMode(スライダー)に従う(既定14)。
 function decideGsiParams() {
-  if (!topdownState.active) {
-    // 一人称(もとの視点): 標準ズーム14、点群周辺を広めにカバー(約8.5km半径)。
-    return { zoom: 14, coverRadiusM: 8500 };
+  if (topdownState.active) {
+    // 真俯瞰: ズーム17固定。カバー半径は表示範囲+スクロール余裕。
+    const r = topdownState.rangeM;
+    const coverRadiusM = Math.max(r * 1.5, r * 0.71 * 1.2);
+    return { zoom: 17, coverRadiusM };
   }
-  const r = topdownState.rangeM;
-  let zoom;
-  if (gsiState.zoomMode !== 'auto') {
-    // 手動固定ズーム(14〜17)
-    zoom = gsiState.zoomMode;
-  } else {
-    // 自動: 表示範囲の帯でズームを決める。
-    if (r >= 800)      zoom = 14; // 広域
-    else if (r >= 200) zoom = 15; // 中間
-    else if (r >= 50)  zoom = 16; // 拡大
-    else               zoom = 17; // 最拡大(建物の輪郭が見えるレベル)
-  }
-  // カバー半径: 表示範囲の対角を覆い、スクロール用に少し余裕(×1.5)。
-  const coverRadiusM = Math.max(r * 1.5, r * 0.71 * 1.2);
+  // 一人称(もとの視点): スライダーで選んだズーム(zoomMode)。'auto'なら基準14。
+  const zoom = (gsiState.zoomMode === 'auto') ? 14 : gsiState.zoomMode;
+  // ズームが上がるほど1タイルが狭いので、カバー半径は控えめに(枚数増を抑制)。
+  // ズーム14で約8.5km、上がるごとに半減。
+  const coverRadiusM = 8500 / Math.pow(2, zoom - 14);
   return { zoom, coverRadiusM };
 }
 
 // 地形メッシュを構築(非同期)。標高タイルで起伏、地図タイルをテクスチャに。
-async function buildGsiGround(centerEcef) {
+// offX/offZ: 点群中心からのワールド水平オフセット(m)。真俯瞰スクロール追従に使う。
+async function buildGsiGround(centerEcef, offX = 0, offZ = 0) {
   clearGsiGround();
-  const { lat, lon } = ecefToLatLon(centerEcef.x, centerEcef.y, centerEcef.z);
+  // 点群中心の緯度経度を求め、オフセット分(メートル)を緯度経度に変換して足す。
+  const base = ecefToLatLon(centerEcef.x, centerEcef.y, centerEcef.z);
+  // ワールドオフセット(offX=東西? offZ=南北?)を方位(northYaw)で東西・南北に分解。
+  // 地図メッシュは northYaw 回転後にワールドへ。逆回転で「東(+E)・北(+N)」成分を得る。
+  const ny = topdownState.northYaw;
+  // ワールド(X,Z)→(東E, 北N): メッシュ回転の逆。北方向=(-sin ny,?,-cos ny), 東=(cos ny,?,-sin ny)
+  // 東成分E = offX*cos ny - offZ*sin ny ... ではなく回転定義に合わせて算出:
+  const eastM  = offX * Math.cos(ny) - offZ * Math.sin(ny);
+  const northM = -(offX * Math.sin(ny) + offZ * Math.cos(ny));
+  // メートル→緯度経度(近似): 緯度1度≒111320m, 経度1度≒111320*cos(lat)m
+  const latRad = base.lat * Math.PI / 180;
+  const lat = base.lat + (northM / 111320);
+  const lon = base.lon + (eastM / (111320 * Math.cos(latRad)));
   gsiState.lat = lat; gsiState.lon = lon;
-  console.log(`[地理院地図] 中心 lat=${lat.toFixed(6)}, lon=${lon.toFixed(6)}`);
+  gsiState.builtOffX = offX; gsiState.builtOffZ = offZ;
+  console.log(`[地理院地図] 中心 lat=${lat.toFixed(6)}, lon=${lon.toFixed(6)} (offset E=${eastM.toFixed(0)} N=${northM.toFixed(0)}m)`);
 
-  // ズーム・カバー範囲を決定(真俯瞰なら表示範囲に応じて自動)
+  // ズーム・カバー範囲を決定
   const params = decideGsiParams();
   const z = params.zoom;
-  gsiState.builtZoom = z; // 帯またぎ検出用に記録
+  gsiState.builtZoom = z;
   const c = lonLatToTileXY(lon, lat, z);
   const cxTile = Math.floor(c.x), cyTile = Math.floor(c.y);
   const tileM = tileSizeMeters(lat, z);
@@ -2767,10 +2841,10 @@ function clearGsiGround() {
 // WORLD SCALE に追従(タイルと同じ dolly中心スケール)
 const _gsiScaleTmp = new THREE.Vector3();
 function applyGsiScale() {
-  // 地図板群はワールド原点付近基準。dolly中心の相似変換を位置とスケールに適用。
+  // 地図は構築時オフセット(builtOffX,Z)の位置を基準にdolly中心スケール。
   gsiState.group.scale.setScalar(worldScale);
-  // 原点(0,0,0)基準位置を dolly 中心でスケール
-  _gsiScaleTmp.set(0, gsiState.group.position.y, 0).sub(dolly.position).multiplyScalar(worldScale).add(dolly.position);
+  _gsiScaleTmp.set(gsiState.builtOffX, gsiState.group.position.y, gsiState.builtOffZ)
+    .sub(dolly.position).multiplyScalar(worldScale).add(dolly.position);
   gsiState.group.position.x = _gsiScaleTmp.x;
   gsiState.group.position.z = _gsiScaleTmp.z;
   gsiState.group.position.y = _gsiScaleTmp.y;
@@ -4502,7 +4576,7 @@ document.addEventListener('click', (e) => {
   const zoomSlider = document.getElementById('gsi-zoom-slider');
   const zoomVal = document.getElementById('gsi-zoom-val');
   const ZOOM_MAP = { 0: 'auto', 1: 14, 2: 15, 3: 16, 4: 17 };
-  const ZOOM_LABEL = { 0: '自動', 1: 'ズーム14', 2: 'ズーム15', 3: 'ズーム16', 4: 'ズーム17' };
+  const ZOOM_LABEL = { 0: '基準', 1: 'ズーム14', 2: 'ズーム15', 3: 'ズーム16', 4: 'ズーム17' };
   if (zoomSlider) {
     zoomSlider.addEventListener('input', () => {
       const lv = parseInt(zoomSlider.value, 10);

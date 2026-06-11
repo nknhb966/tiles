@@ -1220,9 +1220,15 @@
       <input id="gsi-detail-slider" type="range" min="1" max="5" step="1" value="3"
         style="width:260px; accent-color:#00c8ff;">
     </div>
+    <div style="margin-top:8px;">
+      地図の精細さ <span id="gsi-zoom-val" style="font-family:monospace;">自動</span>
+    </div>
+    <input id="gsi-zoom-slider" type="range" min="0" max="4" step="1" value="0"
+      style="width:260px; accent-color:#00c8ff;">
     <div id="info-gsi" class="ctrl-info-body" hidden>
       点群の周辺地形を国土地理院の標高・地図タイルから再現して敷きます。
-      真俯瞰図では表示範囲を拡大するほど地図が自動的に精細になります(一人称では標準)。
+      「地図の精細さ」は自動(真俯瞰の表示範囲に連動)またはズーム14〜17を手動指定できます。
+      数字が大きいほど精細ですが、範囲が狭くなり取得が重くなります。
       「立体表示」で起伏のある地形、「平面表示」で平らな地図に切り替えます。
       「地形の細かさ」を下げると頂点が減り、動作が軽くなります(カクつく場合は下げてください)。
       簡易表示のため、地図と点群の位置・スケールには多少のずれがある場合があります。
@@ -2466,6 +2472,7 @@ const gsiState = {
   baseElev: 0,                  // 中心の地理院標高(点群地面に合わせる基準)
   detail: 'std',                // 地図精細さ('std'/'high')
   builtZoom: 0,                 // 現在構築中の地図ズーム(真俯瞰の帯またぎ検出用)
+  zoomMode: 'auto',             // 'auto'=表示範囲連動 / 14〜17=手動固定ズーム
   // 高さ書き換え用に保持するデータ(タイル再取得なしで頂点数変更/平面立体切替を行う)
   bigElev: null,                // 結合標高グリッド(Float32Array)
   bigW: 0,                      // 結合グリッドの一辺ピクセル数
@@ -2556,19 +2563,26 @@ function sampleElev(elev, u, v) {
 }
 
 // 地図の構築パラメータ(ズーム・カバー半径)を決める。
-// 一人称: ズーム14固定・広め。真俯瞰: 表示範囲(rangeM)の帯でズーム14/15/16を自動選択。
+// zoomMode が 'auto' 以外(14〜17)なら手動固定。'auto' は表示範囲に応じて自動。
+// 一人称(真俯瞰OFF)は常にズーム14固定・広め。
 function decideGsiParams() {
   if (!topdownState.active) {
     // 一人称(もとの視点): 標準ズーム14、点群周辺を広めにカバー(約8.5km半径)。
     return { zoom: 14, coverRadiusM: 8500 };
   }
-  // 真俯瞰: 表示範囲の帯でズームを決める。
   const r = topdownState.rangeM;
   let zoom;
-  if (r >= 800)      zoom = 14; // 広域
-  else if (r >= 200) zoom = 15; // 中間
-  else               zoom = 16; // 拡大
-  // カバー半径: 表示範囲の対角を覆い、スクロール用に少し余裕(×1.5)。最低でも画面範囲。
+  if (gsiState.zoomMode !== 'auto') {
+    // 手動固定ズーム(14〜17)
+    zoom = gsiState.zoomMode;
+  } else {
+    // 自動: 表示範囲の帯でズームを決める。
+    if (r >= 800)      zoom = 14; // 広域
+    else if (r >= 200) zoom = 15; // 中間
+    else if (r >= 50)  zoom = 16; // 拡大
+    else               zoom = 17; // 最拡大(建物の輪郭が見えるレベル)
+  }
+  // カバー半径: 表示範囲の対角を覆い、スクロール用に少し余裕(×1.5)。
   const coverRadiusM = Math.max(r * 1.5, r * 0.71 * 1.2);
   return { zoom, coverRadiusM };
 }
@@ -4481,6 +4495,27 @@ document.addEventListener('click', (e) => {
       const lv = parseInt(detailSlider.value, 10);
       gsiState.step = STEP_MAP[lv] || 6;
       if (gsiState.built) rebuildGsiMesh();
+    });
+  }
+
+  // 地図の精細さ(ズーム)選択スライダー: 0=自動, 1〜4=ズーム14〜17。
+  const zoomSlider = document.getElementById('gsi-zoom-slider');
+  const zoomVal = document.getElementById('gsi-zoom-val');
+  const ZOOM_MAP = { 0: 'auto', 1: 14, 2: 15, 3: 16, 4: 17 };
+  const ZOOM_LABEL = { 0: '自動', 1: 'ズーム14', 2: 'ズーム15', 3: 'ズーム16', 4: 'ズーム17' };
+  if (zoomSlider) {
+    zoomSlider.addEventListener('input', () => {
+      const lv = parseInt(zoomSlider.value, 10);
+      if (zoomVal) zoomVal.textContent = ZOOM_LABEL[lv] || '自動';
+    });
+    zoomSlider.addEventListener('change', () => {
+      const lv = parseInt(zoomSlider.value, 10);
+      gsiState.zoomMode = ZOOM_MAP[lv] ?? 'auto';
+      // 表示中で、適切ズームが現在の構築ズームと違えば再取得
+      if (gsiState.visible && gsiState.centerEcef &&
+          decideGsiParams().zoom !== gsiState.builtZoom) {
+        buildGsiGround(gsiState.centerEcef);
+      }
     });
   }
 })();

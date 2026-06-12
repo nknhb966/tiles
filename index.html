@@ -330,7 +330,7 @@
     }
 
     /* 説明パネル表示トグルボタン。ON(表示中)はシアン枠、OFF(非表示)はグレー枠。 */
-    #annotation-toggle, #topdown-toggle, #gsi-toggle, #gsi-solid-toggle, #slice-toggle {
+    #annotation-toggle, #topdown-toggle, #gsi-toggle, #gsi-solid-toggle, #slice-toggle, #model-toggle {
       width: 260px;
       padding: 8px;
       background: transparent;
@@ -344,12 +344,12 @@
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    #annotation-toggle[aria-pressed="true"], #topdown-toggle[aria-pressed="true"], #gsi-toggle[aria-pressed="true"], #gsi-solid-toggle[aria-pressed="true"], #slice-toggle[aria-pressed="true"] {
+    #annotation-toggle[aria-pressed="true"], #topdown-toggle[aria-pressed="true"], #gsi-toggle[aria-pressed="true"], #gsi-solid-toggle[aria-pressed="true"], #slice-toggle[aria-pressed="true"], #model-toggle[aria-pressed="true"] {
       background: rgba(0,200,255,0.12);
       border-color: #00c8ff;
       color: #00c8ff;
     }
-    #annotation-toggle[aria-pressed="false"], #topdown-toggle[aria-pressed="false"], #gsi-toggle[aria-pressed="false"], #gsi-solid-toggle[aria-pressed="false"], #slice-toggle[aria-pressed="false"] {
+    #annotation-toggle[aria-pressed="false"], #topdown-toggle[aria-pressed="false"], #gsi-toggle[aria-pressed="false"], #gsi-solid-toggle[aria-pressed="false"], #slice-toggle[aria-pressed="false"], #model-toggle[aria-pressed="false"] {
       background: transparent;
       border-color: rgba(160,180,195,0.5);
       color: rgba(160,180,195,0.8);
@@ -475,7 +475,8 @@
     body.touch #controls-body #topdown-toggle,
     body.touch #controls-body #gsi-toggle,
     body.touch #controls-body #gsi-solid-toggle,
-    body.touch #controls-body #slice-toggle {
+    body.touch #controls-body #slice-toggle,
+    body.touch #controls-body #model-toggle {
       width: 140px;
       max-width: calc(100vw - 64px);
     }
@@ -1050,6 +1051,19 @@
       各地点に設置された説明用の球体とパネルの表示/非表示を切り替えます。
       非表示にすると球体ごと消え、点群だけのすっきりした表示になります。
       パネルは球体に一定距離まで近づくと自動的に開きます。
+    </div>
+  </div>
+
+  <!-- ─────────── モデル(点群)表示 ─────────── -->
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>モデル(点群)</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-model" aria-label="モデル表示の説明">ⓘ</button>
+    </div>
+    <button type="button" id="model-toggle" aria-pressed="true">表示中</button>
+    <div id="info-model" class="ctrl-info-body" hidden>
+      点群モデルの表示/非表示を切り替えます。
+      非表示にすると地図(地面)だけになり、地形や地図記号を確認しやすくなります。
     </div>
   </div>
 
@@ -1808,7 +1822,7 @@ if (isTouchDevice) {
 // 仮想スティック状態：正規化された -1〜1
 const touchStick = { x: 0, y: 0 };
 // スワイプ視点回転：1フレームあたりのデルタ（処理後リセット）。横方向のみ使用。
-const swipeDelta = { x: 0 };
+const swipeDelta = { x: 0, y: 0 };
 // 上下ボタン状態
 const touchVert = { up: false, down: false };
 
@@ -1860,23 +1874,27 @@ const touchVert = { up: false, down: false };
   }
 }
 
-// --- 右半分：スワイプで視点回転 ---
+// --- 右半分：スワイプで視点回転(左右)・昇降(上下) ---
 {
   const area = document.getElementById('swipe-area');
   let swipePointerId = null;
-  let lastX = 0;
+  let lastX = 0, lastY = 0;
+  let pinchActive = false; // 2本指ジェスチャー中フラグ(1本指処理の抑止に使う)
 
   area.addEventListener('pointerdown', (e) => {
     if (swipePointerId !== null) return;
     swipePointerId = e.pointerId;
     area.setPointerCapture(e.pointerId);
-    lastX = e.clientX;
+    lastX = e.clientX; lastY = e.clientY;
     e.preventDefault();
   });
   area.addEventListener('pointermove', (e) => {
     if (e.pointerId !== swipePointerId) return;
+    // 2本指ジェスチャー中(ピンチ/2本指スワイプ)は1本指処理を抑止
+    if (pinchActive) { lastX = e.clientX; lastY = e.clientY; return; }
     swipeDelta.x += e.clientX - lastX;
-    lastX = e.clientX;
+    swipeDelta.y += e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
     e.preventDefault();
   });
   const endSwipe = (e) => {
@@ -1886,36 +1904,66 @@ const touchVert = { up: false, down: false };
   area.addEventListener('pointerup', endSwipe);
   area.addEventListener('pointercancel', endSwipe);
 
-  // 真俯瞰中の2本指ピンチで表示範囲(rangeM)を変更。
-  // ピンチアウト(広げる)で拡大(範囲を狭く)、ピンチイン(つまむ)で広域(範囲を広く)。
+  // 真俯瞰中の2本指ジェスチャー:
+  //   ピンチ(指間距離の変化) → 表示範囲(rangeM)を変更
+  //   スワイプ(2本指の中心移動) → 地図を平行移動(左スティックと同じ東西南北移動)
   let pinchPrevDist = null;
+  let pinchPrevCx = 0, pinchPrevCy = 0;
   area.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
+      pinchActive = true;
       pinchPrevDist = touchDist(e.touches);
+      const ctr = touchCenter(e.touches);
+      pinchPrevCx = ctr.x; pinchPrevCy = ctr.y;
       e.preventDefault();
     }
   }, { passive: false });
   area.addEventListener('touchmove', (e) => {
-    if (e.touches.length === 2 && pinchPrevDist != null && topdownState.active) {
-      const d = touchDist(e.touches);
+    if (e.touches.length !== 2 || pinchPrevDist == null) return;
+    const d = touchDist(e.touches);
+    const ctr = touchCenter(e.touches);
+
+    if (topdownState.active) {
+      // === 真俯瞰: ピンチ=表示範囲, 2本指スワイプ=地図平行移動 ===
       if (pinchPrevDist > 0) {
         const ratio = d / pinchPrevDist;
-        // 指が広がる(ratio>1)→範囲を縮小(拡大表示)。範囲は逆数で変化。
-        let next = topdownState.rangeM / ratio;
-        next = Math.max(1, Math.min(100000, next));
-        setTopdownRange(next);
-        // スライダー・数値入力も同期
-        const rs = document.getElementById('topdown-range-slider');
-        const rn = document.getElementById('topdown-range-num');
-        if (rs) rs.value = String(Math.min(1000, Math.round(next)));
-        if (rn) rn.value = String(Math.round(next));
+        if (Math.abs(ratio - 1) > 0.002) {
+          let next = topdownState.rangeM / ratio;
+          next = Math.max(1, Math.min(100000, next));
+          setTopdownRange(next);
+          const rs = document.getElementById('topdown-range-slider');
+          const rn = document.getElementById('topdown-range-num');
+          if (rs) rs.value = String(Math.min(1000, Math.round(next)));
+          if (rn) rn.value = String(Math.round(next));
+        }
       }
-      pinchPrevDist = d;
-      e.preventDefault();
+      const sdx = ctr.x - pinchPrevCx;
+      const sdy = ctr.y - pinchPrevCy;
+      if (sdx !== 0 || sdy !== 0) {
+        const shortPx = Math.min(window.innerWidth, window.innerHeight);
+        const mPerPx = topdownState.rangeM / shortPx;
+        moveTopdownCenter(-sdx * mPerPx, sdy * mPerPx);
+      }
+    } else {
+      // === 一人称: 2本指ピンチ=前後移動(手前/奥) ===
+      // 指を広げる(d増)→前進(奥へ)、つまむ(d減)→後退(手前)。
+      const dd = d - pinchPrevDist; // ピクセル変化
+      if (dd !== 0) {
+        // 視線の水平前方向に移動。boost/fineも反映。
+        const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(dolly.quaternion);
+        fwd.y = 0;
+        if (fwd.lengthSq() > 1e-6) fwd.normalize();
+        const PINCH_MOVE_SENS = 0.05; // ピクセル→メートル係数
+        const dist = dd * PINCH_MOVE_SENS * boostLevel;
+        dolly.position.addScaledVector(fwd, dist);
+      }
     }
+    pinchPrevDist = d;
+    pinchPrevCx = ctr.x; pinchPrevCy = ctr.y;
+    e.preventDefault();
   }, { passive: false });
   const endPinch = (e) => {
-    if (e.touches.length < 2) pinchPrevDist = null;
+    if (e.touches.length < 2) { pinchPrevDist = null; pinchActive = false; }
   };
   area.addEventListener('touchend', endPinch);
   area.addEventListener('touchcancel', endPinch);
@@ -1926,6 +1974,13 @@ function touchDist(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
   return Math.hypot(dx, dy);
+}
+// 2本指タッチの中心
+function touchCenter(touches) {
+  return {
+    x: (touches[0].clientX + touches[1].clientX) / 2,
+    y: (touches[0].clientY + touches[1].clientY) / 2,
+  };
 }
 
 // --- 右下：上昇/下降ボタン ---
@@ -1996,6 +2051,7 @@ function touchDist(touches) {
 
 // タッチ入力をtargetVel/targetYawVelへ反映
 const SWIPE_YAW_SENS = 0.005;   // 1pxあたりのヨー(rad)
+const SWIPE_VERT_SENS = 0.02;   // 1pxあたりの昇降(m)。縦スワイプ→上下移動
 function handleTouchInput(dt) {
   // 左スティック：水平移動
   const yaw = dolly.rotation.y;
@@ -2009,12 +2065,15 @@ function handleTouchInput(dt) {
   targetVel.addScaledVector(forward, -touchStick.y * MOVE_SPEED * b);
   targetVel.addScaledVector(right,    touchStick.x * MOVE_SPEED * b);
 
-  // 右スワイプ：横方向のみヨー回転に使う（縦は無視 = 視点上下は使わない）
-  // dtで割って「速度」として扱い、targetYawVelに加算
+  // 右スワイプ：横方向=ヨー回転、縦方向=昇降(上下)。
+  // dtで割って「速度」として扱い、targetYawVel/targetVel.y に加算。
   if (dt > 0) {
     targetYawVel -= (swipeDelta.x * SWIPE_YAW_SENS) / dt;
+    // 縦: 指を上へ(画面上=clientY減)で上昇。SWIPE_VERT_SENSで感度調整。
+    targetVel.y += (-swipeDelta.y * SWIPE_VERT_SENS * b) / dt;
   }
   swipeDelta.x = 0;
+  swipeDelta.y = 0;
 
   // 上昇/下降ボタン
   if (touchVert.up)   targetVel.y += VERT_SPEED * b;
@@ -2683,36 +2742,56 @@ async function buildGsiGround(centerEcef, offX = 0, offZ = 0) {
   const exa = gsiState.exaggeration;
   const totalM = tileM * N;     // 全体の地表サイズ(m)
 
-  // ── 1. 標高タイルを1つの大きなグリッドに結合 ──
-  // N×N枚、各256pxを結合 → (N*256)×(N*256) の標高配列。
-  // 配列のインデックス: 行(north→south), 列(west→east)。
+  // ── 1. 標高を別ズーム(最大14)で取得し、地図グリッドの各ピクセルにサンプリング ──
+  // 地図(std)はズーム17まであるが標高(dem_png)はズーム14まで。
+  // 地図グリッドの各ピクセルの緯度経度に対応する、標高ズームのタイルから標高を引く。
   const DEM = 256;
-  const W = N * DEM;             // 結合グリッドの幅・高さ(ピクセル)
+  const W = N * DEM;             // 結合グリッド(地図と同じ)の幅・高さ(ピクセル)
   const bigElev = new Float32Array(W * W);
   let demOkCount = 0, demNgCount = 0;
 
-  // 中心標高(高さ基準)
-  const centerDem = await loadDemTile(z, cxTile, cyTile);
-  let baseElev = centerDem ? sampleElev(centerDem, c.x - cxTile, c.y - cyTile) : 0;
-  if (!Number.isFinite(baseElev)) baseElev = 0;
-  gsiState.baseElev = baseElev;
+  const zDem = Math.min(z, 14);  // 標高ズーム(dem_pngの上限14)
+  const nMap = Math.pow(2, z), nDem = Math.pow(2, zDem);
+  const zoomRatio = nDem / nMap; // 地図→標高のタイル座標スケール
+  const mapTileX0 = cxTile - half, mapTileY0 = cyTile - half;
 
-  // 各タイルを読み、結合グリッドの該当ブロックに書き込む。
-  // gx: 西→東(-half..+half), gy: 北→南(-half..+half)
-  for (let gy = -half; gy <= half; gy++) {
-    for (let gx = -half; gx <= half; gx++) {
-      const tx = cxTile + gx, ty = cyTile + gy;
-      const elev = await loadDemTile(z, tx, ty);
-      if (elev) demOkCount++; else demNgCount++;
-      const col0 = (gx + half) * DEM; // 結合グリッド上の左端列
-      const row0 = (gy + half) * DEM; // 結合グリッド上の上端行
-      for (let py = 0; py < DEM; py++) {
-        for (let px = 0; px < DEM; px++) {
-          let h = elev ? elev[py * DEM + px] : NaN;
-          if (!Number.isFinite(h)) h = baseElev; // 無効値/未取得は基準高で平坦化
-          bigElev[(row0 + py) * W + (col0 + px)] = h;
-        }
-      }
+  // 必要な標高タイルの範囲を先に算出して一括ロード(ループ内awaitを避け高速化)
+  const demX0 = Math.floor(mapTileX0 * zoomRatio);
+  const demY0 = Math.floor(mapTileY0 * zoomRatio);
+  const demX1 = Math.floor((mapTileX0 + N) * zoomRatio);
+  const demY1 = Math.floor((mapTileY0 + N) * zoomRatio);
+  const demTiles = new Map(); // key "tx_ty" → Float32Array|null
+  for (let ty = demY0; ty <= demY1; ty++) {
+    for (let tx = demX0; tx <= demX1; tx++) {
+      const t = await loadDemTile(zDem, tx, ty);
+      demTiles.set(`${tx}_${ty}`, t);
+      if (t) demOkCount++; else demNgCount++;
+    }
+  }
+  // 標高ズームのタイル座標(小数)で標高を引く(同期)
+  function elevAtDemCoord(demFx, demFy) {
+    const dtx = Math.floor(demFx), dty = Math.floor(demFy);
+    const t = demTiles.get(`${dtx}_${dty}`);
+    if (!t) return NaN;
+    return sampleElev(t, demFx - dtx, demFy - dty);
+  }
+
+  // 中心標高(高さ基準)
+  {
+    let be = elevAtDemCoord(c.x * zoomRatio, c.y * zoomRatio);
+    if (!Number.isFinite(be)) be = 0;
+    gsiState.baseElev = be;
+  }
+  const baseElev = gsiState.baseElev;
+
+  // 結合グリッドの各ピクセルに標高を入れる(同期サンプリング)
+  for (let row = 0; row < W; row++) {
+    const demFy = (mapTileY0 + row / DEM) * zoomRatio;
+    for (let col = 0; col < W; col++) {
+      const demFx = (mapTileX0 + col / DEM) * zoomRatio;
+      let h = elevAtDemCoord(demFx, demFy);
+      if (!Number.isFinite(h)) h = baseElev;
+      bigElev[row * W + col] = h;
     }
   }
 
@@ -4514,6 +4593,18 @@ document.addEventListener('click', (e) => {
   btn.addEventListener('click', () => {
     const next = btn.getAttribute('aria-pressed') !== 'true'; // 現在ONなら次はOFF
     setAnnotationsVisible(next);
+    btn.setAttribute('aria-pressed', next ? 'true' : 'false');
+    btn.textContent = next ? '表示中' : '非表示';
+  });
+})();
+
+// ── モデル(点群)表示トグル ──
+(function setupModelToggle() {
+  const btn = document.getElementById('model-toggle');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const next = btn.getAttribute('aria-pressed') !== 'true';
+    if (tiles && tiles.group) tiles.group.visible = next;
     btn.setAttribute('aria-pressed', next ? 'true' : 'false');
     btn.textContent = next ? '表示中' : '非表示';
   });

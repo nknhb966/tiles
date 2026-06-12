@@ -330,7 +330,7 @@
     }
 
     /* 説明パネル表示トグルボタン。ON(表示中)はシアン枠、OFF(非表示)はグレー枠。 */
-    #annotation-toggle, #topdown-toggle, #gsi-toggle, #gsi-solid-toggle, #slice-toggle, #model-toggle {
+    #annotation-toggle, #topdown-toggle, #gsi-toggle, #gsi-solid-toggle, #slice-toggle, #model-toggle, #td-gsi-solid-toggle {
       width: 260px;
       padding: 8px;
       background: transparent;
@@ -344,12 +344,12 @@
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    #annotation-toggle[aria-pressed="true"], #topdown-toggle[aria-pressed="true"], #gsi-toggle[aria-pressed="true"], #gsi-solid-toggle[aria-pressed="true"], #slice-toggle[aria-pressed="true"], #model-toggle[aria-pressed="true"] {
+    #annotation-toggle[aria-pressed="true"], #topdown-toggle[aria-pressed="true"], #gsi-toggle[aria-pressed="true"], #gsi-solid-toggle[aria-pressed="true"], #slice-toggle[aria-pressed="true"], #model-toggle[aria-pressed="true"], #td-gsi-solid-toggle[aria-pressed="true"] {
       background: rgba(0,200,255,0.12);
       border-color: #00c8ff;
       color: #00c8ff;
     }
-    #annotation-toggle[aria-pressed="false"], #topdown-toggle[aria-pressed="false"], #gsi-toggle[aria-pressed="false"], #gsi-solid-toggle[aria-pressed="false"], #slice-toggle[aria-pressed="false"], #model-toggle[aria-pressed="false"] {
+    #annotation-toggle[aria-pressed="false"], #topdown-toggle[aria-pressed="false"], #gsi-toggle[aria-pressed="false"], #gsi-solid-toggle[aria-pressed="false"], #slice-toggle[aria-pressed="false"], #model-toggle[aria-pressed="false"], #td-gsi-solid-toggle[aria-pressed="false"] {
       background: transparent;
       border-color: rgba(160,180,195,0.5);
       color: rgba(160,180,195,0.8);
@@ -476,7 +476,8 @@
     body.touch #controls-body #gsi-toggle,
     body.touch #controls-body #gsi-solid-toggle,
     body.touch #controls-body #slice-toggle,
-    body.touch #controls-body #model-toggle {
+    body.touch #controls-body #model-toggle,
+    body.touch #controls-body #td-gsi-solid-toggle {
       width: 140px;
       max-width: calc(100vw - 64px);
     }
@@ -1196,6 +1197,7 @@
     <input id="topdown-range-slider" type="range" min="1" max="1000" step="1" value="25"
       style="width:260px; accent-color:#00c8ff;">
     <button type="button" id="slice-toggle" aria-pressed="false" style="margin-top:8px;">断面表示</button>
+    <button type="button" id="td-gsi-solid-toggle" aria-pressed="false" style="margin-top:6px;">地図を平面表示</button>
     <div style="margin-top:8px;">
       画像の精細さ
       <select id="export-scale" style="font-family:monospace; background:rgba(0,0,0,0.4); color:#00c8ff;
@@ -1619,6 +1621,7 @@ const topdownState = {
   sliceTopY: 0,                  // 点群の上端Y(断面の上限)
   sliceBottomY: 0,               // 点群の下端Y(断面の下限)
   eyeY: 0,                       // 真俯瞰に入る前の目線の高さ(断面の初期クリップ高さ)
+  gsiSolid: false,               // 真俯瞰での地図立体表示(既定:平面)
 };
 
 // VR時のカメラリグ（dolly）：カメラをこの中に入れて移動・回転させる
@@ -1956,13 +1959,13 @@ const touchVert = { up: false, down: false };
       if (dd !== 0) {
         dolly.position.addScaledVector(fwd, dd * PINCH_MOVE_SENS * boostLevel);
       }
-      // 左右スワイプ: 2本指中心の横移動で左右(ストレイフ)移動。
+      // 左右スワイプ: 2本指中心の横移動で左右(ストレイフ)移動。移動量は×0.8で控えめに。
       const sdx = ctr.x - pinchPrevCx;
       if (sdx !== 0) {
         // 右方向ベクトル = 前方を90度右に回した水平ベクトル
         const right = new THREE.Vector3(fwd.z, 0, -fwd.x); // (fwd×up)相当
         // 指を右へ動かしたら右へ移動(自然な向き)。
-        dolly.position.addScaledVector(right, sdx * PINCH_MOVE_SENS * boostLevel);
+        dolly.position.addScaledVector(right, sdx * PINCH_MOVE_SENS * boostLevel * 0.8);
       }
     }
     pinchPrevDist = d;
@@ -2870,8 +2873,8 @@ function rebuildGsiMesh() {
   const totalM = gsiState.totalM;
   const baseElev = gsiState.baseElev;
   const exa = gsiState.exaggeration;
-  // 真俯瞰中は常に平面表示(真上から見るので立体は不要)。一人称ではトグルに従う。
-  const solid = topdownState.active ? false : gsiState.solid;
+  // 真俯瞰中は専用トグル(gsiSolid, 既定平面)に従う。一人称は通常トグル(gsiState.solid)。
+  const solid = topdownState.active ? topdownState.gsiSolid : gsiState.solid;
   const step = Math.max(1, gsiState.step);
   const segs = Math.max(8, Math.floor(W / step));
 
@@ -3772,11 +3775,12 @@ function loadTileset(id) {
   }
   // 旧データセットのアノテーションも破棄(新しいものは load-tile-set 完了時に構築)
   clearAnnotations();
-  // 地理院地図も破棄し、トグルOFFに戻す(新データセットの中心が変わるため)
+  // 地理院地図のメッシュは破棄(中心が変わるため)。ただし表示ON/OFF状態は維持し、
+  // 新データセットの中心が定まったら load-tile-set 完了時に再構築する。
+  const keepGsiVisible = gsiState.visible;
   clearGsiGround();
-  setGsiVisible(false);
-  { const gb = document.getElementById('gsi-toggle');
-    if (gb) { gb.setAttribute('aria-pressed', 'false'); gb.textContent = '地図を表示'; } }
+  gsiState.visible = keepGsiVisible; // clearで触らないが念のため明示
+  gsiState.group.visible = keepGsiVisible;
 
   loadingDataset = id;
   // データセット切替時はカメラ位置・向きをそのデータセットの初期位置にリセット
@@ -3900,9 +3904,15 @@ function loadTileset(id) {
       rebuildAnnotations(id);
 
       // 地理院地図用に中心ECEF座標を保存(トグルONで構築する)。
-      // 既にトグルがONなら即座に再構築する。
+      // 既にトグルがONなら即座に再構築する(データセット切替でも表示状態を引き継ぐ)。
       gsiState.centerEcef = center.clone();
       if (gsiState.visible) buildGsiGround(gsiState.centerEcef);
+      // 地図トグルボタンの表示を現在の表示状態に同期
+      { const gb = document.getElementById('gsi-toggle');
+        if (gb) {
+          gb.setAttribute('aria-pressed', gsiState.visible ? 'true' : 'false');
+          gb.textContent = gsiState.visible ? '地図を非表示' : '地図を表示';
+        } }
 
       console.log(`タイル ${id} 読込完了 (r=${r.toFixed(1)}m, cam=[${camX},${camY},${camZ}], yaw=${camYaw}°)`);
     }
@@ -4768,6 +4778,17 @@ document.addEventListener('click', (e) => {
     });
   }
 
+  // 真俯瞰の地図 立体/平面トグル(既定:平面)。真俯瞰中のみ有効。
+  const tdSolidBtn = document.getElementById('td-gsi-solid-toggle');
+  if (tdSolidBtn) {
+    tdSolidBtn.addEventListener('click', () => {
+      topdownState.gsiSolid = !topdownState.gsiSolid;
+      tdSolidBtn.setAttribute('aria-pressed', topdownState.gsiSolid ? 'true' : 'false');
+      tdSolidBtn.textContent = topdownState.gsiSolid ? '地図を立体表示' : '地図を平面表示';
+      if (topdownState.active && gsiState.built) rebuildGsiMesh();
+    });
+  }
+
   // 真俯瞰図の高解像度PNG書き出し
   const exportBtn = document.getElementById('export-png-btn');
   if (exportBtn) {
@@ -5197,6 +5218,14 @@ renderer.setAnimationLoop(() => {
     if (isTouchDevice && swipeDelta.x !== 0) {
       rotateTopdownHeading(-swipeDelta.x * SWIPE_YAW_SENS);
       swipeDelta.x = 0;
+    }
+    // スマホ: 1本指の上下スワイプで南北(前後)移動。2本指上下と同じ挙動。
+    if (isTouchDevice && swipeDelta.y !== 0) {
+      const shortPx = Math.min(window.innerWidth, window.innerHeight);
+      const mPerPx = topdownState.rangeM / shortPx;
+      // 指を下へ(clientY増=swipeDelta.y正)→地図を下へ送る=中心は上へ(dy正)。
+      moveTopdownCenter(0, swipeDelta.y * mPerPx);
+      swipeDelta.y = 0;
     }
   } else {
     targetVel.set(0, 0, 0);

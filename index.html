@@ -1967,13 +1967,23 @@ const touchVert = { up: false, down: false };
         // 指を右へ動かしたら右へ移動(自然な向き)。
         dolly.position.addScaledVector(right, sdx * PINCH_MOVE_SENS * boostLevel * 0.8);
       }
+      // 上下スワイプ: 一時ピッチ(見上げ/見下ろし)。指を離すと水平へ戻る。
+      const sdy = ctr.y - pinchPrevCy;
+      if (sdy !== 0) {
+        pitchActive = true;
+        // 指を上へ(sdy負)→見上げ(pitch正)。累積してピッチ目標を更新。±90度に制限。
+        pitchTarget = Math.max(-PITCH_MAX, Math.min(PITCH_MAX, pitchTarget - sdy * PITCH_SENS));
+      }
     }
     pinchPrevDist = d;
     pinchPrevCx = ctr.x; pinchPrevCy = ctr.y;
     e.preventDefault();
   }, { passive: false });
   const endPinch = (e) => {
-    if (e.touches.length < 2) { pinchPrevDist = null; pinchActive = false; }
+    if (e.touches.length < 2) {
+      pinchPrevDist = null; pinchActive = false;
+      pitchActive = false; // 指を離したらピッチは水平へ戻し始める
+    }
   };
   area.addEventListener('touchend', endPinch);
   area.addEventListener('touchcancel', endPinch);
@@ -2062,6 +2072,11 @@ function touchCenter(touches) {
 // タッチ入力をtargetVel/targetYawVelへ反映
 const SWIPE_YAW_SENS = 0.005;   // 1pxあたりのヨー(rad)
 const SWIPE_VERT_SENS = 0.02;   // 1pxあたりの昇降(m)。縦スワイプ→上下移動
+// 2本指上下スワイプ中だけの一時ピッチ(見上げ/見下ろし)。指を離すと滑らかに水平へ戻る。
+let pitchTarget = 0;            // 目標ピッチ(rad)。+で見上げ, -で見下ろし。±90度。
+let pitchActive = false;        // 2本指上下スワイプ中か(trueの間ピッチ維持)
+const PITCH_MAX = Math.PI / 2;  // 最大±90度
+const PITCH_SENS = Math.PI / 2 / 400; // 400pxスワイプで90度(画面縦半分程度)
 function handleTouchInput(dt) {
   // 左スティック：水平移動
   const yaw = dolly.rotation.y;
@@ -2363,6 +2378,8 @@ function placeTopdownCamera() {
 // 真俯瞰モードに入る
 function enterTopdown() {
   if (renderer.xr.isPresenting) return; // VR中は不可
+  // 一時ピッチを解除(camera姿勢を水平へ)
+  pitchTarget = 0; pitchActive = false; camera.rotation.x = 0;
   // 真俯瞰に入る前の目線の高さ(ワールドY)を保存。断面の初期クリップ高さに使う。
   topdownState.eyeY = dolly.position.y;
   topdownState.center.set(dolly.position.x, dolly.position.y, dolly.position.z);
@@ -5252,6 +5269,24 @@ renderer.setAnimationLoop(() => {
   if (!orbitActive) {
     dolly.rotation.x = 0;
     dolly.rotation.z = 0;
+  }
+
+  // 2本指上下スワイプによる一時ピッチ(camera側に適用、水平のdollyは維持)。
+  // 指を離す(pitchActive=false)と pitchTarget を0へ減衰させ、滑らかに水平へ戻る。
+  // 一人称・非VR・非オービット・非真俯瞰のときのみ有効。
+  {
+    const pitchEnabled = !renderer.xr.isPresenting && !orbitActive &&
+                         !topdownState.active && !resetting;
+    if (!pitchEnabled) {
+      pitchTarget = 0; pitchActive = false;
+    } else if (!pitchActive) {
+      // 指を離したら目標を0へ減衰(滑らかに水平へ)
+      pitchTarget *= Math.exp(-8 * dt);
+      if (Math.abs(pitchTarget) < 0.001) pitchTarget = 0;
+    }
+    // camera.rotation.x を pitchTarget へ滑らかに追従
+    const pt = 1 - Math.exp(-12 * dt);
+    camera.rotation.x += (pitchTarget - camera.rotation.x) * pt;
   }
 
   // dollyを動かしたあと、シーン全体のワールド行列を更新

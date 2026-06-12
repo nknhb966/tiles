@@ -1942,20 +1942,27 @@ const touchVert = { up: false, down: false };
       if (sdx !== 0 || sdy !== 0) {
         const shortPx = Math.min(window.innerWidth, window.innerHeight);
         const mPerPx = topdownState.rangeM / shortPx;
-        moveTopdownCenter(-sdx * mPerPx, sdy * mPerPx);
+        // 左右は反転(指の向きと地図の送り方向を合わせる)。上下は従来どおり。
+        moveTopdownCenter(sdx * mPerPx, sdy * mPerPx);
       }
     } else {
-      // === 一人称: 2本指ピンチ=前後移動(手前/奥) ===
-      // 指を広げる(d増)→前進(奥へ)、つまむ(d減)→後退(手前)。
+      // === 一人称: 2本指ピンチ=前後移動, 2本指左右スワイプ=左右移動 ===
+      // ピンチ: 指を広げる(d増)→前進(奥へ)、つまむ(d減)→後退(手前)。
       const dd = d - pinchPrevDist; // ピクセル変化
+      const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(dolly.quaternion);
+      fwd.y = 0;
+      if (fwd.lengthSq() > 1e-6) fwd.normalize();
+      const PINCH_MOVE_SENS = 0.05; // ピクセル→メートル係数
       if (dd !== 0) {
-        // 視線の水平前方向に移動。boost/fineも反映。
-        const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(dolly.quaternion);
-        fwd.y = 0;
-        if (fwd.lengthSq() > 1e-6) fwd.normalize();
-        const PINCH_MOVE_SENS = 0.05; // ピクセル→メートル係数
-        const dist = dd * PINCH_MOVE_SENS * boostLevel;
-        dolly.position.addScaledVector(fwd, dist);
+        dolly.position.addScaledVector(fwd, dd * PINCH_MOVE_SENS * boostLevel);
+      }
+      // 左右スワイプ: 2本指中心の横移動で左右(ストレイフ)移動。
+      const sdx = ctr.x - pinchPrevCx;
+      if (sdx !== 0) {
+        // 右方向ベクトル = 前方を90度右に回した水平ベクトル
+        const right = new THREE.Vector3(fwd.z, 0, -fwd.x); // (fwd×up)相当
+        // 指を右へ動かしたら右へ移動(自然な向き)。
+        dolly.position.addScaledVector(right, sdx * PINCH_MOVE_SENS * boostLevel);
       }
     }
     pinchPrevDist = d;
@@ -2069,8 +2076,8 @@ function handleTouchInput(dt) {
   // dtで割って「速度」として扱い、targetYawVel/targetVel.y に加算。
   if (dt > 0) {
     targetYawVel -= (swipeDelta.x * SWIPE_YAW_SENS) / dt;
-    // 縦: 指を上へ(画面上=clientY減)で上昇。SWIPE_VERT_SENSで感度調整。
-    targetVel.y += (-swipeDelta.y * SWIPE_VERT_SENS * b) / dt;
+    // 縦: 指を下へ(画面下=clientY増)で上昇。SWIPE_VERT_SENSで感度調整。
+    targetVel.y += (swipeDelta.y * SWIPE_VERT_SENS * b) / dt;
   }
   swipeDelta.x = 0;
   swipeDelta.y = 0;
@@ -2399,9 +2406,12 @@ function enterTopdown() {
   updateScaleBar(); // 縮尺バー表示
   updateSlicePanel();
   // 地図表示中なら、真俯瞰の表示範囲に応じた精細度で再取得(一人称より精細になりうる)
-  if (gsiState.visible && gsiState.centerEcef &&
-      decideGsiParams().zoom !== gsiState.builtZoom) {
-    buildGsiGround(gsiState.centerEcef);
+  if (gsiState.visible && gsiState.centerEcef) {
+    if (decideGsiParams().zoom !== gsiState.builtZoom) {
+      buildGsiGround(gsiState.centerEcef); // 再取得→内部で平面化される
+    } else if (gsiState.built) {
+      rebuildGsiMesh(); // 再取得不要でも真俯瞰用に平面化
+    }
   }
 }
 
@@ -2449,10 +2459,14 @@ function exitTopdown() {
   cubeUniforms.uClipY.value = 1e9;
   const slicePanel = document.getElementById('slice-panel');
   if (slicePanel) slicePanel.setAttribute('hidden', '');
-  // 一人称に戻ったら、地図表示中なら標準ズーム(14)で敷き直す
-  if (gsiState.visible && gsiState.centerEcef &&
-      decideGsiParams().zoom !== gsiState.builtZoom) {
-    buildGsiGround(gsiState.centerEcef);
+  // 一人称に戻ったら、地図表示中なら標準ズーム(14)で敷き直す。
+  // ズーム据え置きでも、立体トグルの状態(solid)に応じてメッシュを再生成して復帰。
+  if (gsiState.visible && gsiState.centerEcef) {
+    if (decideGsiParams().zoom !== gsiState.builtZoom) {
+      buildGsiGround(gsiState.centerEcef);
+    } else if (gsiState.built) {
+      rebuildGsiMesh(); // 立体/平面をトグル状態へ戻す
+    }
   }
 }
 
@@ -2856,7 +2870,8 @@ function rebuildGsiMesh() {
   const totalM = gsiState.totalM;
   const baseElev = gsiState.baseElev;
   const exa = gsiState.exaggeration;
-  const solid = gsiState.solid;
+  // 真俯瞰中は常に平面表示(真上から見るので立体は不要)。一人称ではトグルに従う。
+  const solid = topdownState.active ? false : gsiState.solid;
   const step = Math.max(1, gsiState.step);
   const segs = Math.max(8, Math.floor(W / step));
 

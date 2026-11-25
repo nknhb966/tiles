@@ -1978,6 +1978,17 @@
     body.touch #dbg-panel .pp-pc { display: none; }
     /* 一覧のカード: ボタンが増えたので、広い画面ではボタンを2段に折り返し、名前と件数の欄を広く */
     @media (min-width: 561px) { #ch-datasets .ch-actions { flex: 0 1 370px; flex-wrap: wrap; justify-content: flex-end; } }
+    /* ══ tiles_014 ══ */
+    /* CSV(データの設定) */
+    .ch-export #ch-csv-src > div { margin-bottom: 4px; line-height: 1.5; }
+    .ch-csv-h { color: #00c8ff; font-weight: bold; margin-bottom: 2px; }
+    .ch-csv-confirm { margin: 6px 0; padding: 8px 10px; border: 1px solid #ffd24a; border-radius: 4px; background: rgba(255,210,74,0.08); color: #ffe9a8; font-size: 12px; line-height: 1.5; }
+    .ch-csv-confirm .ch-fa-btns { margin-top: 6px; }
+    #ch-csv-msg:not(:empty) { color: #ffd24a; margin: 4px 0; }
+    #ch-csv .ch-fa-btns { margin: 6px 0; }
+    #ch-csv .ch-btn[hidden] { display: none; }
+    /* 「VRで開く」は VR 対応端末だけ */
+    body:not(.vr-ok) #ch-datasets .ch-btn[data-act="vr"] { display: none !important; }
   </style>
 </head>
 <body>
@@ -2168,15 +2179,17 @@
       <div id="gsi-options" hidden>
         <button type="button" id="gsi-solid-toggle" aria-pressed="true" style="margin-top:8px;">立体表示</button>
         <div id="gsi-detail-wrap">
-          <div class="cp-sublabel">地図の細かさ <span id="gsi-detail-val" class="cp-mono">標準</span></div>
-          <input id="gsi-detail-slider" type="range" min="1" max="5" step="1" value="3" style="width:260px; accent-color:#00c8ff;" aria-label="地図の細かさ">
+          <div class="cp-sublabel">地形の細かさ <span id="gsi-detail-val" class="cp-mono">標準</span></div>
+          <input id="gsi-detail-slider" type="range" min="1" max="5" step="1" value="3" style="width:260px; accent-color:#00c8ff;" aria-label="地形の細かさ">
         </div>
+        <div class="cp-sublabel">地図の精細さ <span id="gsi-zoom-val" class="cp-mono">基準</span></div>
+        <input id="gsi-zoom-slider" type="range" min="0" max="4" step="1" value="0" style="width:260px; accent-color:#00c8ff;" aria-label="地図の精細さ">
       </div>
       <div id="info-show" class="ctrl-info-body" hidden>
         <b>点群</b>: 点群モデル。消すと地図だけになり、地形を確認しやすくなります。<br>
         <b>説明パネル</b>: 各地点の説明(球体とパネル)。球体に近づくとパネルが自動で開きます。<br>
         <b>地図</b>: 国土地理院の地図と標高から周りの地面を作って敷きます。
-        「立体表示/平面表示」で起伏の有無、「地図の細かさ」を上げると地形も地図もくっきりします(ただし重く・表示範囲は狭く)。
+        「立体表示/平面表示」で起伏の有無、「地形の細かさ」を下げると軽く、「地図の精細さ」を上げるとくっきり(ただし狭く・重く)なります。
         簡易表示のため、点群とは多少ずれることがあります。出典: 国土地理院(地理院タイルを加工して作成)
       </div>
     </div>
@@ -2307,9 +2320,11 @@
       データセットや説明パネルを作る人、動作を確かめる人向けです。ふだん見るだけなら使いません。<br>
       <b>配置の調整</b>: モデルの位置(地図に合わせる)と、最初に見る場所・向きを決めます。datasets.csv の値・初期位置・いまを並べて表示し、
       「初期位置にする」でモデルごとにこの端末へ一時保存します(この端末ではすぐに使われます)。端末に取り込んだ3Dデータは対象外です。<br>
+      <b>元データ</b>: サーバーの CSV(index.html と同じ場所)か、データの一覧で読み込んだ CSV のどちらかです。作業中の変更は、元データとの違いとして一時保存します。<br>
       <b>アノテーション配置</b>: 3m 先の黄色い立方体の所に説明パネルを追加し、一覧から選んで位置・タイトル・本文などを直せます(1件削除・全部削除も)。
       編集するとすぐ、モデルごとにこの端末へ一時保存します。A キーでも追加でき(このモード中だけ A は左移動ではなく追加)、I J K L を押している間は立方体の周りを回ります。<br>
-      <b>書き出し</b>: datasets.csv・annotations.csv は、データの一覧の「書き出し」で、全データまとめて書き出します。Web 上のデータの追加・一覧から外すのも、データの一覧で行います。<br>
+      <b>CSV(データの設定)</b>: データの一覧で、元データの切り替え(CSV の読み込み・サーバーの CSV に戻す・読み込んだ CSV に戻す)と、
+      datasets.csv・annotations.csv の書き出しを行います。Web 上のデータの追加・一覧から外すのも、データの一覧で行います。<br>
       パネルは、ボタン列・設定パネルと重ならない場所にまとめて出ます。作業モード中は、60 秒操作しなくても初期位置に戻りません。
       状態は URL(?place=1 など)にも反映され、再読込しても続きます。
     </div>
@@ -2413,7 +2428,7 @@
         <div class="pp-sec">モデルの位置(地図に合わせる)</div>
         <table class="pp-tbl" aria-label="モデルの位置">
           <tr><th></th><th>東西 X</th><th>高さ Y</th><th>南北 Z</th></tr>
-          <tr class="r-csv"><td>datasets.csv</td><td id="pm-cx"></td><td id="pm-cy"></td><td id="pm-cz"></td></tr>
+          <tr class="r-csv"><td>元データ</td><td id="pm-cx"></td><td id="pm-cy"></td><td id="pm-cz"></td></tr>
           <tr class="r-init"><td>初期位置</td><td id="pm-ix"></td><td id="pm-iy"></td><td id="pm-iz"></td></tr>
           <tr class="r-now"><td>いま</td><td id="pm-nx"></td><td id="pm-ny"></td><td id="pm-nz"></td></tr>
         </table>
@@ -2432,7 +2447,7 @@
         <div class="pp-sec">最初に見る場所と向き</div>
         <table class="pp-tbl" aria-label="最初に見る場所と向き">
           <tr><th></th><th>x</th><th>y</th><th>z</th><th>向き</th></tr>
-          <tr class="r-csv"><td>datasets.csv</td><td id="pv-cx"></td><td id="pv-cy"></td><td id="pv-cz"></td><td id="pv-cw"></td></tr>
+          <tr class="r-csv"><td>元データ</td><td id="pv-cx"></td><td id="pv-cy"></td><td id="pv-cz"></td><td id="pv-cw"></td></tr>
           <tr class="r-init"><td>初期位置</td><td id="pv-ix"></td><td id="pv-iy"></td><td id="pv-iz"></td><td id="pv-iw"></td></tr>
           <tr class="r-now"><td>いま</td><td id="pv-nx"></td><td id="pv-ny"></td><td id="pv-nz"></td><td id="pv-nw"></td></tr>
         </table>
@@ -2446,7 +2461,7 @@
     <div class="pp-sec">このモデルの一時保存</div>
     <div class="pp-hint">「初期位置にする」で、この端末に一時保存します(この端末ではすぐ使われます)。保存せずに別のモデルを開くと、動かした分は戻ります。</div>
     <div class="pp-btns">
-      <button type="button" class="dbg-btn" id="pp-revert">datasets.csv の値に戻す</button>
+      <button type="button" class="dbg-btn" id="pp-revert">元データの値に戻す</button>
       <button type="button" class="dbg-btn" data-open-export>一覧で書き出す</button>
     </div>
   </div>
@@ -2512,12 +2527,29 @@
         <summary>外したデータ(<span id="ch-removed-n">0</span>件)</summary>
         <div id="ch-removed" class="ch-removed"></div>
       </details>
-      <div class="ch-sec" id="ch-export-sec">書き出し <span class="ch-sub">配置の調整・アノテーション・一覧の変更を CSV にする</span></div>
-      <div class="ch-export">
+      <div class="ch-sec" id="ch-export-sec">CSV(データの設定) <span class="ch-sub">元データの切り替え・読み込み・作業中の変更の書き出し</span></div>
+      <div class="ch-export" id="ch-csv">
+        <div id="ch-csv-src" class="ch-sub"></div>
+        <div class="ch-fa-btns">
+          <button type="button" class="ch-btn" id="ch-csv-load" title="datasets.csv・annotations.csv(片方でも可)を読み込み、元データにします">CSV を読み込む</button>
+          <button type="button" class="ch-btn" id="ch-csv-use-server" title="作業中の変更を捨てて、サーバーの CSV(index.html と同じ場所)を使います">サーバーの CSV に戻す</button>
+          <button type="button" class="ch-btn" id="ch-csv-use-local" title="作業中の変更を捨てて、読み込んだ CSV を使います">読み込んだ CSV に戻す</button>
+          <button type="button" class="ch-btn warn" id="ch-csv-delete-local" title="この端末に保存した、読み込んだ CSV を削除します">読み込んだ CSV を削除</button>
+        </div>
+        <input type="file" id="ch-csv-file" accept=".csv,text/csv" multiple hidden>
+        <div id="ch-csv-confirm" class="ch-csv-confirm" hidden>
+          <div id="ch-csv-confirm-msg"></div>
+          <div class="ch-fa-btns">
+            <button type="button" class="ch-btn warn" id="ch-csv-confirm-ok">変更を捨てて切り替える</button>
+            <button type="button" class="ch-btn" id="ch-csv-confirm-cancel">やめる</button>
+          </div>
+        </div>
+        <div id="ch-csv-msg" class="ch-sub"></div>
         <div id="ch-export-info" class="ch-sub"></div>
         <div class="ch-fa-btns">
           <button type="button" class="ch-btn" id="ch-export-ds">datasets.csv を書き出す</button>
           <button type="button" class="ch-btn" id="ch-export-ann">annotations.csv を書き出す</button>
+          <button type="button" class="ch-btn warn" id="ch-work-discard" title="作業中の変更(配置・名前・追加・一覧から外す・アノテーション)をすべて捨て、元データの値に戻します">作業中の変更を捨てる</button>
         </div>
       </div>
       <div class="ch-sec">端末の3Dデータ <span class="ch-sub">この端末に取り込んだ点群・3Dモデル</span></div>
@@ -3255,13 +3287,21 @@ async function loadDatasetsCSV() {
     datasetsLoadError = null; // フォールバックで動作するのでエラー表示はしない
     console.warn(`datasets.csv ${reason} → 組み込みデータ(${DATASETS.length}件)で表示します`);
   };
+  await null; // (起動処理の途中から呼ばれるので、ページの読込が終わってから元データの設定を見る)
+  csvSourceUsed.datasets = 'fallback';
   try {
-    const res = await fetch(DATASETS_CSV_URL);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    const parsed = parseDatasetsCSV(text);
+    // 元データ: 読み込んだ CSV を使う設定ならそれを、無ければサーバーの CSV
+    let text = csvLocalText('datasets');
+    if (text != null) csvSourceUsed.datasets = 'local';
+    else {
+      const res = await fetch(DATASETS_CSV_URL);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      text = await res.text();
+    }
+    const parsed = parseDatasetsCSV(text.replace(/^\ufeff/, ''));
     if (parsed.length > 0) {
       DATASETS = parsed;
+      if (csvSourceUsed.datasets !== 'local') csvSourceUsed.datasets = 'server';
       datasetsLoadError = null;
       console.log(`データセットCSV読込完了: ${parsed.length}件`);
     } else {
@@ -3325,13 +3365,21 @@ function parseAnnotationsCSV(text) {
 }
 
 async function loadAnnotationsCSV() {
+  await null; // (起動処理の途中から呼ばれるので、ページの読込が終わってから元データの設定を見る)
   try {
-    const res = await fetch(ANNOTATIONS_CSV_URL);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    ANNOTATIONS = parseAnnotationsCSV(await res.text());
+    // 元データ: 読み込んだ CSV を使う設定ならそれを、無ければサーバーの CSV
+    const local = csvLocalText('annotations');
+    if (local != null) { ANNOTATIONS = parseAnnotationsCSV(local.replace(/^\ufeff/, '')); csvSourceUsed.annotations = 'local'; }
+    else {
+      const res = await fetch(ANNOTATIONS_CSV_URL);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      ANNOTATIONS = parseAnnotationsCSV((await res.text()).replace(/^\ufeff/, ''));
+      csvSourceUsed.annotations = 'server';
+    }
     console.log(`annotations.csv 読込完了: ${ANNOTATIONS.length}件`);
   } catch (e) {
     ANNOTATIONS = [];
+    csvSourceUsed.annotations = 'none';
     console.warn(`annotations.csv 読込失敗(アノテーション無しで継続): ${e.message}`);
   }
 }
@@ -8696,6 +8744,12 @@ function alert0(text) {
     if (!hasFiles(e)) return;
     e.preventDefault(); depth = 0; drop.hidden = true;
     if (gate.active && !chooser.open) return;
+    const dropped = [...(e.dataTransfer.files || [])];
+    if (dropped.length && dropped.every(f => /\.csv$/i.test(f.name)) && window.__csvImportFiles) {
+      openExportInChooser();
+      window.__csvImportFiles(dropped);
+      return;
+    }
     localBeginImport(await entriesFromDataTransfer(e.dataTransfer));
   });
   // 取り込みダイアログ
@@ -8767,6 +8821,7 @@ window.__local3d = {
   await Promise.all([loadDatasetsCSV(), loadAnnotationsCSV()]);
   applyPlacementEdits();  // 配置の調整で一時保存した値・追加/外したデータ
   applyAnnotationEdits(); // アノテーション配置で一時保存した内容
+  csvShowFlash();         // 元データを切り替えて読み直した時のお知らせ
   buildDatasetButtons();
   // 表示するデータを選ぶ画面を出す(選ぶまでの間に、以降の準備を進める)
   showChooser({ boot: true });
@@ -8917,7 +8972,7 @@ dbgPanel.innerHTML = `
     <div class="pp-hint">編集するとすぐ、この端末に一時保存します(この端末ではすぐ使われます)。</div>
     <div class="pp-btns">
       <button type="button" class="dbg-btn warn" id="ap-del-all">全部削除</button>
-      <button type="button" class="dbg-btn" id="ap-revert">annotations.csv の値に戻す</button>
+      <button type="button" class="dbg-btn" id="ap-revert">元データの値に戻す</button>
       <button type="button" class="dbg-btn" data-open-export>一覧で書き出す</button>
     </div>
   </div>
@@ -10873,6 +10928,7 @@ function renderChooser() {
       card.innerHTML = `<div class="ch-main"><div class="ch-name"></div><div class="ch-info"></div></div>
         <div class="ch-actions">
           <button type="button" class="ch-btn primary" data-act="open">開く</button>
+          <button type="button" class="ch-btn" data-act="vr" title="VR に入って、このデータを見ます(表示中なら読み直さずに入ります)">VRで開く</button>
           <button type="button" class="ch-btn" data-act="overlay" hidden title="今のデータに重ねて一緒に表示します">重ねる</button>
           <button type="button" class="ch-btn" data-act="save-level" disabled title="今の表示レベルで見るのに必要なタイル(離れて見る分)を、この端末に保存します">レベル5で保存</button>
           <button type="button" class="ch-btn" data-act="save-full" disabled title="すべてのタイルをこの端末に保存します(保存後はオフラインでも全部見られます)">完全保存</button>
@@ -10949,6 +11005,7 @@ function renderChooser() {
   }
   renderChooserLocal();
   renderChooserEdit();
+  renderChooserCsv();
   // 端末の使用量・回線
   const foot = document.getElementById('ch-foot');
   const net = netEstimate();
@@ -11021,6 +11078,7 @@ onLevelUiChange(() => { if (chooser.open) renderChooser(); });
     if (!card) return;
     const id = card.dataset.id;
     const act = e.target.closest('button')?.dataset.act || 'open';
+    if (act === 'vr') { e.stopPropagation(); enterVrAndOpen(id); return; }
     if (act === 'delete') { e.stopPropagation(); armDelete(e.target.closest('button'), () => deletePreloadData(id)); return; }
     if (act === 'remove') {
       e.stopPropagation();
@@ -11571,6 +11629,7 @@ function resetSettingsToDefaults() {
   press('annotation-toggle', true);
   press('gsi-solid-toggle', true);
   fire(document.getElementById('gsi-detail-slider'), '3');
+  fire(document.getElementById('gsi-zoom-slider'), '0');
   press('gsi-toggle', false);
   setSpeedStep('normal');
   const sc = document.getElementById('scale-slider');
@@ -11658,7 +11717,7 @@ document.addEventListener('click', (e) => {
   // top は #dataset-switch 真下に固定で再計算不要。
 });
 
-// ═══════════════ データの一覧: Web 上のデータを追加・外したデータ・書き出し(tiles_013) ═══════════════
+// ═══════════════ データの一覧: Web 上のデータを追加・外したデータ・作業中の変更(tiles_013) ═══════════════
 function renderChooserEdit() {
   const $ = (id) => document.getElementById(id);
   const box = $('ch-removed-box');
@@ -11668,7 +11727,7 @@ function renderChooserEdit() {
   $('ch-removed').innerHTML = REMOVED_DATASETS.map(ds =>
     `<div class="ch-rm-item"><span>${escapeHtml(ds.label ? `${ds.id}: ${ds.label}` : ds.id)}</span>` +
     `<button type="button" class="ch-btn" data-restore="${escapeHtml(ds.id)}">一覧に戻す</button></div>`).join('');
-  // 書き出し: この端末で変えたもの(datasets.csv・annotations.csv との違い)
+  // 作業中の変更(元データとの違い)
   const name = (ds) => (ds.label ? `${ds.id} ${ds.label}` : ds.id);
   const dsLines = [], annLines = [];
   for (const ds of DATASETS) {
@@ -11687,10 +11746,243 @@ function renderChooserEdit() {
   const tm = (t) => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
   const last = (k) => (m[k] ? `最後に書き出した日時 ${tm(m[k])}${m.changedAt && m.changedAt > m[k] ? '(その後に変更あり)' : ''}` : 'まだ書き出していません');
   $('ch-export-info').innerHTML =
-    `<div><b>datasets.csv との違い</b>: ${dsLines.length ? escapeHtml(dsLines.join(' · ')) : 'なし'}<br><span class="ch-dim">${last('dsAt')}</span></div>` +
-    `<div><b>annotations.csv との違い</b>: ${annLines.length ? escapeHtml(annLines.join(' · ')) : 'なし'}<br><span class="ch-dim">${last('annAt')}</span></div>` +
-    `<div class="ch-dim">書き出すのは一覧の全データです(外したデータ・端末の3Dデータは含みません)。サーバーの CSV と置き換えると、ほかの端末にも反映されます。</div>`;
+    `<div class="ch-csv-h">作業中の変更(元データとの違い)</div>` +
+    `<div><b>datasets.csv</b>: ${dsLines.length ? escapeHtml(dsLines.join(' · ')) : 'なし'}<br><span class="ch-dim">${last('dsAt')}</span></div>` +
+    `<div><b>annotations.csv</b>: ${annLines.length ? escapeHtml(annLines.join(' · ')) : 'なし'}<br><span class="ch-dim">${last('annAt')}</span></div>` +
+    `<div class="ch-dim">書き出すのは「元データ＋作業中の変更」の全体です(外したデータ・端末の3Dデータは含みません)。` +
+    `サーバーの CSV と置き換えるか、別の端末で「CSV を読み込む」と使えます。</div>`;
 }
+
+// ═══════════════ CSV の元データ(tiles_014) ═══════════════
+// ① サーバーの CSV(index.html と同じ場所) ② 読み込んだ CSV(この端末の localStorage に保存) のどちらかを「元データ」にし、
+// 作業モードの変更(③ 配置・名前・追加・一覧から外す・アノテーション)は、その元データとの差分として一時保存する。
+// 作業中の変更は1組だけ持ち、元データを切り替える時は捨てる。切り替えは保存してからページを読み直して反映する。
+// 読み込んだ CSV は片方だけでもよく、無い方はサーバーの CSV を使う。種類は中身の1行目(見出し)で見分ける。
+const CSV_SRC_KEY = 'tilesViewer.csvSource.v1';
+const CSV_FLASH_KEY = 'tilesViewer.csvFlash';
+const csvSourceUsed = { datasets: 'server', annotations: 'server' }; // 起動時に実際に使った元データ
+function csvSrcLoad() {
+  const s = lsGet(CSV_SRC_KEY);
+  const local = (s && typeof s === 'object' && s.local && typeof s.local === 'object') ? s.local : {};
+  return { use: s && s.use === 'local' ? 'local' : 'server', local };
+}
+function csvSrcSave(s) {
+  try { localStorage.setItem(CSV_SRC_KEY, JSON.stringify(s)); return true; } catch (e) { return false; }
+}
+const csvHasLocal = (s) => !!(s.local.datasets || s.local.annotations);
+// 起動時: 読み込んだ CSV を使う設定なら、その文字列(無ければ null = サーバー)
+function csvLocalText(kind) {
+  const s = csvSrcLoad();
+  const f = s.use === 'local' ? s.local[kind] : null;
+  return f && typeof f.text === 'string' ? f.text : null;
+}
+// 1行目の見出しで種類を見分ける
+function csvDetectKind(text) {
+  const head = String(text).replace(/^﻿/, '').split(/\r?\n/)[0].split(',').map(x => x.trim().replace(/^"|"$/g, ''));
+  if (head.includes('datasetId')) return 'annotations';
+  if (head.includes('id') && (head.includes('label') || head.includes('xOffset'))) return 'datasets';
+  return null;
+}
+// 作業中の変更(③)の件数と、すべて捨てる
+function workChangesCount() {
+  return Object.keys(placeLoadStore().items).length + Object.keys(annLoadStore().models).length;
+}
+function workChangesDiscard() {
+  placeSaveStore({ items: {} });
+  annSaveStore({ models: {} });
+}
+function csvReloadWith(msg) {
+  try { sessionStorage.setItem(CSV_FLASH_KEY, msg); } catch (e) { /* 表示だけなので無視 */ }
+  location.reload();
+}
+// 読み直した後に一度だけ出すお知らせ
+function csvShowFlash() {
+  let m = null;
+  try { m = sessionStorage.getItem(CSV_FLASH_KEY); sessionStorage.removeItem(CSV_FLASH_KEY); } catch (e) { m = null; }
+  if (m) showToast(m);
+}
+
+function renderChooserCsv() {
+  const $ = (id) => document.getElementById(id);
+  const box = $('ch-csv-src');
+  if (!box) return;
+  const s = csvSrcLoad();
+  const n = workChangesCount();
+  const tm = (t) => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  const line = (kind) => {
+    const used = csvSourceUsed[kind], f = s.local[kind];
+    const now = used === 'local' && f ? `読み込んだ CSV「${escapeHtml(f.name || kind + '.csv')}」(${tm(f.at)} に読み込み)`
+      : used === 'fallback' ? '組み込みのデータ(サーバーの CSV が読めませんでした)'
+      : used === 'none' ? 'なし(サーバーの CSV が読めませんでした)'
+      : 'サーバーの CSV(index.html と同じ場所)';
+    const keep = used !== 'local' && f ? `<br><span class="ch-dim">読み込んだ CSV「${escapeHtml(f.name || kind + '.csv')}」(${tm(f.at)})も保存してあります</span>` : '';
+    return `<div><b>${kind}.csv</b>: ${now}${keep}</div>`;
+  };
+  box.innerHTML = `<div class="ch-csv-h">いまの元データ</div>${line('datasets')}${line('annotations')}` +
+    `<div class="ch-dim">作業中の変更: ${n ? `${n}件(下の「元データとの違い」)` : 'なし'}</div>`;
+  const hasLocal = csvHasLocal(s);
+  const usingLocal = csvSourceUsed.datasets === 'local' || csvSourceUsed.annotations === 'local';
+  const arm = (id, on) => { const b = $(id); if (b.dataset.armed !== '1') b.disabled = !on; };
+  arm('ch-csv-use-server', usingLocal || n > 0);
+  $('ch-csv-use-local').hidden = !hasLocal;
+  arm('ch-csv-use-local', hasLocal && (!usingLocal || n > 0));
+  $('ch-csv-delete-local').hidden = !hasLocal;
+  arm('ch-work-discard', n > 0);
+}
+
+(function setupChooserCsv() {
+  const $ = (id) => document.getElementById(id);
+  if (!$('ch-csv-load')) return;
+  const msg = (t) => { $('ch-csv-msg').textContent = t || ''; };
+  // 作業中の変更がある時だけ2回押し
+  function armedRun(b, confirmText, fn) {
+    const label = b.dataset.label || (b.dataset.label = b.textContent);
+    if (workChangesCount() > 0 && b.dataset.armed !== '1') {
+      b.dataset.armed = '1';
+      b.textContent = confirmText;
+      clearTimeout(b._t);
+      b._t = setTimeout(() => { b.dataset.armed = ''; b.textContent = label; renderChooserCsv(); }, 4000);
+      msg(`作業中の変更(${workChangesCount()}件)は捨てられます。残したい時は、先に下の「書き出す」で書き出してください。`);
+      return;
+    }
+    clearTimeout(b._t); b.dataset.armed = ''; b.textContent = label;
+    fn();
+  }
+  $('ch-csv-use-server').addEventListener('click', (e) => armedRun(e.currentTarget, 'もう一度押すと変更を捨てて戻す', () => {
+    const s = csvSrcLoad(); s.use = 'server';
+    if (!csvSrcSave(s)) { msg('この端末に保存できませんでした'); return; }
+    workChangesDiscard();
+    csvReloadWith('サーバーの CSV に戻しました');
+  }));
+  $('ch-csv-use-local').addEventListener('click', (e) => armedRun(e.currentTarget, 'もう一度押すと変更を捨てて戻す', () => {
+    const s = csvSrcLoad(); if (!csvHasLocal(s)) return;
+    s.use = 'local';
+    if (!csvSrcSave(s)) { msg('この端末に保存できませんでした'); return; }
+    workChangesDiscard();
+    csvReloadWith('読み込んだ CSV に戻しました');
+  }));
+  $('ch-work-discard').addEventListener('click', (e) => armedRun(e.currentTarget, 'もう一度押すと変更を捨てる', () => {
+    workChangesDiscard();
+    csvReloadWith('作業中の変更を捨てて、元データの値に戻しました');
+  }));
+  $('ch-csv-delete-local').addEventListener('click', (e) => {
+    const b = e.currentTarget, label = b.dataset.label || (b.dataset.label = b.textContent);
+    const s = csvSrcLoad();
+    const usingLocal = csvSourceUsed.datasets === 'local' || csvSourceUsed.annotations === 'local';
+    if (b.dataset.armed !== '1') {
+      b.dataset.armed = '1';
+      b.textContent = 'もう一度押すと削除';
+      clearTimeout(b._t);
+      b._t = setTimeout(() => { b.dataset.armed = ''; b.textContent = label; }, 4000);
+      msg(usingLocal ? `いま使っている読み込んだ CSV を削除し、サーバーの CSV に戻します${workChangesCount() ? `(作業中の変更 ${workChangesCount()}件 も捨てます)` : ''}。` : '');
+      return;
+    }
+    clearTimeout(b._t); b.dataset.armed = ''; b.textContent = label;
+    s.local = {}; s.use = 'server';
+    csvSrcSave(s);
+    if (usingLocal) { workChangesDiscard(); csvReloadWith('読み込んだ CSV を削除し、サーバーの CSV に戻しました'); return; }
+    msg('読み込んだ CSV を削除しました');
+    renderChooserCsv();
+  });
+  // 読み込み(ファイルを選ぶ・ドラッグ&ドロップ)
+  let pending = null;
+  $('ch-csv-load').addEventListener('click', () => { $('ch-csv-file').value = ''; $('ch-csv-file').click(); });
+  $('ch-csv-file').addEventListener('change', (e) => { const fs = [...(e.target.files || [])]; if (fs.length) csvImportFiles(fs); });
+  $('ch-csv-confirm-cancel').addEventListener('click', () => { pending = null; $('ch-csv-confirm').hidden = true; msg('読み込みをやめました'); });
+  $('ch-csv-confirm-ok').addEventListener('click', () => { const p = pending; pending = null; $('ch-csv-confirm').hidden = true; if (p) apply(p); });
+  function apply(p) {
+    const s = csvSrcLoad();
+    for (const k of Object.keys(p)) s.local[k] = p[k];
+    s.use = 'local';
+    if (!csvSrcSave(s)) { msg('この端末に保存できませんでした(保存できる量を超えています)'); return; }
+    workChangesDiscard();
+    csvReloadWith(`読み込んだ CSV(${Object.values(p).map(f => f.name).join('・')})に切り替えました`);
+  }
+  async function csvImportFiles(files) {
+    const p = {}, bad = [];
+    for (const f of files) {
+      let text = '';
+      try { text = (await f.text()).replace(/^﻿/, ''); } catch (e) { bad.push(`${f.name}(読めません)`); continue; }
+      const kind = csvDetectKind(text);
+      if (kind === 'datasets' && !parseDatasetsCSV(text).length) { bad.push(`${f.name}(データが1件もありません)`); continue; }
+      if (!kind) { bad.push(`${f.name}(datasets.csv・annotations.csv の見出しではありません)`); continue; }
+      if (p[kind]) { bad.push(`${f.name}(${kind}.csv が2つあります)`); continue; }
+      const rows = kind === 'datasets' ? parseDatasetsCSV(text).length : parseAnnotationsCSV(text).length;
+      p[kind] = { text, name: f.name, at: Date.now(), rows };
+    }
+    if (!Object.keys(p).length) { msg(`読み込めませんでした: ${bad.join('、')}`); return; }
+    const parts = Object.entries(p).map(([k, f]) => `${k}.csv ← ${f.name}(${f.rows}件)`).join('・');
+    const n = workChangesCount();
+    if (n > 0) {
+      pending = p;
+      $('ch-csv-confirm-msg').textContent = `${parts} を元データにします。作業中の変更(${n}件)は捨てられます。残したい時は、やめて先に書き出してください。` + (bad.length ? `(読めなかったもの: ${bad.join('、')})` : '');
+      $('ch-csv-confirm').hidden = false;
+      $('ch-csv-confirm').scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    if (bad.length) msg(`読めなかったもの: ${bad.join('、')}`);
+    apply(p);
+  }
+  window.__csvImportFiles = csvImportFiles;
+})();
+
+// ═══════════════ データの一覧から VR に入る(tiles_014) ═══════════════
+// 「VRで開く」: 押した操作の中で VR に入り(VR ボタンを押したのと同じ扱い)、そのデータを VR の中で読み込む。
+// 表示中のデータなら読み直さずにそのまま入る。読み込みの画面は VR の中では見えないので、目の前に「読み込み中」を出す。
+function enterVrAndOpen(id) {
+  if (!document.body.classList.contains('vr-ok')) return;
+  if (!renderer.xr.isPresenting) vrBtn.click();
+  chooseDataset(id);
+}
+const vrLoadHud = (() => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024; canvas.height = 220;
+  const ctx = canvas.getContext('2d');
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2 * 220 / 1024),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false }));
+  mesh.position.set(0, -0.15, -1.6);
+  mesh.renderOrder = 9999;
+  mesh.frustumCulled = false;
+  mesh.visible = false;
+  camera.add(mesh);
+  let lastKey = '';
+  function draw(title, step, pct) {
+    const key = `${title}|${step}|${pct}`;
+    if (key === lastKey) return;
+    lastKey = key;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(8,12,18,0.86)';
+    ctx.strokeStyle = '#00c8ff'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.roundRect(4, 4, canvas.width - 8, canvas.height - 8, 24); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 56px sans-serif'; ctx.textBaseline = 'top';
+    ctx.fillText(title, 40, 30);
+    ctx.fillStyle = '#9fdcff'; ctx.font = '40px sans-serif';
+    ctx.fillText(step, 40, 108);
+    ctx.fillStyle = '#00c8ff'; ctx.font = 'bold 56px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(pct, canvas.width - 40, 30);
+    ctx.textAlign = 'left';
+    const f = Math.max(0, Math.min(1, parseFloat(pct) / 100 || 0));
+    ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(40, 172, canvas.width - 80, 12);
+    ctx.fillStyle = '#00c8ff'; ctx.fillRect(40, 172, (canvas.width - 80) * f, 12);
+    tex.needsUpdate = true;
+  }
+  // 読込画面の内容(題名・いまの段階・%)をそのまま映す
+  function texts() {
+    const li = document.querySelector('#boot-screen .boot-steps li[data-state="active"]');
+    const step = li ? `${li.querySelector('.st-label')?.textContent || ''} ${li.querySelector('.st-detail')?.textContent || ''}`.trim() : '';
+    return [gateEls.title.textContent || '読み込み中', step, gateEls.percent.textContent || ''];
+  }
+  setInterval(() => {
+    const on = renderer.xr.isPresenting && gate.active;
+    if (!on) { if (mesh.visible) mesh.visible = false; return; }
+    draw(...texts());
+    mesh.visible = true;
+  }, 250);
+  return { mesh, texts };
+})();
+
 (function setupChooserEdit() {
   const $ = (id) => document.getElementById(id);
   if (!$('ch-add-btn')) return;
@@ -11728,13 +12020,13 @@ function renderChooserEdit() {
     downloadTextFile('datasets.csv', window.__lastDatasetsCsv = buildDatasetsCsv(), 'text/csv;charset=utf-8');
     exportMetaExported('dsAt');
     renderChooser();
-    showToast('datasets.csv を書き出しました。サーバーの datasets.csv と置き換えてください');
+    showToast('datasets.csv を書き出しました。サーバーの CSV と置き換えるか、別の端末で読み込んでください');
   });
   $('ch-export-ann').addEventListener('click', () => {
     downloadTextFile('annotations.csv', window.__lastAnnotationsCsv = buildAnnotationsCsv(), 'text/csv;charset=utf-8');
     exportMetaExported('annAt');
     renderChooser();
-    showToast('annotations.csv を書き出しました。サーバーの annotations.csv と置き換えてください');
+    showToast('annotations.csv を書き出しました。サーバーの CSV と置き換えるか、別の端末で読み込んでください');
   });
 })();
 
@@ -11899,7 +12191,7 @@ document.addEventListener('click', (e) => { if (e.target.closest && e.target.clo
     const stEl = $('pp-state');
     if (!ds || local) { stEl.textContent = ''; stEl.className = 'pp-state'; return; }
     const dirty = placeIsDirty(ds), unsaved = modelUnsaved(ds);
-    stEl.textContent = (ds._added ? '追加・未出力' : (dirty ? 'datasets.csv から変更あり' : 'datasets.csv と同じ')) + (unsaved ? ' · モデルの位置は未保存' : '');
+    stEl.textContent = (ds._added ? '追加・未出力' : (dirty ? '元データから変更あり' : '元データと同じ')) + (unsaved ? ' · モデルの位置は未保存' : '');
     stEl.className = 'pp-state ' + (dirty || unsaved ? 'dirty' : 'clean');
     const lab = $('pp-label');
     if (document.activeElement !== lab) lab.value = ds.label || '';
@@ -11914,7 +12206,7 @@ document.addEventListener('click', (e) => { if (e.target.closest && e.target.clo
     cell('pv-ix', ds.xOffset, f2, c ? c.xOffset : null); cell('pv-iy', ds.yOffset, f2, c ? c.yOffset : null); cell('pv-iz', ds.zOffset, f2, c ? c.zOffset : null); cell('pv-iw', ds.yawOffset, f1, c ? c.yawOffset : null);
     cell('pv-nx', o.x - currentXAdjust, f2, ds.xOffset); cell('pv-ny', o.y - currentHeightAdjust, f2, ds.yOffset); cell('pv-nz', o.z - currentZAdjust, f2, ds.zOffset); cell('pv-nw', o.yawDeg, f1, ds.yawOffset);
     const rv = $('pp-revert');
-    if (rv.dataset.armed !== '1') rv.textContent = ds._added ? 'この追加を取り消す' : 'datasets.csv の値に戻す';
+    if (rv.dataset.armed !== '1') rv.textContent = ds._added ? 'この追加を取り消す' : '元データの値に戻す';
     rv.disabled = !dirty && !unsaved;
     $('pp-step').textContent = String(stepNow(false));
     $('pp-scale-warn').hidden = Math.abs(worldScale - 1) < 1e-6;
@@ -12012,7 +12304,7 @@ document.addEventListener('click', (e) => { if (e.target.closest && e.target.clo
     applyWorldScale();
     placeRecord(ds);
     updateDatasetButtons();
-    showToast('datasets.csv の値に戻しました');
+    showToast('元データの値に戻しました');
   });
   // PC のキー: [ ] = 高さ Y、; : = 東西 X、, . = 南北 Z(Shift で 0.01)、R = 初期位置へ
   window.addEventListener('keydown', (e) => {
@@ -12168,7 +12460,7 @@ function buildAnnotationsCsv() {
     if (id == null || isLocalId(id)) { st.textContent = ''; st.className = 'pp-state'; }
     else {
       const dirty = annIsDirty(id);
-      const t = dirty ? 'annotations.csv から変更あり' : 'annotations.csv と同じ';
+      const t = dirty ? '元データから変更あり' : '元データと同じ';
       if (st.textContent !== t) { st.textContent = t; st.className = 'pp-state ' + (dirty ? 'dirty' : 'clean'); }
       const rv = $('ap-revert'); if (rv.dataset.armed !== '1') rv.disabled = !dirty;
     }
@@ -12275,12 +12567,12 @@ function buildAnnotationsCsv() {
     annRecord(id); annRebuild(id);
     sel = -1; renderList();
   }));
-  $('ap-revert').addEventListener('click', (e) => armed(e.currentTarget, 'もう一度押すと戻します', 'annotations.csv の値に戻す', () => {
+  $('ap-revert').addEventListener('click', (e) => armed(e.currentTarget, 'もう一度押すと戻します', '元データの値に戻す', () => {
     const id = curId(); if (id == null) return;
     clearTimeout(recTimer); recId = null; clearTimeout(textTimer);
     annRevert(id);
     sel = -1; renderList();
-    showToast('annotations.csv の値に戻しました');
+    showToast('元データの値に戻しました');
   }));
   onDevModeChange((name, on) => { if (name === 'annotate' && on) { lastId = curId(); sel = -1; renderList(); } if (name === 'annotate' && !on) { sel = -1; paintSelection(); } });
   window.__annAddAtCube = addAtCube;
@@ -12288,6 +12580,7 @@ function buildAnnotationsCsv() {
   window.__annSelect = select;
 })();
 // 動作確認用
+window.__v14 = { csvSrcLoad, workChangesCount, csvSourceUsed, vrHudTexts: () => vrLoadHud.texts(), gateActive: () => gate.active, current: () => currentDataset };
 window.__v13 = { buildAnnotationsCsv, buildDatasetsCsv, annLoadStore, placeLoadStore, annList, removed: () => REMOVED_DATASETS, datasets: () => DATASETS };
 window.__v12 = { setBudget: (n) => setPointBudget(n), density: () => pointDensity, pcStats: () => pcVis.stats, placeLoadStore, placeIsDirty, buildDatasetsCsv, datasets: () => DATASETS };
 
@@ -12337,8 +12630,7 @@ window.__v12 = { setBudget: (n) => setPointBudget(n), density: () => pointDensit
   const detailWrap = document.getElementById('gsi-detail-wrap');
   // 平面表示時は地形の細かさをグレーアウト(平面では起伏がないので効果が無い)
   function updateDetailEnabled() {
-    // 地図の細かさは平面表示でも地図の精細さに効くので、操作できるままにする
-    if (detailWrap) detailWrap.classList.remove('disabled');
+    if (detailWrap) detailWrap.classList.toggle('disabled', !gsiState.solid);
   }
   if (solidBtn) {
     solidBtn.addEventListener('click', () => {
@@ -12351,27 +12643,48 @@ window.__v12 = { setBudget: (n) => setPointBudget(n), density: () => pointDensit
   }
   updateDetailEnabled(); // 初期状態を反映
 
-  // 地図の細かさ(1本): 1(軽い)〜5(細かい)。地形の細かさ(メッシュの間隔 STEP)と地図の精細さ(ズーム)をまとめて決める。
-  // 平面表示の時は地図の精細さだけが効く
+  // 地形の細かさスライダー: 1(粗い/軽い)〜5(細かい/重い)。STEP値に変換。
+  // 細かさ5→step2, 4→4, 3→6, 2→10, 1→16 (大きいstep=粗い)
   const detailSlider = document.getElementById('gsi-detail-slider');
   const detailVal = document.getElementById('gsi-detail-val');
-  const MAP_LEVELS = { 1: { step: 16, zoom: 'auto' }, 2: { step: 10, zoom: 'auto' }, 3: { step: 6, zoom: 'auto' }, 4: { step: 4, zoom: 15 }, 5: { step: 2, zoom: 16 } };
-  const LABEL_MAP = { 1: '最も軽い', 2: '軽い', 3: '標準', 4: '細かい', 5: '最も細かい' };
+  const STEP_MAP = { 1: 16, 2: 10, 3: 6, 4: 4, 5: 2 };
+  const LABEL_MAP = { 1: '最も粗い', 2: '粗い', 3: '標準', 4: '細かい', 5: '最も細かい' };
   if (detailSlider) {
-    gsiState.step = MAP_LEVELS[3].step;
+    // 初期: 細かさ3(標準) = step6
+    gsiState.step = STEP_MAP[3];
     detailSlider.addEventListener('input', () => {
-      if (detailVal) detailVal.textContent = LABEL_MAP[parseInt(detailSlider.value, 10)] || '標準';
+      const lv = parseInt(detailSlider.value, 10);
+      if (detailVal) detailVal.textContent = LABEL_MAP[lv] || '標準';
     });
     detailSlider.addEventListener('change', () => {
-      const m = MAP_LEVELS[parseInt(detailSlider.value, 10)] || MAP_LEVELS[3];
-      const stepChanged = gsiState.step !== m.step;
-      gsiState.step = m.step;
-      gsiState.zoomMode = m.zoom;
-      if (gsiState.visible && gsiState.centerEcef && decideGsiParams().zoom !== gsiState.builtZoom) buildGsiGround(gsiState.centerEcef);
-      else if (stepChanged && gsiState.built) rebuildGsiMesh();
+      const lv = parseInt(detailSlider.value, 10);
+      gsiState.step = STEP_MAP[lv] || 6;
+      if (gsiState.built) rebuildGsiMesh();
+    });
+  }
+
+  // 地図の精細さ(ズーム)選択スライダー: 0=自動, 1〜4=ズーム14〜17。
+  const zoomSlider = document.getElementById('gsi-zoom-slider');
+  const zoomVal = document.getElementById('gsi-zoom-val');
+  const ZOOM_MAP = { 0: 'auto', 1: 14, 2: 15, 3: 16, 4: 17 };
+  const ZOOM_LABEL = { 0: '基準', 1: 'ズーム14', 2: 'ズーム15', 3: 'ズーム16', 4: 'ズーム17' };
+  if (zoomSlider) {
+    zoomSlider.addEventListener('input', () => {
+      const lv = parseInt(zoomSlider.value, 10);
+      if (zoomVal) zoomVal.textContent = ZOOM_LABEL[lv] || '自動';
+    });
+    zoomSlider.addEventListener('change', () => {
+      const lv = parseInt(zoomSlider.value, 10);
+      gsiState.zoomMode = ZOOM_MAP[lv] ?? 'auto';
+      // 表示中で、適切ズームが現在の構築ズームと違えば再取得
+      if (gsiState.visible && gsiState.centerEcef &&
+          decideGsiParams().zoom !== gsiState.builtZoom) {
+        buildGsiGround(gsiState.centerEcef);
+      }
     });
   }
 })();
+
 
 // ── 真俯瞰図(真上から見る): 画面下のバー ──
 // ボタン列・設定パネルの「真上」で入る(setNavMode('top'))。× か「歩く」「回る」で元の視点へ。

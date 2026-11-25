@@ -1817,6 +1817,82 @@
     #dbg-panel .dbg-h { font-weight: bold; margin-bottom: 2px; }
     #dbg-coord-block:not([hidden]) + #dbg-annotate-block:not([hidden]) { margin-top: 8px; padding-top: 6px; border-top: 1px solid #0a0; }
     #dbg-annotate-block .dbg-h { color: #ff0; }
+    /* ══ tiles_012 ══ */
+    /* VR に対応していない端末では、VR の表示(WEBXR NOT AVAILABLE 等)を一切出さない。判定が済むまでも出さない */
+    body:not(.vr-ok) .three-vr { display: none !important; }
+    body:not(.touch) button.three-vr { bottom: calc(var(--credit-h, 34px) + 4px) !important; }
+
+    /* クレジット: 左下の1か所に、必ず出す表記だけを常に表示する(地理院は地図の表示中だけ)。
+       項目ごとに行を分け、半透明の帯で読みやすくする。ライブラリ名などは ⓘ の中へ */
+    #credit {
+      left: 8px; right: auto; bottom: 8px;
+      max-width: min(calc(100vw - 16px), 760px);
+      display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+      padding: 3px 8px 4px; border-radius: 4px;
+      background: rgba(0,0,0,0.58); backdrop-filter: blur(3px);
+      color: #dce8f0; font-size: 12px; line-height: 1.45; text-shadow: none;
+    }
+    #credit .cr-item { display: block; }
+    #credit .cr-nw { white-space: nowrap; }
+    #credit #credit-info-btn { width: 17px; height: 17px; margin-left: 6px; vertical-align: -3px; }
+    #credit #gsi-attribution {
+      position: static; z-index: auto; padding: 0; background: none; backdrop-filter: none; border-radius: 0;
+      color: inherit; font-size: inherit; line-height: inherit; max-width: none; text-align: left; pointer-events: auto;
+    }
+    #credit #gsi-attribution[hidden] { display: none; }
+    #credit #gsi-attribution a { color: #8fd8ff; }
+    body.touch #credit { font-size: 11px; line-height: 1.4; padding: 2px 6px 3px; max-width: calc(100vw - 16px); }
+    @media (max-height: 500px) { body.touch #credit { font-size: 10px; line-height: 1.3; } }
+    /* PC: 設定パネルは、クレジットと横に重なる時だけその上で止める */
+    body:not(.touch) #controls { max-height: calc(100vh - 80px - var(--ctl-gap, 16px)); }
+    #credit-info .credit-info-body h4 { margin: 0 0 4px; font-size: 13px; color: #00c8ff; }
+    #credit-info .credit-info-body .ci-sec { margin-bottom: 12px; }
+
+    /* 描く点の上限・読み込む細かさの値 */
+    #budget-now { margin-left: 8px; }
+
+    /* 作業モード「配置の調整」のパネル */
+    #place-panel {
+      position: fixed; left: 16px; bottom: 16px; z-index: 200;
+      background: rgba(0,0,0,0.88); color: #e0e8ee;
+      font-family: sans-serif; font-size: 12px; line-height: 1.5;
+      padding: 8px 12px 10px; border: 1px solid #ffd24a; border-radius: 4px;
+    }
+    #place-panel[hidden] { display: none !important; }
+    #place-panel .pp-h { font-weight: bold; color: #ffd24a; font-size: 13px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+    #place-panel .pp-id { color: #9ff; font-weight: normal; }
+    #place-panel .pp-state { font-weight: normal; font-size: 11px; padding: 0 6px; border-radius: 3px; }
+    #place-panel .pp-state.dirty { color: #111; background: #ffd24a; }
+    #place-panel .pp-state.clean { color: #9ab; border: 1px solid #456; }
+    #place-panel .pp-sec { margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,210,74,0.3); color: #ffd24a; font-weight: bold; }
+    #place-panel .pp-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    #place-panel input[type="text"] {
+      flex: 1 1 auto; min-width: 0; background: rgba(255,255,255,0.08); color: #fff;
+      border: 1px solid rgba(0,200,255,0.4); border-radius: 3px; padding: 3px 6px; font: inherit;
+    }
+    #place-panel .pp-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 16px; }
+    #place-panel .pp-col > .pp-sec:first-child { margin-top: 6px; }
+    #place-panel .pp-grid { display: grid; grid-template-columns: 52px 34px 64px 34px; justify-content: start; gap: 4px 6px; align-items: center; margin-top: 4px; }
+    #place-panel .pp-k { color: #9ab; }
+    #place-panel details { margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,210,74,0.3); }
+    #place-panel summary { cursor: pointer; color: #ffd24a; font-weight: bold; }
+    #place-panel .pp-grid button, #place-panel .pp-btns button, #place-panel .pp-add button { min-height: 30px; }
+    #place-panel .pp-grid button { padding: 0; font-size: 16px; }
+    #place-panel .pp-v { font-family: monospace; color: #fff; text-align: right; }
+    #place-panel .pp-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    #place-panel .pp-btns .dbg-btn, #place-panel .pp-add .dbg-btn { flex: 1 1 auto; white-space: nowrap; }
+    #place-panel .pp-pose { font-family: monospace; font-size: 11px; color: #cde; margin-top: 2px; }
+    #place-panel .pp-hint { color: #9ab; font-size: 11px; margin-top: 3px; }
+    #place-panel .pp-warn { color: #ffb36b; font-size: 11px; margin-top: 3px; }
+    #place-panel .pp-note { color: #cde; margin-top: 4px; }
+    #place-panel .pp-add { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    #place-panel .pp-add input[id="pp-new-id"] { flex: 0 1 96px; }
+    #place-panel .pp-add input[id="pp-new-label"] { flex: 1 1 150px; }
+    body.touch #place-panel .pp-pc { display: none; }
+    .ch-badge.edit { background: #ffd24a; color: #111; border-color: #ffd24a; }
+
+    /* PC: 作業モードのパネルの幅と位置は JS(layoutWorkPanels)で決める */
+    body:not(.touch) #work-panels { max-width: none; }
   </style>
 </head>
 <body>
@@ -1846,15 +1922,15 @@
     <b style="color:#ff6b35;">X Button</b> 点を小さく<br>
     <b style="color:#ff6b35;">Y Button</b> 点を大きく<br>
     <b style="color:#ff6b35;">R Grip</b> 押すほど速く(移動の速さは周りまでの距離で自動)<br>
-    <b style="color:#ff6b35;">L Grip + X</b> 点を疎に(密度を下げる)<br>
-    <b style="color:#ff6b35;">L Grip + Y</b> 点を密に(密度を上げる)
+    <b style="color:#ff6b35;">L Grip + X</b> 描く点を減らす(上限を下げる)<br>
+    <b style="color:#ff6b35;">L Grip + Y</b> 描く点を増やす(上限を上げる)
   </div>
   </div>
   <div class="vh-sec vh-pc">
   <div style="margin:10px 0 6px; letter-spacing:1px; font-weight:bold; font-size:14px;">PC CONTROLS</div>
   <div style="color:#c8dde8;">
     <b style="color:#ff6b35;">W A S D</b> 移動 / <b style="color:#ff6b35;">↑ ↓</b> 上昇・下降<br>
-    <b style="color:#ff6b35;">左ドラッグ</b> 見回す(回るモードは周りを回る)<br>
+    <b style="color:#ff6b35;">左ドラッグ</b> モデルを回す(歩くモードは見回す)<br>
     <b style="color:#ff6b35;">右ドラッグ</b> 平行移動 / <b style="color:#ff6b35;">ホイール</b> カーソルの所へ<br>
     <b style="color:#ff6b35;">ダブルクリック</b> その地点へ移動<br>
     <b style="color:#ff6b35;">Shift</b> ゆっくり / <b style="color:#ff6b35;">?</b> 操作ガイド
@@ -1918,17 +1994,17 @@
         <b>いま</b>: 実際に描いている点の数とフレームレート。<br>
         起動画面で選んだレベルが、先読みする範囲と自動調整の出発点になります。
       </div>
-      <button type="button" class="lv-more" id="lv-more" aria-expanded="false">画質・点の密度などを個別に調整 ▼</button>
+      <button type="button" class="lv-more" id="lv-more" aria-expanded="false">細かさ・点の上限などを個別に調整 ▼</button>
     </div>
     <div id="lv-advanced" hidden>
-      <div class="cp-note">画質・点の密度・描く点の上限を変えると、表示レベルは「カスタム」になり、自動調整は止まります。描画解像度とメモリに残す量は、表示レベルを選び直すとその標準に戻ります。</div>
-      <!-- 画質(内部の errorTarget 8〜80 を 1〜20 の段階で表示。値↑=高品質) -->
+      <div class="cp-note">読み込む細かさ・描く点の上限を変えると、表示レベルは「カスタム」になり、自動調整は止まります。メモリに残す量は、表示レベルを選び直すとその標準に戻ります。描画解像度は表示レベルで決まります。</div>
+      <!-- 読み込む細かさ(内部の errorTarget 8〜80 を 1〜20 の段階で表示。値↑=細かい) -->
       <div class="ctrl-group">
         <div class="ctrl-label">
-          <span>画質</span>
-          <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-quality" aria-label="画質の説明">ⓘ</button>
+          <span>読み込む細かさ</span>
+          <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-quality" aria-label="読み込む細かさの説明">ⓘ</button>
         </div>
-        <input id="lod-slider" type="range" min="1" max="20" step="1" value="12" style="width:260px; accent-color:#00c8ff;">
+        <input id="lod-slider" type="range" min="1" max="20" step="1" value="12" style="width:260px; accent-color:#00c8ff;" aria-label="読み込む細かさ">
         <div class="cp-valrow"><span id="lod-val">12</span><span class="cp-hint">/ 20(大きいほど細かい)</span></div>
         <div id="info-quality" class="ctrl-info-body" hidden>
           どの細かさのタイル(点群を分割したブロック)まで読み込むかを決めます。
@@ -1936,63 +2012,26 @@
           回線が遅い・通信量を抑えたい時は、まずここを下げると効果的です。
         </div>
       </div>
-      <!-- 点の密度(描画する点の割合) -->
-      <div class="ctrl-group">
-        <div class="ctrl-label">
-          <span>点の密度</span>
-          <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-density" aria-label="点の密度の説明">ⓘ</button>
-        </div>
-        <input id="density-slider" type="range" min="10" max="100" step="5" value="100" style="width:260px; accent-color:#00c8ff;">
-        <div class="cp-valrow"><span id="density-val">100</span>%<span class="cp-hint">(描画する点の割合)</span></div>
-        <div id="info-density" class="ctrl-info-body" hidden>
-          読み込んだ点のうち何%を描くかを決めます。通信量やメモリは変わらず、描画の負担だけが割合に比例して減ります。
-          全体が均一に薄くなるので、画質を下げた時のような粗さの段差は出ません。描画が追いつかずカクつく時に下げてください。
-        </div>
-      </div>
-      <!-- 描く点の上限(ポイント予算) -->
+      <!-- 描く点の上限(ポイント予算)。超えたら全体を均一に間引き、それでも超える分は細かいタイルから省く -->
       <div class="ctrl-group">
         <div class="ctrl-label">
           <span>描く点の上限</span>
           <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-budget" aria-label="描く点の上限の説明">ⓘ</button>
-          <span id="budget-current" class="cp-val"></span>
         </div>
-        <div class="dbg-grid cols-4 cp-grid" id="budget-btns">
-          <button type="button" class="dbg-btn" data-budget="0" aria-pressed="true">無制限</button>
-          <button type="button" class="dbg-btn" data-budget="1000000" aria-pressed="false">100万</button>
-          <button type="button" class="dbg-btn" data-budget="2000000" aria-pressed="false">200万</button>
-          <button type="button" class="dbg-btn" data-budget="4000000" aria-pressed="false">400万</button>
-        </div>
+        <input id="budget-slider" type="range" min="0" max="10" step="1" value="4" style="width:260px; accent-color:#00c8ff;" aria-label="描く点の上限">
+        <div class="cp-valrow"><span id="budget-val">300万点</span><span id="budget-now" class="cp-hint"></span></div>
         <div id="info-budget" class="ctrl-info-body" hidden>
-          1回の描画で描く点の数に上限を設けます(ポイント予算)。超える分は、細かいタイルから一時的に描かないようにします
-          (読み込んだデータは残るので、上限を戻すとすぐ元に戻ります)。重さを確実に抑えたい時に使います。
-          表示レベルごとに標準の上限があり、自動の時はレベルに合わせて変わります。
+          1回の描画で描く点の数の上限です(ポイント予算)。見えている点が上限を超えると、まず全体を均一に間引き(最大で半分まで)、
+          それでも超える分は、細かいタイルから一時的に描かないようにします。読み込んだデータは残るので、上限を上げるとすぐ元に戻ります。
+          通信量とメモリは変わらず、描画の重さだけが減ります。表示レベルごとに標準の上限があり、自動の時はレベルに合わせて変わります。
         </div>
       </div>
-      <!-- 描画解像度 -->
-      <div class="ctrl-group">
-        <div class="ctrl-label">
-          <span>描画解像度</span>
-          <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-dpr" aria-label="描画解像度の説明">ⓘ</button>
-        </div>
-        <div class="dbg-grid cp-grid"><button type="button" class="dbg-btn" id="dpr-cap-btn" aria-pressed="false">上限 2x(OFF)</button></div>
-        <div class="cp-valrow"><span id="dpr-info" class="cp-hint" style="margin-left:0"></span></div>
-        <div id="info-dpr" class="ctrl-info-body" hidden>
-          画面の細かさ(画素密度)に合わせて、何倍の解像度で描くかです。画面倍率が2を超えるスマホなどで「上限 2x」を ON にすると、
-          見た目はほとんど変わらずに描く画素の数を減らせ、GPU の負担と発熱を抑えられます。
-        </div>
-      </div>
-      <!-- メモリに残す量(キャッシュ上限) -->
+      <!-- メモリに残す量(容量だけ。タイルの枚数の上限は自動) -->
       <div class="ctrl-group">
         <div class="ctrl-label">
           <span>メモリに残す量</span>
           <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-cache" aria-label="メモリに残す量の説明">ⓘ</button>
         </div>
-        <div class="cp-sublabel">タイル数</div>
-        <div class="dbg-range-row">
-          <input id="cache-tiles-slider" type="range" min="300" max="8000" step="100" value="2000" aria-label="メモリに残すタイル数">
-          <span class="dbg-val"><span id="cache-tiles-val">2000</span> 枚</span>
-        </div>
-        <div class="cp-sublabel">容量</div>
         <div class="dbg-range-row">
           <input id="cache-bytes-slider" type="range" min="256" max="4096" step="128" value="1536" aria-label="メモリに残す容量">
           <span class="dbg-val"><span id="cache-bytes-val">1536</span> MB</span>
@@ -2001,7 +2040,7 @@
           一度読み込んだタイルを、見えなくなってもメモリに残しておく量です(キャッシュ上限)。多いほど、振り返ったり戻ったりした時に
           読み直さずにすみますが、メモリを多く使います。上限の90%までは捨てずに残します。<br>
           初期値は、表示レベルの必要量と、この端末のメモリから決めた量(約<span id="cache-device-mb">-</span> MB)の大きい方です。
-          スマホで増やしすぎると、ページが落ちることがあります。
+          タイルの枚数の上限は自動で決めます。スマホで増やしすぎると、ページが落ちることがあります。
         </div>
       </div>
     </div>
@@ -2051,17 +2090,15 @@
       <div id="gsi-options" hidden>
         <button type="button" id="gsi-solid-toggle" aria-pressed="true" style="margin-top:8px;">立体表示</button>
         <div id="gsi-detail-wrap">
-          <div class="cp-sublabel">地形の細かさ <span id="gsi-detail-val" class="cp-mono">標準</span></div>
-          <input id="gsi-detail-slider" type="range" min="1" max="5" step="1" value="3" style="width:260px; accent-color:#00c8ff;">
+          <div class="cp-sublabel">地図の細かさ <span id="gsi-detail-val" class="cp-mono">標準</span></div>
+          <input id="gsi-detail-slider" type="range" min="1" max="5" step="1" value="3" style="width:260px; accent-color:#00c8ff;" aria-label="地図の細かさ">
         </div>
-        <div class="cp-sublabel">地図の精細さ <span id="gsi-zoom-val" class="cp-mono">基準</span></div>
-        <input id="gsi-zoom-slider" type="range" min="0" max="4" step="1" value="0" style="width:260px; accent-color:#00c8ff;">
       </div>
       <div id="info-show" class="ctrl-info-body" hidden>
         <b>点群</b>: 点群モデル。消すと地図だけになり、地形を確認しやすくなります。<br>
         <b>説明パネル</b>: 各地点の説明(球体とパネル)。球体に近づくとパネルが自動で開きます。<br>
         <b>地図</b>: 国土地理院の地図と標高から周りの地面を作って敷きます。
-        「立体表示/平面表示」で起伏の有無、「地形の細かさ」を下げると軽く、「地図の精細さ」を上げるとくっきり(ただし狭く・重く)なります。
+        「立体表示/平面表示」で起伏の有無、「地図の細かさ」を上げると地形も地図もくっきりします(ただし重く・表示範囲は狭く)。
         簡易表示のため、点群とは多少ずれることがあります。出典: 国土地理院(地理院タイルを加工して作成)
       </div>
     </div>
@@ -2071,7 +2108,7 @@
   <!-- ════════ 移動・視点 ════════ -->
   <section class="cp-sec" data-sec="move">
     <button type="button" class="cp-head" aria-expanded="true">
-      <span class="cp-title">移動・視点</span><span class="cp-sub">歩く/回る/真上・移動の速さ・表示倍率</span><span class="cp-chev">▾</span>
+      <span class="cp-title">移動・視点</span><span class="cp-sub">回す/歩く/真上・移動の速さ・表示倍率</span><span class="cp-chev">▾</span>
     </button>
     <div class="cp-body">
     <div class="ctrl-group">
@@ -2080,13 +2117,13 @@
         <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-nav" aria-label="操作の説明">ⓘ</button>
       </div>
       <div class="dbg-grid cols-3 cp-grid">
-        <button type="button" class="dbg-btn" data-nav-mode="walk" aria-pressed="true">歩く</button>
-        <button type="button" class="dbg-btn" data-nav-mode="orbit" aria-pressed="false">回る</button>
+        <button type="button" class="dbg-btn" data-nav-mode="orbit" aria-pressed="true">回す</button>
+        <button type="button" class="dbg-btn" data-nav-mode="walk" aria-pressed="false">歩く</button>
         <button type="button" class="dbg-btn" data-nav-mode="top" aria-pressed="false">真上</button>
       </div>
       <div id="info-nav" class="ctrl-info-body" hidden>
         <b>歩く</b>: 一人称で歩き回ります。建物の中や街並みを見るのに向いています。<br>
-        <b>回る</b>: つかんだ所を中心に、模型を手に取るようにモデルの周りを回ります。全体を見るのに向いています。<br>
+        <b>回す</b>: つかんだ所を中心に、模型を手に取って回すようにモデルを回して見ます。全体を見るのに向いています(最初はこちら)。<br>
         <b>真上</b>: 真上から見下ろした地図のような表示(真俯瞰図)。表示範囲・断面・画像保存などは画面下のバーで操作します。VR 中は使えません。<br>
         どちらもダブルクリック(ダブルタップ)でその地点へ移動します。キーや指の操作は「操作ガイド」をご覧ください。
       </div>
@@ -2176,7 +2213,7 @@
   <!-- ════════ 作業用(データ作成・確認向け) ════════ -->
   <section class="cp-sec" data-sec="work">
     <button type="button" class="cp-head" aria-expanded="false">
-      <span class="cp-title">作業用</span><span class="cp-sub">作業モード・CSVの行・保存データ・性能モニタ</span><span class="cp-chev">▾</span>
+      <span class="cp-title">作業用</span><span class="cp-sub">作業モード・性能モニタ</span><span class="cp-chev">▾</span>
     </button>
     <div class="cp-body" hidden>
   <div class="ctrl-group" id="debug-group">
@@ -2185,51 +2222,18 @@
       <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-debug" aria-label="作業モードの説明">ⓘ</button>
     </div>
     <div class="dbg-grid">
-      <button type="button" class="dbg-btn dbg-mode" data-mode="debug" aria-pressed="false">座標表示</button>
+      <button type="button" class="dbg-btn dbg-mode" data-mode="place" aria-pressed="false">配置の調整</button>
       <button type="button" class="dbg-btn dbg-mode" data-mode="annotate" aria-pressed="false">アノテーション配置</button>
-      <button type="button" class="dbg-btn dbg-mode" data-mode="heightadjust" aria-pressed="false">モデル位置調整</button>
     </div>
     <div id="info-debug" class="ctrl-info-body" hidden>
       データセットや説明パネルを作る人、動作を確かめる人向けです。ふだん見るだけなら使いません。<br>
-      <b>座標表示</b>: カメラの位置と向き、datasets.csv の行を表示します。R で初期位置へ戻り、C で行をコピーします。<br>
+      <b>配置の調整</b>: モデルの位置(地図に合わせる)と、最初に見る場所・向きを決めます。値はモデルごとにこの端末に一時保存され、
+      この端末ではすぐに使われます。「datasets.csv を書き出す」で全データの CSV を保存し、サーバーの datasets.csv と置き換えると、ほかの端末にも反映されます。
+      Web 上の新しいデータ(id と名前)の追加もここでできます。端末に取り込んだ3Dデータは対象外です。<br>
       <b>アノテーション配置</b>: 3m 先に黄色い立方体を出し、A で annotations.csv の行をコピーします
-      (このモード中だけ A は左移動ではなくコピー)。I J K L を押している間は立方体の周りを回ります。
-      座標表示とは別々に ON/OFF でき、両方 ON の時は1枚のパネルに並べて出ます。<br>
-      <b>モデル位置調整</b>: [ ] ; : , . で点群を動かして地図と合わせ、Y で補正込みの行をコピーします。<br>
-      説明のパネルは、ボタン列・設定パネルと重ならない場所にまとめて出ます。作業モード中は、60 秒操作しなくても初期位置に戻りません。
-      状態は URL(?debug=1 など)にも反映され、再読込しても続きます。
-    </div>
-  </div>
-  <div class="ctrl-group">
-    <div class="ctrl-label">
-      <span>CSV の行をコピー</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-copy" aria-label="CSVの行をコピーの説明">ⓘ</button>
-    </div>
-    <div class="dbg-grid cols-3">
-      <button type="button" class="dbg-btn" id="copy-ds-btn" title="現在のカメラ位置・向きを datasets.csv 形式でコピー">datasets<br><span class="k">C</span></button>
-      <button type="button" class="dbg-btn" id="copy-ann-btn" title="カメラ3m先(オービット中は立方体)を annotations.csv 形式でコピー">annotations<br><span class="k">A</span></button>
-      <button type="button" class="dbg-btn" id="copy-adj-btn" title="モデル位置補正込みの datasets.csv 行をコピー">補正込み行<br><span class="k">Y</span></button>
-    </div>
-    <div id="info-copy" class="ctrl-info-body" hidden>
-      CSV にそのまま貼り付けられる形でコピーします。<b>datasets</b>: 今のカメラの位置と向き(初期位置)。
-      <b>annotations</b>: 3m 先(回るモードでは立方体)の説明パネルの設置点。<b>補正込み行</b>: モデル位置調整の補正を含めた datasets の行。
-      キー(C / A / Y)でも同じです。
-    </div>
-  </div>
-  <div class="ctrl-group">
-    <div class="ctrl-label">
-      <span>保存データ</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-preload" aria-label="保存データの説明">ⓘ</button>
-    </div>
-    <div id="preload-info">-</div>
-    <div class="dbg-grid">
-      <button type="button" class="dbg-btn" id="preload-redo-btn">再ダウンロード</button>
-      <button type="button" class="dbg-btn warn" id="preload-clear-btn">すべて削除</button>
-    </div>
-    <div id="info-preload" class="ctrl-info-body" hidden>
-      今開いているデータセットの、この端末への保存状況です。<b>再ダウンロード</b>は保存データを捨てて取り直します(データが更新された時に)。
-      <b>すべて削除</b>は全データセットの保存したタイルを削除します(確認あり。端末の3Dデータは残ります)。
-      データセットごとの保存・削除は「データの一覧」でもできます。
+      (このモード中だけ A は左移動ではなくコピー)。I J K L を押している間は立方体の周りを回ります。<br>
+      パネルは、ボタン列・設定パネルと重ならない場所にまとめて出ます。作業モード中は、60 秒操作しなくても初期位置に戻りません。
+      状態は URL(?place=1 など)にも反映され、再読込しても続きます。
     </div>
   </div>
   <div class="ctrl-group">
@@ -2245,6 +2249,7 @@
   </div>
     </div>
   </section>
+
   <div class="cp-reset">
     <button type="button" class="dbg-btn" id="settings-reset-btn">設定を初期値に戻す</button>
     <div class="cp-note" style="margin-top:6px">表示レベル・点のサイズ・表示するもの・視点・移動の速さ・表示倍率などを最初の状態に戻します(保存したデータ・重ねて表示・端末の3Dデータはそのまま)。</div>
@@ -2314,27 +2319,53 @@
 </div>
 
 <!-- 地理院地図 表示中の出典表記(規約対応: 出典明示+加工明記)。地図ON時のみ表示。 -->
-<div id="gsi-attribution" hidden>地理院タイル（標準地図・標高タイル（基盤地図情報数値標高モデル））を加工して作成<br>出典：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer">国土地理院</a></div>
 
 <!-- モデル位置調整モード(デバッグ欄 / ?heightadjust=1)のパネル。点群を動かしCSVの補正値を測る。 -->
 <div id="work-panels"></div>
-<div id="heightadjust-panel" hidden>
-  <div style="font-weight:bold; color:#ffd24a; margin-bottom:4px;">モデル位置調整モード</div>
-  <div style="margin-bottom:6px;">
-    地図を表示し、点群が地図と合う位置を探します(高さは横から確認)。
+<!-- 作業モード「配置の調整」: モデルの位置(地図に合わせる)と、最初に見る場所・向きを決め、datasets.csv を書き出す -->
+<div id="place-panel" hidden>
+  <div class="pp-h">配置の調整 <span id="pp-id" class="pp-id">-</span><span id="pp-state" class="pp-state"></span></div>
+  <div id="pp-local-note" class="pp-note" hidden>
+    端末に取り込んだ3Dデータ(位置情報なし)は、datasets.csv の書き出しの対象外です。位置は「端末の3Dデータ」の位置合わせで決めてください。
   </div>
-  <div><b>[</b> / <b>]</b> : 高さ Y 下げ / 上げ</div>
-  <div><b>;</b> / <b>:</b> : 東西 X 減 / 増</div>
-  <div><b>,</b> / <b>.</b> : 南北 Z 減 / 増</div>
-  <div><b>Shift + 各キー</b> : 微調整 (±0.01m)</div>
-  <div><b>遅く / ふつう / 速く</b> : 移動量 0.01 / 0.1 / 1m</div>
-  <div style="margin-top:6px;">
-    現在のモデル: <span id="ha-id" style="color:#9ff;">-</span><br>
-    <span id="ha-val" style="color:#fff; font-size:13px; user-select:all;">X=0.00  Y=0.00  Z=0.00</span>
+  <div id="pp-main">
+    <div class="pp-cols">
+      <div class="pp-col">
+        <div class="pp-row">名前 <input id="pp-label" type="text" maxlength="40" autocomplete="off" aria-label="名前(datasets.csv の label)"></div>
+        <div class="pp-sec">モデルの位置(地図に合わせる)</div>
+        <div class="pp-grid">
+          <span>東西 X</span><button type="button" class="dbg-btn" data-pp="x-1" aria-label="東西 X を減らす">−</button><span id="pp-x" class="pp-v">0.00</span><button type="button" class="dbg-btn" data-pp="x1" aria-label="東西 X を増やす">＋</button>
+          <span>高さ Y</span><button type="button" class="dbg-btn" data-pp="y-1" aria-label="高さ Y を下げる">−</button><span id="pp-y" class="pp-v">0.00</span><button type="button" class="dbg-btn" data-pp="y1" aria-label="高さ Y を上げる">＋</button>
+          <span>南北 Z</span><button type="button" class="dbg-btn" data-pp="z-1" aria-label="南北 Z を減らす">−</button><span id="pp-z" class="pp-v">0.00</span><button type="button" class="dbg-btn" data-pp="z1" aria-label="南北 Z を増やす">＋</button>
+        </div>
+        <div class="pp-hint">1回 <span id="pp-step">0.1</span> m(移動の速さ: 遅く 0.01 / ふつう 0.1 / 速く 1)<span class="pp-pc"><br>キー [ ] ; : , .(Shift で 0.01)</span></div>
+      </div>
+      <div class="pp-col">
+        <div class="pp-sec">最初に見る場所と向き</div>
+        <div class="pp-pose"><span class="pp-k">初期位置</span> <span id="pp-init">-</span><br><span class="pp-k">いま</span> <span id="pp-now">-</span></div>
+        <div id="pp-scale-warn" class="pp-warn" hidden>表示倍率が 1.0 ではありません。初期位置は表示倍率 1.0 で決めてください。</div>
+        <div class="pp-btns">
+          <button type="button" class="dbg-btn" id="pp-set-pose">今の視点を初期位置にする</button>
+          <button type="button" class="dbg-btn" id="pp-go-pose">初期位置へ<span class="pp-pc">(R)</span></button>
+        </div>
+        <div class="pp-sec">一時保存と書き出し</div>
+        <div class="pp-btns">
+          <button type="button" class="dbg-btn" id="pp-revert">datasets.csv の値に戻す</button>
+          <button type="button" class="dbg-btn" id="pp-export">datasets.csv を書き出す</button>
+        </div>
+      </div>
+    </div>
+    <div id="pp-summary" class="pp-hint"></div>
   </div>
-  <div style="margin-top:4px; color:#9f9;">
-    Y キー: この値を含む datasets.csv 行をコピー
-  </div>
+  <details id="pp-add-box">
+    <summary>＋ Web 上のデータを追加</summary>
+    <div class="pp-add">
+      <input id="pp-new-id" type="text" placeholder="id(例 1881)" autocomplete="off" aria-label="追加する id">
+      <input id="pp-new-label" type="text" placeholder="名前(例 武生公会堂記念館)" maxlength="40" autocomplete="off" aria-label="追加する名前">
+      <button type="button" class="dbg-btn" id="pp-add">追加して開く</button>
+    </div>
+    <div id="pp-add-msg" class="pp-hint">産総研の 3D Tiles の id と、一覧に出す名前を入れてください。</div>
+  </details>
 </div>
 
 <!-- ロード進捗オーバーレイ -->
@@ -2411,28 +2442,40 @@
 <!-- 「待たずに開始」後、裏で進んでいる先読みの進捗 -->
 <div id="preload-chip" hidden></div>
 
-<!-- データ提供元クレジット表記。データセットのライセンスに応じて文言を調整してください -->
-<!-- OSSライブラリのライセンス表記 (Apache-2.0 のCaltech/JPL, Google, MITのthree.js) も含める。
-     詳細は ⓘ ボタンから別ダイアログで表示する。 -->
+<!-- クレジット(左下の1か所)。必ず出す表記だけを常に表示する:
+     ・3D Tiles データの提供元(産総研)… 常に
+     ・地理院タイル … 地図の表示中だけ(国土地理院の出典記載ルール: 表示されている間は常に見えるように。加工した旨も記載)
+     ライブラリ(three.js など)のライセンス表記は ⓘ の中。 -->
 <div id="credit">
-  3D Tiles データ: 産業技術総合研究所 (AIST) / gsvrg.ipri.aist.go.jp
-  &nbsp;|&nbsp;
-  Built with
-  <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a>,
-  <a href="https://github.com/NASA-AMMOS/3DTilesRendererJS" target="_blank" rel="noopener">3D Tiles Renderer</a>,
-  <a href="https://google.github.io/draco/" target="_blank" rel="noopener">Draco</a>
-  <button type="button" id="credit-info-btn" aria-label="ライセンス詳細" aria-expanded="false" aria-controls="credit-info">ⓘ</button>
+  <span class="cr-item cr-data">3D Tiles データ: 産業技術総合研究所 (AIST) / <a href="https://gsvrg.ipri.aist.go.jp/" target="_blank" rel="noopener">gsvrg.ipri.aist.go.jp</a><button type="button" id="credit-info-btn" aria-label="クレジットとライセンスの詳細" aria-expanded="false" aria-controls="credit-info">ⓘ</button></span>
+  <span class="cr-item" id="gsi-attribution" hidden>地理院タイル（標準地図・標高タイル（基盤地図情報数値標高モデル））を加工して作成　<span class="cr-nw">出典：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer">国土地理院</a></span></span>
 </div>
 
-<!-- ライセンス詳細ダイアログ。クレジットの ⓘ ボタンで開閉。
-     Apache-2.0 のライセンス通知保持義務に応えるための表記。 -->
+<!-- クレジットとライセンスの詳細。クレジットの ⓘ ボタンで開閉。
+     Apache-2.0 のライセンス通知保持義務に応えるための表記も含む。 -->
 <div id="credit-info" hidden>
   <div class="credit-info-inner">
     <div class="credit-info-header">
-      <span>Open Source Licenses</span>
+      <span>クレジットとライセンス</span>
       <button type="button" id="credit-info-close" aria-label="閉じる">✕</button>
     </div>
     <div class="credit-info-body">
+      <div class="ci-sec">
+        <h4>3D Tiles データ</h4>
+        産業技術総合研究所 (AIST) / <a href="https://gsvrg.ipri.aist.go.jp/" target="_blank" rel="noopener">gsvrg.ipri.aist.go.jp</a>
+      </div>
+      <div class="ci-sec">
+        <h4>地図(地図を表示している時)</h4>
+        地理院タイル（標準地図・標高タイル（基盤地図情報数値標高モデル））を加工して作成<br>
+        出典：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer">国土地理院</a>
+      </div>
+      <div class="ci-sec">
+        <h4>使用しているライブラリ</h4>
+        Built with
+        <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a>,
+        <a href="https://github.com/NASA-AMMOS/3DTilesRendererJS" target="_blank" rel="noopener">3D Tiles Renderer</a>,
+        <a href="https://google.github.io/draco/" target="_blank" rel="noopener">Draco</a>
+      </div>
       <p>
         <b>three.js</b> (MIT License)<br>
         © three.js authors. <a href="https://github.com/mrdoob/three.js/blob/master/LICENSE" target="_blank" rel="noopener">LICENSE</a>
@@ -2477,8 +2520,8 @@
 <!-- 道具(歩く/回る・計測・操作ガイド) -->
 <div id="tool-rail" role="toolbar" aria-label="操作">
   <button type="button" class="tr-btn touch-only" id="panel-toggle" aria-pressed="false" title="設定(表示レベル・点のサイズなど)" aria-label="設定">⚙</button>
-  <button type="button" class="tr-btn" data-nav-mode="walk" aria-pressed="true" title="歩く(一人称で移動)">歩く</button>
-  <button type="button" class="tr-btn" data-nav-mode="orbit" aria-pressed="false" title="回る(触った所を中心に回る)">回る</button>
+  <button type="button" class="tr-btn" data-nav-mode="orbit" aria-pressed="true" title="回す(触った所を中心にモデルを回す)">回す</button>
+  <button type="button" class="tr-btn" data-nav-mode="walk" aria-pressed="false" title="歩く(一人称で移動)">歩く</button>
   <button type="button" class="tr-btn" data-nav-mode="top" aria-pressed="false" title="真上(真上から見下ろす真俯瞰図)">真上</button>
   <button type="button" class="tr-btn" id="measure-toggle" aria-pressed="false" title="計測(座標・距離・高さ・面積・角度)">計測</button>
   <button type="button" class="tr-btn touch-only" id="speed-cycle" aria-pressed="false" title="移動の速さ(遅く→ふつう→速く)">ふつう</button>
@@ -4624,19 +4667,13 @@ function handleDensityButton(side, pressed, delta) {
   }
 }
 function applyDensityDelta(delta) {
-  // 0.10〜1.00 にクランプ(スライダー範囲と同じ)
-  const next = Math.max(0.10, Math.min(1.00, pointDensity + delta));
-  if (Math.abs(next - pointDensity) < 1e-6) return; // 端で変化なしならスキップ
-  pointDensity = next;
-  cubeUniforms.uDensity.value = pointDensity;
-  // UI 同期 (スライダー value と表示)
-  const slider = document.getElementById('density-slider');
-  const valEl  = document.getElementById('density-val');
-  if (slider && valEl) {
-    const pct = Math.round(pointDensity * 100);
-    slider.value = String(pct);
-    valEl.textContent = String(pct);
-  }
+  // VR: L Grip + X / Y で、描く点の上限を1段ずつ下げる / 上げる(以前の「点の密度」の代わり。無制限には行かない)
+  const max = BUDGET_STEPS.length - 2;
+  const i = pcVis.budget ? budgetStepIndex(pcVis.budget) : max;
+  const ni = Math.max(0, Math.min(max, i + (delta > 0 ? 1 : -1)));
+  if (pcVis.budget && ni === i) return;
+  setPointBudget(BUDGET_STEPS[ni]);
+  markLevelCustom();
 }
 
 // XR入力ソースを毎フレーム読む関数
@@ -5199,22 +5236,44 @@ function pcTick() {
 
 const _pcList = [];
 const _pcHiddenTiles = new Set();
+// 描く点の上限(ポイント予算): 見えている点が上限を超えたら、まず全体を均一に間引く(最大で半分まで)。
+// それでも超える分は、細かいタイル(追加型)から一時的に描かない(Potree と同じく上限で打ち切り)。
+// 間引きの割合は 5% 刻み。増やす時は少し余裕ができてから(上限の境目で点がちらつかないように)。
+const AUTO_DENS_FLOOR = 0.5, AUTO_DENS_STEP = 0.05;
+function setAutoDensity(raw, force = false) {
+  let d;
+  if (force) d = Math.min(1, raw);
+  else if (raw >= 1) d = (pointDensity < 1 && raw < 1 + AUTO_DENS_STEP) ? pointDensity : 1;
+  else {
+    d = Math.max(AUTO_DENS_FLOOR, Math.floor(raw / AUTO_DENS_STEP + 1e-9) * AUTO_DENS_STEP);
+    if (d > pointDensity && raw < pointDensity + AUTO_DENS_STEP * 1.5) d = pointDensity;
+  }
+  if (Math.abs(d - pointDensity) < 1e-6) return;
+  pointDensity = d;
+  applyPointDensity();
+}
 function pcApplyBudget() {
   const st = pcVis.stats;
   st.hiddenTiles = 0; st.hiddenPoints = 0; st.shownPoints = 0;
   if (!pcVis.budget || !tiles) {
+    setAutoDensity(1, true);
     if (pcVis.budgetHidden.size) {
       for (const n of pcVis.budgetHidden) { n.userData.pcBudgetHidden = false; pcApplyVisible(n); }
       pcVis.budgetHidden.clear();
     }
     return;
   }
-  // 3D Tiles が今フレーム表示すると判断したタイルを、粗い階層 → 画面上の誤差が大きい順に並べる
+  // 3D Tiles が今フレーム表示すると判断したタイルと、その点の合計
   _pcList.length = 0;
+  let total = 0;
   for (const tr of allTileRenderers()) for (const tile of tr.visibleTiles) {
     const n = tile.engineData && tile.engineData.scene;
-    if (n && n.parent) _pcList.push(tile);
+    if (n && n.parent) { _pcList.push(tile); total += n.userData.pointCount || 0; }
   }
+  // ① 均一に間引く割合
+  if (total > 0) setAutoDensity(pcVis.budget / total); else setAutoDensity(1, true);
+  // ② 間引いても超える分は、粗い階層 → 画面上の誤差が大きい順に並べ、細かいタイルから省く(間引く前の点数で比べる)
+  const limit = pcVis.budget / Math.max(AUTO_DENS_FLOOR, pointDensity);
   _pcList.sort((a, b) =>
     (a.internal.depth - b.internal.depth) || ((b.traversal.error || 0) - (a.traversal.error || 0)));
   _pcHiddenTiles.clear();
@@ -5223,11 +5282,11 @@ function pcApplyBudget() {
     const n = tile.engineData.scene;
     const pts = n.userData.pointCount || 0;
     // 置換型(REPLACE)は隠すと穴が開くので隠さない(点数には数える)。
-    // 追加型(ADD)は、予算に達した後のもの・親が隠れているものを隠す(Potree と同じく上限で打ち切り)。
+    // 追加型(ADD)は、上限に達した後のもの・親が隠れているものを隠す。
     let hide = false;
     if (tile.refine === 'ADD') {
       if (full || (tile.parent && _pcHiddenTiles.has(tile.parent))) hide = true;
-      else if (used > 0 && used + pts > pcVis.budget) { full = true; hide = true; }
+      else if (used > 0 && used + pts > limit) { full = true; hide = true; }
     }
     if (hide) { _pcHiddenTiles.add(tile); st.hiddenTiles++; st.hiddenPoints += pts; }
     else { used += pts; st.shownPoints += pts; }
@@ -5237,7 +5296,7 @@ function pcApplyBudget() {
       pcApplyVisible(n);
     }
   }
-  // 表示対象から外れたノードの「予算で非表示」は解除しておく(再表示時に引きずらないように)
+  // 表示対象から外れたノードの「上限で非表示」は解除しておく(再表示時に引きずらないように)
   for (const n of pcVis.budgetHidden) {
     if (!n.parent) { n.userData.pcBudgetHidden = false; pcVis.budgetHidden.delete(n); pcApplyVisible(n); }
   }
@@ -5984,6 +6043,25 @@ function startPreloadJob(datasetId, { force = false, level = levelState.level } 
     }
     if (root.stored) job.fromStore = true;
     if (root.buf) noteDsCenter(datasetId, root.buf);
+    // 記録上このレベル分まで保存済みなら、タイル一覧の読み直しと保存済みの数え直しを省く
+    // (表示用のタイルは、保存した所から1件ずつ取り出すので、記録が違っていても表示は正しく行われる)
+    if (!force) {
+      const man0 = await store.readManifest();
+      if (isStopped()) return;
+      if (man0 && (man0.doneLevel || 0) >= level) {
+        const sum = dsSummary(datasetId);
+        const hist = (sum && (sum.hist || (sum.snap && sum.snap.hist))) || null;
+        job.total = hist ? histCount(hist, preloadThreshold(level)) : 0;
+        job.done = job.total;
+        job.prevBytes = man0.bytes || 0; job.totalBytes = job.prevBytes;
+        job.implicit = !!man0.implicit;
+        job.fromCache = true;
+        job.phase = 'done'; job.running = false; job.finishedAt = performance.now();
+        console.log(`[先読み] ${datasetId}: レベル${level}の範囲は保存済み(記録で確認)`);
+        report(true);
+        return;
+      }
+    }
     // ── 1. タイル一覧 ──
     job.phase = 'list';
     report(true);
@@ -6055,7 +6133,13 @@ const dsInfo = new Map();
 const _dsInfoListeners = [];
 function onDsInfoChange(fn) { _dsInfoListeners.push(fn); }
 function emitDsInfo(id) { for (const fn of _dsInfoListeners) { try { fn(id); } catch (e) { console.warn(e); } } }
-function dsInfoInvalidate(id) { const i = dsInfo.get(id); if (i) i.stale = true; emitDsInfo(id); }
+const _dsSnapTimers = {};
+function dsInfoInvalidate(id) {
+  const i = dsInfo.get(id); if (i) i.stale = true; emitDsInfo(id);
+  // 保存の状況が変わった: 記録(次に一覧を開いた時にすぐ出す結果)も裏で新しくしておく
+  clearTimeout(_dsSnapTimers[id]);
+  _dsSnapTimers[id] = setTimeout(() => { refreshDsInfo(id, { allowNetwork: false }).catch(() => {}); }, 1500);
+}
 // 保存済み・ネット(未保存なら)から情報を集める。allowNetwork=false なら端末内だけ
 async function refreshDsInfo(id, { allowNetwork = true } = {}) {
   let info = dsInfo.get(id);
@@ -6081,12 +6165,18 @@ async function refreshDsInfo(id, { allowNetwork = true } = {}) {
       noteDsCenter(id, buf);
       cat = await getCatalog(id, store, buf, { allowNetwork: true });
     }
+    const man = await store.readManifest();
     if (cat && cat.tiles) {
       info.hist = catalogHist(cat);
       info.total = cat.tiles.length;
       info.implicit = cat.implicit;
-      const storedSet = await store.storedUrlSet();
-      info.storedHist = catalogHist(cat, storedSet);
+      if (man && ((man.doneLevel || 0) >= 10 || man.full)) {
+        // 完全保存済み: すべてのタイルがある(保存したタイルの一覧を数え直さない。件数が多いと時間がかかるため)
+        info.storedHist = info.hist;
+      } else {
+        const storedSet = await store.storedUrlSet();
+        info.storedHist = catalogHist(cat, storedSet);
+      }
       info.storedCount = histCount(info.storedHist, -Infinity);
       info.cache = store.mode === 'cache';
     } else if (sum && sum.hist) {
@@ -6097,12 +6187,15 @@ async function refreshDsInfo(id, { allowNetwork = true } = {}) {
     } else {
       throw new Error(allowNetwork ? 'no-catalog' : 'not-loaded');
     }
-    const man = await store.readManifest();
     info.avgBytes = (man && man.dlCount >= 3 && man.dlBytes) ? man.dlBytes / man.dlCount : (sum && sum.avgBytes) || null;
     info.doneLevel = man ? (man.doneLevel || (man.complete ? 10 : 0)) : 0;
     // 平均容量が分からない時は、数件の容量をサーバーに問い合わせる(本体は取らない)
     if (!info.avgBytes && allowNetwork && cat) info.avgBytes = await sampleTileBytes(id, store, cat);
     info.state = 'ready';
+    info.fromSnap = false;
+    // 次に一覧を開いた時にすぐ出せるよう、結果を記録しておく
+    saveDsSummary(id, { snap: { hist: info.hist, total: info.total, implicit: info.implicit, storedHist: info.storedHist,
+      storedCount: info.storedCount, doneLevel: info.doneLevel, avgBytes: info.avgBytes, cache: info.cache, storedRoot: info.storedRoot } });
   } catch (e) {
     info.state = 'error';
     info.error = String(e && e.message || e);
@@ -6508,6 +6601,12 @@ function loadTileset(id, opts = {}) {
       // CSVの値はカメラ初期位置(x,y,z)と yaw(度) を表す。
       // デバッグモードで移動時に表示される xyz/yaw と完全一致する設計。
       const ds = getDataset(id);
+      if (ds && ds._needPose) {
+        // 追加したばかりのデータは初期位置が未定: データの中心の少し手前から見る(配置の調整で決め直す)
+        ds.xOffset = 0; ds.yOffset = 1.6; ds.zOffset = Math.round(r * 0.4 * 100) / 100; ds.yawOffset = 0;
+        delete ds._needPose;
+        placeRecord(ds);
+      }
       const camX   = ds ? ds.xOffset   : 0;
       const camY   = ds ? ds.yOffset   : 1.6;
       const camZ   = ds ? ds.zOffset   : (r * 0.4);
@@ -6799,7 +6898,7 @@ function gateMaybeFinish() {
   gateEls.skip.hidden = true;
   // 起動画面でデータを選んで始めたので、準備ができたらそのまま開始する
   gateEls.title.textContent = '準備完了';
-  gate.closeTimer = setTimeout(gateClose, 350);
+  gate.closeTimer = setTimeout(gateClose, 150);
 }
 
 function gateClose() {
@@ -8666,6 +8765,7 @@ window.__local3d = {
 
   // datasets と annotations を並行で読み込む(annotationsは失敗しても続行)
   await Promise.all([loadDatasetsCSV(), loadAnnotationsCSV()]);
+  applyPlacementEdits(); // 配置の調整で一時保存した値・追加したデータ
   buildDatasetButtons();
   // 表示するデータを選ぶ画面を出す(選ぶまでの間に、以降の準備を進める)
   showChooser({ boot: true });
@@ -8694,9 +8794,9 @@ window.__local3d = {
 // URL パラメータ(?debug=1 等)は初期状態として引き続き有効。ボタン操作は URL にも反映する(再読込で維持)。
 const _params = new URLSearchParams(location.search);
 const devModes = {
-  debug:        _params.has('debug'),
-  annotate:     _params.has('annotate'),
-  heightadjust: _params.has('heightadjust'),
+  // 配置の調整(以前の ?debug=1 座標表示・?heightadjust=1 モデル位置調整 も、これで開く)
+  place:    _params.has('place') || _params.has('debug') || _params.has('heightadjust'),
+  annotate: _params.has('annotate'),
 };
 // プロファイル選択('auto' | 'low' | 'mid' | 'high' | 'ultra')。?profile=… で初期指定可。
 let profileSelection = 'auto';
@@ -8711,7 +8811,7 @@ function setDevMode(name, on) {
   syncDevModeButtons();
   syncUrlParams();
 }
-const isDebugPanelOn = () => devModes.debug || devModes.annotate;
+const isDebugPanelOn = () => devModes.annotate; // アノテーション配置のパネル
 
 function syncDevModeButtons() {
   document.querySelectorAll('.dbg-mode').forEach(btn => {
@@ -8721,6 +8821,7 @@ function syncDevModeButtons() {
 // 現在の状態を URL に反映(履歴は増やさない)
 function syncUrlParams() {
   const p = new URLSearchParams(location.search);
+  p.delete('debug'); p.delete('heightadjust'); // 以前の名前(配置の調整にまとめた)
   for (const k of Object.keys(devModes)) {
     if (devModes[k]) p.set(k, '1'); else p.delete(k);
   }
@@ -8733,6 +8834,7 @@ function syncUrlParams() {
 document.querySelectorAll('.dbg-mode').forEach(btn => {
   btn.addEventListener('click', () => setDevMode(btn.dataset.mode, !devModes[btn.dataset.mode]));
 });
+if (_params.has('debug') || _params.has('heightadjust')) { syncDevModeButtons(); syncUrlParams(); }
 
 // 入力欄にフォーカスがある時はショートカットキーを無視する(数値入力中の誤操作防止)
 function isTypingTarget(t) {
@@ -8791,19 +8893,6 @@ dbgPanel.style.cssText = `
   min-width:280px; display:none;
 `;
 dbgPanel.innerHTML = `
-  <div id="dbg-coord-block" hidden>
-    <div class="dbg-h">座標表示</div>
-    <div>現在: <span id="dbg-id">-</span></div>
-    <div>x=<span id="dbg-x">0</span> y=<span id="dbg-y">0</span> z=<span id="dbg-z">0</span> yaw=<span id="dbg-yaw">0</span>°</div>
-    <div style="margin-top:6px; color:#9f9;">
-      WASD/矢印キーで視点を動かし、希望の見え方になったら下記値を CSV に貼り付けてください
-    </div>
-    <div style="margin-top:4px;">
-      <span style="color:#9f9;">datasets.csv行:</span>
-      <span id="dbg-csv" style="color:#fff; user-select:all;">-</span>
-    </div>
-    <div style="margin-top:4px; color:#9f9;">R: 初期位置リセット &nbsp; C: datasets行コピー</div>
-  </div>
   <div id="dbg-annotate-block" hidden>
     <div class="dbg-h">アノテーション配置 <span style="color:#9f9; font-weight:normal;">現在: <span id="dbg-ann-id">-</span></span></div>
     <div style="color:#ff0;">黄色い立方体 = カメラ3m先の設置点</div>
@@ -8817,18 +8906,12 @@ dbgPanel.innerHTML = `
       J/L: 押している間 左/右 から回り込み<br>
       (1秒で90度・最大90度、離すと正面に戻る。同時押しで斜めも可)
     </div>
+    <button type="button" class="dbg-btn" id="copy-ann-btn" style="margin-top:6px;">annotations の行をコピー(A)</button>
   </div>
 `;
 document.body.appendChild(dbgPanel);
-const dbgCoordBlock = document.getElementById('dbg-coord-block');
 const dbgAnnId = document.getElementById('dbg-ann-id');
-const dbgId    = document.getElementById('dbg-id');
-const dbgX     = document.getElementById('dbg-x');
-const dbgY     = document.getElementById('dbg-y');
-const dbgZ     = document.getElementById('dbg-z');
-const dbgYaw   = document.getElementById('dbg-yaw');
 const dbgAnn   = document.getElementById('dbg-ann');
-const dbgCsv   = document.getElementById('dbg-csv');
 const dbgAnnBlock = document.getElementById('dbg-annotate-block');
 
 // dolly の yaw を -180〜+180 に正規化(CSV値とそのまま比較しやすいように)
@@ -8906,12 +8989,6 @@ function copyAdjustRow(btn) {
 const _dbgMarkerTmp = new THREE.Vector3();
 function refreshDebug() {
   const o = currentCam();
-  dbgId.textContent  = o.id ?? '-';
-  dbgX.textContent   = o.x.toFixed(2);
-  dbgY.textContent   = o.y.toFixed(2);
-  dbgZ.textContent   = o.z.toFixed(2);
-  dbgYaw.textContent = o.yawDeg.toFixed(1);
-  dbgCsv.textContent = datasetsRowText() ?? '-';
   if (dbgAnnId) dbgAnnId.textContent = o.id ?? '-';
 
   if (devModes.annotate) {
@@ -8933,7 +9010,6 @@ setInterval(() => { if (isDebugPanelOn()) refreshDebug(); }, 60);
 function applyDebugPanelVisibility(refresh = true) {
   const on = isDebugPanelOn();
   dbgPanel.style.display = on ? '' : 'none';
-  dbgCoordBlock.hidden = !devModes.debug;
   dbgAnnBlock.hidden = !devModes.annotate;
   placeMarker.visible = devModes.annotate;
   if (on && refresh) refreshDebug();
@@ -9050,24 +9126,13 @@ window.__tickAnnotateOrbit = tickAnnotateOrbit;
 window.__isAnnotateOrbitActive = () => orbitState.active;
 window.__orbitTarget = orbitState.target; // マーカー位置表示用
 
-// R = CSVのデフォルト値にカメラをリセット、C = datasets行コピー(座標表示 or 配置モード中)
 // A = annotations行コピー(配置モード中のみ。左移動の A と同じキーなので、他モードでは働かせない)
 window.addEventListener('keydown', (e) => {
   // 通常のWASD/矢印キー操作は阻害しない(Alt/Ctrl/Metaは無視、Shiftだけは許容)
   if (e.altKey || e.ctrlKey || e.metaKey) return;
   if (gate.active || isTypingTarget(e.target)) return;
-  const dbgOn = devModes.debug; // R / C は座標表示の時だけ(アノテーション配置とは別)
-  if (dbgOn && e.code === 'KeyR') {
-    const id = currentDataset ?? loadingDataset;
-    const ds = id != null ? getDataset(id) : null;
-    if (ds) {
-      dolly.position.set(ds.xOffset + (ds.xAdjust || 0), ds.yOffset + (ds.heightAdjust || 0), ds.zOffset + (ds.zAdjust || 0));
-      dolly.rotation.set(0, THREE.MathUtils.degToRad(ds.yawOffset), 0);
-      refreshDebug();
-    }
-  } else if (dbgOn && e.code === 'KeyC') {
-    if (!e.repeat) copyDatasetsRow(document.getElementById('copy-ds-btn'));
-  } else if (devModes.annotate && e.code === 'KeyA') {
+  // (R = 初期位置へ は「配置の調整」で扱う)
+  if (devModes.annotate && e.code === 'KeyA') {
     if (!e.repeat) copyAnnotationRow(document.getElementById('copy-ann-btn'));
   } else if (devModes.annotate && e.code === 'KeyI') { orbitKeys.up = true; }
   else if (devModes.annotate && e.code === 'KeyK') { orbitKeys.down = true; }
@@ -9150,17 +9215,6 @@ applyPointUI(Number(savedSettings.sizePx) || (isTouchDevice ? 2.5 : 2), false, {
   }));
 }
 
-// ── 点の密度スライダー ──
-// UI値(10〜100%)を uniform uDensity(0.1〜1.0)に反映、シェーダで均一間引き。
-const densitySlider = document.getElementById('density-slider');
-const densityVal    = document.getElementById('density-val');
-densitySlider.addEventListener('input', () => {
-  const pct = parseInt(densitySlider.value, 10);
-  pointDensity = Math.max(0.01, pct / 100); // 0.10〜1.00 (UI下限10%だが念のためクランプ)
-  densityVal.textContent = String(pct);
-  applyPointDensity();
-});
-
 // ── WORLD SCALE スライダー ──
 // tiles.group のスケール変更で世界の大きさを変える(1.0=実寸)。
 // カメラ位置中心の相似変換にするため、position も new_pos = dolly + scale*(base - dolly) で補正。
@@ -9223,15 +9277,6 @@ lodSlider.addEventListener('input', () => {
   lodVal.textContent = String(quality);
   // VR状態/優先モードを加味して反映
   applyActiveTilesSettings();
-});
-
-// キャッシュ上限スライダー（タイル数）
-const cacheTilesSlider = document.getElementById('cache-tiles-slider');
-const cacheTilesVal = document.getElementById('cache-tiles-val');
-cacheTilesSlider.addEventListener('input', () => {
-  cacheMaxTiles = parseInt(cacheTilesSlider.value, 10);
-  cacheTilesVal.textContent = cacheMaxTiles;
-  applyCacheAll();
 });
 
 // キャッシュ上限スライダー（バイト数MB）
@@ -9315,19 +9360,24 @@ document.querySelectorAll('#profile-btns .dbg-btn').forEach(b => {
 { const forced = _params.get('profile'); if (forced && PROFILES[forced]) profileSelection = forced; }
 
 // ── ポイント予算(デバッグ欄) ──
+// 描く点の上限の段階(レベル1〜10の標準値と無制限)
+const BUDGET_STEPS = [600_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 4_000_000, 6_000_000, 8_000_000, 12_000_000, 16_000_000, 0];
+function budgetStepIndex(pts) {
+  if (!pts) return BUDGET_STEPS.length - 1;
+  let best = 0, bd = Infinity;
+  BUDGET_STEPS.forEach((v, i) => { if (v) { const d = Math.abs(Math.log(v / pts)); if (d < bd) { bd = d; best = i; } } });
+  return best;
+}
 function setPointBudget(pts) {
   pcVis.budget = Math.max(0, pts | 0);
-  document.querySelectorAll('#budget-btns .dbg-btn').forEach(btn => {
-    btn.setAttribute('aria-pressed', Number(btn.dataset.budget) === pcVis.budget ? 'true' : 'false');
-  });
-  const cur = document.getElementById('budget-current');
-  if (cur) cur.textContent = pcVis.budget ? `→ ${fmtInt(pcVis.budget)} 点` : '';
+  const sl = document.getElementById('budget-slider');
+  if (sl && document.activeElement !== sl) sl.value = String(budgetStepIndex(pcVis.budget));
+  const v = document.getElementById('budget-val');
+  if (v) v.textContent = fmtPoints(pcVis.budget);
 }
-document.querySelectorAll('#budget-btns .dbg-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    setPointBudget(Number(btn.dataset.budget));
-    console.log(`ポイント予算: ${pcVis.budget ? pcVis.budget + '点' : '無制限'}`);
-  });
+document.getElementById('budget-slider')?.addEventListener('input', (e) => {
+  setPointBudget(BUDGET_STEPS[parseInt(e.target.value, 10)] ?? 0);
+  if (e.isTrusted) markLevelCustom();
 });
 setPointBudget(0);
 
@@ -9390,10 +9440,7 @@ function applyLevelRuntime(L) {
   lodSlider.value = String(qualityFromErrorTarget(p.et));
   lodVal.textContent = lodSlider.value;
   applyActiveTilesSettings();
-  pointDensity = p.dens;
-  densitySlider.value = String(Math.round(p.dens * 100));
-  densityVal.textContent = densitySlider.value;
-  applyPointDensity();
+  // 点の割合(間引き)は描く点の上限から自動で決める(pcApplyBudget)
   setPointBudget(p.budget);
 }
 // それ以外(手でレベルを選んだ時だけ変える)
@@ -9401,7 +9448,6 @@ function applyLevelStatic(L) {
   const p = levelParams(L);
   // 保持量 = 表示レベルに必要な量と、端末のメモリから決めた量の大きい方
   cacheMaxTiles = Math.max(p.tiles, CACHE_DEVICE_TILES); cacheMaxBytesMB = Math.max(p.mb, CACHE_DEVICE_MB);
-  cacheTilesSlider.value = String(cacheMaxTiles); cacheTilesVal.textContent = String(cacheMaxTiles);
   cacheBytesSlider.value = String(Math.min(4096, cacheMaxBytesMB)); cacheBytesVal.textContent = String(cacheMaxBytesMB);
   applyCacheAll();
   DOWNLOAD_MAX_JOBS = p.jobs;
@@ -9459,7 +9505,7 @@ function levelScores(et, dens, budget, dpr) {
 }
 function currentScores() {
   const dpr = renderer.xr.isPresenting ? 2 : renderer.getPixelRatio();
-  return levelScores(lodErrorTarget, pointDensity, pcVis.budget, dpr);
+  return levelScores(lodErrorTarget, 1, pcVis.budget, dpr);
 }
 function fmtPoints(n) {
   if (!n) return '無制限';
@@ -9490,7 +9536,7 @@ function renderLevelUi() {
   const det = document.getElementById('lv-detail');
   if (det) {
     const dpr = renderer.xr.isPresenting ? null : renderer.getPixelRatio();
-    det.textContent = `描画する点 ${fmtPoints(pcVis.budget)}まで · 細かさ ${lodErrorTarget}px · 点の割合 ${Math.round(pointDensity * 100)}%` +
+    det.textContent = `描く点 ${fmtPoints(pcVis.budget)}まで · 読み込む細かさ ${qualityFromErrorTarget(lodErrorTarget)}/20` +
       (dpr ? ` · 解像度 ${dpr.toFixed(dpr % 1 ? 2 : 1)}倍` : '');
   }
   for (const fn of _lvListeners) { try { fn(); } catch (e) { console.warn(e); } }
@@ -9506,6 +9552,8 @@ function renderLevelNow() {
   const t = levelTargetFps();
   const txt = `いま ${fmtPoints(levelState.points)} · ${levelState.fps ? Math.round(levelState.fps) : '-'}fps(目標 ${t}fps)`;
   if (el.textContent !== txt) el.textContent = txt;
+  const bn = document.getElementById('budget-now');
+  if (bn) { const t2 = pointDensity < 1 ? `いま上限を超えたので ${Math.round(pointDensity * 100)}% に間引き中` : ''; if (bn.textContent !== t2) bn.textContent = t2; }
 }
 
 // ── 自動調整(毎フレーム、描画の後に呼ぶ) ──
@@ -9566,12 +9614,10 @@ function levelAutoTick(dt) {
   more?.addEventListener('click', () => {
     adv.hidden = !adv.hidden;
     more.setAttribute('aria-expanded', adv.hidden ? 'false' : 'true');
-    more.textContent = adv.hidden ? '画質・点の密度などを個別に調整 ▼' : '画質・点の密度などを個別に調整 ▲';
+    more.textContent = adv.hidden ? '細かさ・点の上限などを個別に調整 ▼' : '細かさ・点の上限などを個別に調整 ▲';
   });
   // 個別の値を手で変えたらカスタム(プログラムからの変更は isTrusted=false なので除外)
   lodSlider.addEventListener('input', (e) => { if (e.isTrusted) markLevelCustom(); });
-  densitySlider.addEventListener('input', (e) => { if (e.isTrusted) markLevelCustom(); });
-  document.querySelectorAll('#budget-btns .dbg-btn').forEach(b => b.addEventListener('click', (e) => { if (e.isTrusted) markLevelCustom(); }));
 })();
 
 // 初期値: ?profile= > 前回の設定 > 端末から判定
@@ -9621,7 +9667,7 @@ function latLonToJprcs(lat, lon, zone) {
 //   回る: 触った点(クリック・タップした所の点群)を中心にモデルの周りを回る。ピンチ・ホイールで寄る/離れる。
 //   共通: ダブルクリック/ダブルタップでその地点へ移動。ホイールはカーソル位置へ前進・後退。右ドラッグ/2本指で平行移動。
 const navState = {
-  mode: savedSettings.navMode === 'orbit' ? 'orbit' : 'walk',
+  mode: savedSettings.navModeUser === 'walk' ? 'walk' : 'orbit', // 既定は「回す」。自分で選んだ時だけ次回も引き継ぐ
   pivot: new THREE.Vector3(),
   hasPivot: false,
   near: 4,          // 周囲の点群までの距離(平滑化後)。移動の速さの基準
@@ -10250,13 +10296,13 @@ function setNavMode(mode) {
   }
   if (topdownState.active) exitTopdown();
   navState.mode = mode === 'orbit' ? 'orbit' : 'walk';
-  saveSetting('navMode', navState.mode);
   syncNavUi();
 }
 document.querySelectorAll('[data-nav-mode]').forEach(b => b.addEventListener('click', () => {
   setNavMode(b.dataset.navMode);
+  if (b.dataset.navMode !== 'top') saveSetting('navModeUser', navState.mode); // 自分で選んだ操作は次回も
   showToast(topdownState.active ? '真上: 真上から見下ろします。表示範囲・断面・画像保存は下のバーで'
-    : navState.mode === 'orbit' ? '回る: なぞると触った所を中心に回ります' : '歩く: 一人称で移動します');
+    : navState.mode === 'orbit' ? '回す: なぞると触った所を中心にモデルを回します' : '歩く: 一人称で移動します');
 }));
 setNavMode(navState.mode);
 
@@ -10323,8 +10369,8 @@ function showToast(text, ms = 2200) {
     <dt>↑ ↓</dt><dd>上昇・下降</dd><dt>ホイール</dt><dd>カーソルの所へ前進・後退</dd>
     <dt>右ドラッグ</dt><dd>平行移動(つかんで動かす)</dd><dt>ダブルクリック</dt><dd>その地点へ移動</dd>
     <dt>Shift</dt><dd>押している間ゆっくり</dd></dl>
-    <h3>回る</h3>
-    <dl><dt>左ドラッグ</dt><dd>つかんだ所を中心にモデルの周りを回る</dd><dt>ホイール</dt><dd>カーソルの所へ寄る・離れる</dd>
+    <h3>回す</h3>
+    <dl><dt>左ドラッグ</dt><dd>つかんだ所を中心にモデルを回す</dd><dt>ホイール</dt><dd>カーソルの所へ寄る・離れる</dd>
     <dt>右ドラッグ</dt><dd>平行移動</dd><dt>ダブルクリック</dt><dd>そこを中心にして近づく</dd></dl>
     <h3>真上(真俯瞰図)</h3>
     <dl><dt>左ドラッグ / W A S D</dt><dd>地図を動かす</dd><dt>ホイール</dt><dd>拡大・縮小</dd>
@@ -10335,8 +10381,8 @@ function showToast(text, ms = 2200) {
     <dl><dt>左側をなぞる</dt><dd>触った所にスティックが出て、その向きに移動</dd><dt>右側をなぞる</dt><dd>見回す</dd>
     <dt>2本指 ピンチ</dt><dd>指の間の所へ前進・後退</dd><dt>2本指でなぞる</dt><dd>平行移動(上下にも)</dd>
     <dt>2本指をひねる</dt><dd>向きを変える</dd><dt>▲ ▼</dt><dd>上昇・下降(歩くモードの時、右のボタン列の横に出ます)</dd><dt>ダブルタップ</dt><dd>その地点へ移動</dd></dl>
-    <h3>回る</h3>
-    <dl><dt>1本指でなぞる</dt><dd>触った所を中心に回る</dd><dt>ピンチ</dt><dd>寄る・離れる</dd>
+    <h3>回す</h3>
+    <dl><dt>1本指でなぞる</dt><dd>触った所を中心にモデルを回す</dd><dt>ピンチ</dt><dd>寄る・離れる</dd>
     <dt>2本指でなぞる / ひねる</dt><dd>平行移動 / 回転</dd><dt>ダブルタップ</dt><dd>そこを中心にして近づく</dd></dl>
     <h3>真上(真俯瞰図)</h3>
     <dl><dt>なぞる</dt><dd>地図を動かす</dd><dt>ピンチ / ひねる</dt><dd>拡大・縮小 / 向きを回す</dd>
@@ -10742,15 +10788,30 @@ function chooseDataset(id, { force = false } = {}) {
   if (!force && id === currentDataset) { gateClose(); return; }
   loadTileset(id, { gate: boot ? 'boot' : 'switch', force });
 }
-let _chRefreshQueue = Promise.resolve();
+// 一覧を開いた時の確認: 前回の結果(記録)があればすぐ表示し、裏で3件ずつ並行して確かめ直す
+const _chRefreshPending = [];
+let _chRefreshActive = 0;
+const CH_REFRESH_PARALLEL = 3;
+function chooserRefreshPump() {
+  while (_chRefreshActive < CH_REFRESH_PARALLEL && _chRefreshPending.length) {
+    const id = _chRefreshPending.shift();
+    _chRefreshActive++;
+    refreshDsInfo(id, { allowNetwork: true }).catch(() => {}).finally(() => { _chRefreshActive--; chooserRefreshPump(); });
+  }
+}
 function chooserRefreshAll() {
   for (const ds of DATASETS) {
-    const i = dsInfo.get(ds.id);
+    let i = dsInfo.get(ds.id);
+    if (!i) {
+      // 前回の確認結果(記録)をすぐ表示する。保存データが消えていた等は、このあとの確認で直る
+      const snap = dsSummary(ds.id)?.snap;
+      if (snap && snap.hist) { i = { ...snap, state: 'ready', stale: true, fromSnap: true }; dsInfo.set(ds.id, i); }
+    }
     if (i && i.state === 'ready' && !i.stale) continue;
     if (i && i.state === 'loading') continue;
-    // 1件ずつ順に(一度に大量の通信をしない)
-    _chRefreshQueue = _chRefreshQueue.then(() => refreshDsInfo(ds.id, { allowNetwork: true })).catch(() => {});
+    if (!_chRefreshPending.includes(ds.id)) _chRefreshPending.push(ds.id);
   }
+  chooserRefreshPump();
 }
 
 // ── 表示 ──
@@ -10762,11 +10823,11 @@ function chooserLevelUi() {
   document.getElementById('ch-auto').checked = levelState.auto;
   document.getElementById('ch-target').textContent = String(isVRBrowser ? 72 : (isTouchDevice ? 30 : 60));
   const p = levelParams(L);
-  const sc = levelScores(p.et, p.dens, p.budget, effectiveDpr(p.dpr));
+  const sc = levelScores(p.et, 1, p.budget, effectiveDpr(p.dpr));
   document.getElementById('ch-look').innerHTML = meterHtml(sc.look, 'look') + `<b>${sc.look}</b>`;
   document.getElementById('ch-heavy').innerHTML = meterHtml(sc.heavy, 'heavy') + `<b>${sc.heavy}</b>`;
   document.getElementById('ch-level-desc').textContent =
-    `描画する点 ${fmtPoints(p.budget)}まで · 細かさ ${p.et}px · 点の割合 ${Math.round(p.dens * 100)}% · ` +
+    `描く点 ${fmtPoints(p.budget)}まで · 読み込む細かさ ${qualityFromErrorTarget(p.et)}/20 · ` +
     (L >= 10 ? '先読み: すべてのタイル' : `先読み: ${PRELOAD_REF_DIST}m以上離れて見る分のタイル(近くの細部は見ている間に取得)`) +
     (levelState.auto ? ' · 動きの滑らかさを見て自動で上下します' : '');
 }
@@ -10827,7 +10888,8 @@ function renderChooser() {
     const badges = (ds.id === currentDataset ? '<span class="ch-badge now">表示中</span>' : '') +
                    (overlayHas(ds.id) ? '<span class="ch-badge ov">重ねて表示中</span>' : '') +
                    (fullDlIsComplete(ds.id) ? '<span class="ch-badge full">完全保存済み</span>' : '') +
-                   (ds.id === last && ds.id !== currentDataset ? '<span class="ch-badge">前回</span>' : '');
+                   (ds.id === last && ds.id !== currentDataset ? '<span class="ch-badge">前回</span>' : '') +
+                   (ds._added ? '<span class="ch-badge edit">追加・未出力</span>' : (placeIsDirty(ds) ? '<span class="ch-badge edit">配置を調整中</span>' : ''));
     card.querySelector('.ch-name').innerHTML = `${escapeHtml(ds.label ? `${ds.id}: ${ds.label}` : ds.id)}${badges}`;
     card.querySelector('.ch-info').innerHTML = dsCardInfoHtml(ds.id);
     const del = card.querySelector('[data-act="delete"]');
@@ -11390,10 +11452,19 @@ syncDprUi();
 // 作業モードのパネル(#work-panels)が出ている時は、スマホの計測パネルをその下にずらす
 function layoutBottomUi() {
   const cr = document.getElementById('credit');
+  let crRect = null;
   if (cr) {
     const r = cr.getBoundingClientRect();
-    const h = r.height ? Math.round(window.innerHeight - r.top + 6) : 34;
+    crRect = r.height ? r : null;
+    const h = crRect ? Math.round(window.innerHeight - r.top + 6) : 34;
     document.documentElement.style.setProperty('--credit-h', `${Math.max(24, h)}px`);
+  }
+  // PC: 設定パネルは、クレジットと横に重なる時だけ、その上で止める
+  const ctl = document.getElementById('controls');
+  if (ctl && !isTouchDevice) {
+    const c = ctl.getBoundingClientRect();
+    const overlapX = crRect && c.width && crRect.right > c.left - 4;
+    document.documentElement.style.setProperty('--ctl-gap', overlapX ? `${Math.round(window.innerHeight - crRect.top + 8)}px` : '16px');
   }
   const wp = document.getElementById('work-panels'), mp = document.getElementById('measure-panel');
   if (wp && mp) {
@@ -11401,21 +11472,52 @@ function layoutBottomUi() {
     if (isTouchDevice && shown && !mp.hidden) mp.style.top = `${Math.round(wp.getBoundingClientRect().bottom + 6)}px`;
     else mp.style.top = '';
   }
+  layoutWorkPanels();
+}
+// PC: 作業モードのパネルは、左のボタン列と右の設定パネルの間に置く(幅 320〜540px)。
+// 間が狭すぎる時は、左のボタン列の右から幅を確保する(設定パネルの上に重なる。設定は「たたむ」で閉じられる)
+function layoutWorkPanels() {
+  const wp = document.getElementById('work-panels');
+  if (!wp || isTouchDevice) return;
+  const vw = window.innerWidth;
+  const rail = document.getElementById('tool-rail');
+  const rr = rail ? rail.getBoundingClientRect() : null;
+  const railRight = rr && rr.width ? Math.round(rr.right + 8) : 76;
+  // 計測パネル(左上)が開いている時は、その右から
+  const mp = document.getElementById('measure-panel');
+  const mr = mp && !mp.hidden ? mp.getBoundingClientRect() : null;
+  let leftMin = mr && mr.width ? Math.max(railRight, Math.round(mr.right + 8)) : railRight;
+  const ctl = document.getElementById('controls');
+  const c = ctl ? ctl.getBoundingClientRect() : null;
+  const rightEdge = c && c.width ? Math.round(c.left - 8) : vw - 16;
+  if (rightEdge - leftMin < 320) leftMin = railRight; // 狭い時は計測パネルに重ねてでも幅を取る
+  const avail = rightEdge - leftMin;
+  let width, left;
+  if (avail >= 320) {
+    width = Math.min(540, avail);
+    left = Math.max(leftMin, Math.min(rightEdge - width, Math.round(vw / 2 - width / 2)));
+  } else {
+    width = Math.max(240, Math.min(540, vw - railRight - 16));
+    left = railRight;
+  }
+  wp.style.left = `${left}px`;
+  wp.style.width = `${width}px`;
+  wp.style.right = 'auto';
 }
 (function setupLayout10() {
   const wp = document.getElementById('work-panels');
   const dp = document.getElementById('dbg-panel');
   if (wp && dp && dp.parentNode !== wp) wp.insertBefore(dp, wp.firstChild);
-  const ha = document.getElementById('heightadjust-panel');
+  const ha = document.getElementById('place-panel');
   if (wp && ha && ha.parentNode !== wp) wp.appendChild(ha);
   layoutBottomUi();
   window.addEventListener('resize', layoutBottomUi);
   if ('ResizeObserver' in window) {
     const ro = new ResizeObserver(layoutBottomUi);
-    for (const id of ['credit', 'work-panels']) { const el = document.getElementById(id); if (el) ro.observe(el); }
+    for (const id of ['credit', 'work-panels', 'controls']) { const el = document.getElementById(id); if (el) ro.observe(el); }
   }
   const mo = new MutationObserver(layoutBottomUi);
-  for (const id of ['measure-panel', 'heightadjust-panel', 'dbg-panel']) {
+  for (const id of ['measure-panel', 'place-panel', 'dbg-panel']) {
     const el = document.getElementById(id);
     if (el) mo.observe(el, { attributes: true, attributeFilter: ['hidden', 'style'] });
   }
@@ -11433,7 +11535,8 @@ function noteTopdownBarTop() {
 //       表示するもの(点群・説明パネルを表示、地図は非表示と地図の細かい設定)、視点(歩く)、移動の速さ(ふつう)、表示倍率(1.0)、描画解像度の上限
 // 残す: 保存したデータ・重ねて表示・端末の3Dデータ・パネルの開閉
 function resetSettingsToDefaults() {
-  setNavMode('walk');
+  setNavMode('orbit');
+  saveSetting('navModeUser', undefined);
   setLevel(PROFILE_LEVEL[autoProfile.key] || 5, { keepAuto: true });
   setLevelAuto(true);
   applyPointUI(isTouchDevice ? 2.5 : 2, false);
@@ -11445,12 +11548,10 @@ function resetSettingsToDefaults() {
   press('annotation-toggle', true);
   press('gsi-solid-toggle', true);
   fire(document.getElementById('gsi-detail-slider'), '3');
-  fire(document.getElementById('gsi-zoom-slider'), '0');
   press('gsi-toggle', false);
   setSpeedStep('normal');
   const sc = document.getElementById('scale-slider');
   if (sc && Math.abs(parseFloat(sc.value) - 1) > 1e-6) { sc.value = '1.0'; sc.dispatchEvent(new Event('input')); }
-  if (renderDprCapOn) document.getElementById('dpr-cap-btn')?.click();
   showToast('設定を初期値に戻しました');
 }
 document.getElementById('settings-reset-btn')?.addEventListener('click', (e) => {
@@ -11534,57 +11635,277 @@ document.addEventListener('click', (e) => {
   // top は #dataset-switch 真下に固定で再計算不要。
 });
 
-// ── モデル高さ調整モード(デバッグ欄「モデル位置調整」 / ?heightadjust=1) ──
-// 点群を [ ] キーで上下させ、地図地形に地面が合う位置のheightAdjust値を測る(CSV用)。
-(function setupHeightAdjust() {
-  const panel = document.getElementById('heightadjust-panel');
-  const haId = document.getElementById('ha-id');
-  const haVal = document.getElementById('ha-val');
+// ═══════════════ 作業モード「配置の調整」(tiles_012) ═══════════════
+// モデルの位置(heightAdjust / xAdjust / zAdjust)・最初に見る場所と向き(xOffset / yOffset / zOffset / yawOffset)・名前(label)を
+// モデルごとにこの端末へ一時保存し(localStorage)、この端末では常にその値を使う。全データを datasets.csv として書き出せる。
+// Web 上の新しい id と名前の追加もここで行う。端末に取り込んだ3Dデータ(LOCAL_DATASETS)は対象外。
+// 以前の「座標表示」(?debug=1)と「モデル位置調整」(?heightadjust=1)をまとめたもの(行のコピーはやめた)。
+const PLACE_KEY = 'tilesViewer.placement.v1';
+const PLACE_FIELDS = ['label', 'xOffset', 'yOffset', 'zOffset', 'yawOffset', 'heightAdjust', 'xAdjust', 'zAdjust'];
+function placeLoadStore() {
+  const s = lsGet(PLACE_KEY);
+  return (s && typeof s === 'object' && s.items && typeof s.items === 'object') ? s : { items: {} };
+}
+function placeSaveStore(s) { lsSet(PLACE_KEY, s); }
+const placeSame = (a, b) => Math.abs((Number(a) || 0) - (Number(b) || 0)) < 1e-6;
+// datasets.csv の値から変わっているか(追加したデータは常に「未出力」)
+function placeIsDirty(ds) {
+  if (!ds || LOCAL_DATASETS.has(ds.id)) return false;
+  if (ds._added) return true;
+  const c = ds._csv;
+  if (!c) return false;
+  return PLACE_FIELDS.some(f => (f === 'label' ? (ds.label || '') !== (c.label || '') : !placeSame(ds[f], c[f])));
+}
+// 起動時(datasets.csv の読込後): 一時保存した値を反映し、追加したデータを一覧に足す。CSV と同じになったものは消す
+function applyPlacementEdits() {
+  const st = placeLoadStore();
+  for (const ds of DATASETS) ds._csv = Object.fromEntries(PLACE_FIELDS.map(f => [f, ds[f]]));
+  let changed = false;
+  for (const [id, it] of Object.entries(st.items)) {
+    if (!it || typeof it !== 'object') { delete st.items[id]; changed = true; continue; }
+    const ds = DATASETS.find(d => d.id === id);
+    if (ds) {
+      for (const f of PLACE_FIELDS) if (it[f] !== undefined) ds[f] = f === 'label' ? String(it[f]) : (Number(it[f]) || 0);
+      if (!placeIsDirty(ds)) { delete st.items[id]; changed = true; }
+      else if (it.added) { it.added = false; changed = true; } // datasets.csv に載った(以後は「調整あり」として扱う)
+    } else if (it.added) {
+      const nd = { id, _added: true, _csv: null };
+      for (const f of PLACE_FIELDS) nd[f] = f === 'label' ? String(it.label || id) : (Number(it[f]) || 0);
+      if (it.needPose) nd._needPose = true;
+      DATASETS.push(nd);
+    } else { delete st.items[id]; changed = true; } // datasets.csv から無くなった
+  }
+  if (changed) placeSaveStore(st);
+  const n = Object.keys(st.items).length;
+  if (n) console.log(`[配置の調整] この端末で調整した値を使います(${n}件)`);
+}
+// 1つのデータの今の値を一時保存する(datasets.csv と同じなら消す)
+function placeRecord(ds) {
+  if (!ds || LOCAL_DATASETS.has(ds.id)) return;
+  const st = placeLoadStore();
+  if (placeIsDirty(ds)) {
+    const it = { added: !!ds._added };
+    for (const f of PLACE_FIELDS) it[f] = ds[f];
+    if (ds._needPose) it.needPose = true;
+    st.items[ds.id] = it;
+  } else delete st.items[ds.id];
+  placeSaveStore(st);
+  placeEmit();
+}
+function placeEmit() {
+  if (typeof chooser !== 'undefined' && chooser.open) renderChooser();
+  if (window.__placeRefresh) window.__placeRefresh();
+}
+// datasets.csv(全データ。端末の3Dデータは含めない)
+function placeFmt(v, d) { return String(Number((Number(v) || 0).toFixed(d))); }
+function buildDatasetsCsv() {
+  const head = 'id,label,xOffset,yOffset,zOffset,yawOffset,heightAdjust,xAdjust,zAdjust';
+  const rows = DATASETS.filter(ds => !LOCAL_DATASETS.has(ds.id)).map(ds => [
+    ds.id, String(ds.label || '').replace(/[,\r\n]/g, ' ').trim(),
+    placeFmt(ds.xOffset, 2), placeFmt(ds.yOffset, 2), placeFmt(ds.zOffset, 2), placeFmt(ds.yawOffset, 1),
+    placeFmt(ds.heightAdjust, 2), placeFmt(ds.xAdjust, 2), placeFmt(ds.zAdjust, 2),
+  ].join(','));
+  return [head, ...rows].join('\n') + '\n';
+}
+function downloadTextFile(name, text, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
+(function setupPlacePanel() {
+  const panel = document.getElementById('place-panel');
+  if (!panel) return;
+  const $ = (id) => document.getElementById(id);
+  const curDs = () => { const id = currentDataset ?? loadingDataset; return id != null ? getDataset(id) : null; };
+  const isLocalDs = (ds) => !!ds && LOCAL_DATASETS.has(ds.id);
+  // 1回の量: 移動の速さ 遅く 0.01 / ふつう 0.1 / 速く 1 m。Shift で 0.01
+  const stepNow = (fine) => (fine ? 0.01 : (boostLevel >= 3 ? 1 : (boostLevel < 1 ? 0.01 : 0.1)));
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const f2 = (v) => (Number(v) || 0).toFixed(2);
+  const poseText = (x, y, z, yaw) => `x ${f2(x)}  y ${f2(y)}  z ${f2(z)}  向き ${(Number(yaw) || 0).toFixed(1)}°`;
 
   function refresh() {
-    if (haId) haId.textContent = currentDataset ?? loadingDataset ?? '-';
-    if (haVal) haVal.textContent =
-      `X=${currentXAdjust.toFixed(2)}  Y=${currentHeightAdjust.toFixed(2)}  Z=${currentZAdjust.toFixed(2)}`;
+    const ds = curDs();
+    const local = isLocalDs(ds);
+    $('pp-id').textContent = ds ? ds.id : '-';
+    $('pp-local-note').hidden = !local;
+    $('pp-main').hidden = !ds || local;
+    const stEl = $('pp-state');
+    if (ds && !local) {
+      const dirty = placeIsDirty(ds);
+      stEl.textContent = ds._added ? '追加・未出力' : (dirty ? '調整あり・未出力' : 'datasets.csv と同じ');
+      stEl.className = 'pp-state ' + (dirty ? 'dirty' : 'clean');
+      const lab = $('pp-label');
+      if (document.activeElement !== lab) lab.value = ds.label || '';
+      $('pp-x').textContent = f2(currentXAdjust);
+      $('pp-y').textContent = f2(currentHeightAdjust);
+      $('pp-z').textContent = f2(currentZAdjust);
+      $('pp-init').textContent = poseText(ds.xOffset, ds.yOffset, ds.zOffset, ds.yawOffset);
+      const o = currentCam();
+      $('pp-now').textContent = poseText(o.x - currentXAdjust, o.y - currentHeightAdjust, o.z - currentZAdjust, o.yawDeg);
+      const rv = $('pp-revert');
+      if (rv.dataset.armed !== '1') rv.textContent = ds._added ? 'この追加を取り消す' : 'datasets.csv の値に戻す';
+      rv.disabled = !dirty;
+    } else { stEl.textContent = ''; stEl.className = 'pp-state'; }
+    $('pp-step').textContent = String(stepNow(false));
+    $('pp-scale-warn').hidden = Math.abs(worldScale - 1) < 1e-6;
+    const list = DATASETS.filter(placeIsDirty);
+    $('pp-summary').textContent = list.length
+      ? `未出力の変更 ${list.length}件: ${list.map(d => d.label || d.id).join('、')}`
+      : '未出力の変更はありません';
   }
-  // 表示中だけ更新
-  setInterval(() => { if (devModes.heightadjust) refresh(); }, 100);
-  function applyVisibility() {
-    if (!panel) return;
-    if (devModes.heightadjust) { panel.removeAttribute('hidden'); refresh(); }
-    else panel.setAttribute('hidden', '');
+  // 書き込みはまとめて(キーの押しっぱなしで何度も保存しない)
+  let recTimer = null, recDs = null;
+  function recordSoon(ds) {
+    if (recDs && recDs !== ds) placeRecord(recDs);
+    recDs = ds; clearTimeout(recTimer);
+    recTimer = setTimeout(() => { const d = recDs; recDs = null; if (d) placeRecord(d); }, 300);
   }
-  onDevModeChange((name) => { if (name === 'heightadjust') applyVisibility(); });
-  applyVisibility();
-
+  // モデルを動かす(地図に合わせる)
+  function nudge(axis, dir, fine) {
+    const ds = curDs();
+    if (!ds || isLocalDs(ds)) return;
+    const step = stepNow(fine) * dir;
+    if (axis === 'x') { currentXAdjust = r2(currentXAdjust + step); ds.xAdjust = currentXAdjust; }
+    else if (axis === 'y') { currentHeightAdjust = r2(currentHeightAdjust + step); ds.heightAdjust = currentHeightAdjust; }
+    else { currentZAdjust = r2(currentZAdjust + step); ds.zAdjust = currentZAdjust; }
+    applyWorldScale();
+    recordSoon(ds);
+    refresh();
+  }
+  // 初期位置へ(R キーも同じ)
+  function goPose() {
+    const ds = curDs();
+    if (!ds) return;
+    dolly.position.set(ds.xOffset + currentXAdjust, ds.yOffset + currentHeightAdjust, ds.zOffset + currentZAdjust);
+    dolly.rotation.set(0, THREE.MathUtils.degToRad(ds.yawOffset || 0), 0);
+    pitchTarget = 0;
+    applyWorldScale();
+    refresh();
+  }
+  panel.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pp]');
+    if (!b) return;
+    const s = b.dataset.pp;
+    nudge(s[0], Number(s.slice(1)), false);
+  });
+  $('pp-set-pose').addEventListener('click', (e) => {
+    const ds = curDs();
+    if (!ds || isLocalDs(ds)) return;
+    const o = currentCam();
+    ds.xOffset = r2(o.x - currentXAdjust);
+    ds.yOffset = r2(o.y - currentHeightAdjust);
+    ds.zOffset = r2(o.z - currentZAdjust);
+    ds.yawOffset = Math.round(o.yawDeg * 10) / 10;
+    delete ds._needPose;
+    placeRecord(ds);
+    const b = e.currentTarget;
+    b.textContent = '✓ 初期位置にしました';
+    clearTimeout(b._t);
+    b._t = setTimeout(() => { b.textContent = '今の視点を初期位置にする'; }, 1400);
+  });
+  $('pp-go-pose').addEventListener('click', goPose);
+  $('pp-label').addEventListener('input', () => {
+    const ds = curDs();
+    if (!ds || isLocalDs(ds)) return;
+    ds.label = $('pp-label').value.replace(/[,\r\n]/g, '、');
+    recordSoon(ds);
+    clearTimeout(panel._lt);
+    panel._lt = setTimeout(() => updateDatasetButtons(), 300);
+  });
+  $('pp-revert').addEventListener('click', (e) => {
+    const ds = curDs();
+    if (!ds || isLocalDs(ds) || !placeIsDirty(ds)) return;
+    const b = e.currentTarget;
+    if (b.dataset.armed !== '1') {
+      b.dataset.armed = '1';
+      b.textContent = 'もう一度押すと戻します';
+      clearTimeout(b._t);
+      b._t = setTimeout(() => { b.dataset.armed = ''; refresh(); }, 3000);
+      return;
+    }
+    clearTimeout(b._t);
+    b.dataset.armed = '';
+    if (recDs === ds) { clearTimeout(recTimer); recDs = null; }
+    if (ds._added) {
+      const i = DATASETS.indexOf(ds);
+      if (i >= 0) DATASETS.splice(i, 1);
+      const st = placeLoadStore(); delete st.items[ds.id]; placeSaveStore(st);
+      buildDatasetButtons(); updateDatasetButtons();
+      showToast(`「${ds.label || ds.id}」の追加を取り消しました`);
+      showChooser({ boot: false });
+      refresh();
+      return;
+    }
+    for (const f of PLACE_FIELDS) ds[f] = ds._csv[f];
+    currentXAdjust = ds.xAdjust || 0; currentHeightAdjust = ds.heightAdjust || 0; currentZAdjust = ds.zAdjust || 0;
+    applyWorldScale();
+    placeRecord(ds);
+    updateDatasetButtons();
+    showToast('datasets.csv の値に戻しました');
+  });
+  $('pp-export').addEventListener('click', () => {
+    if (recDs) { clearTimeout(recTimer); const d = recDs; recDs = null; placeRecord(d); }
+    const text = buildDatasetsCsv();
+    window.__lastDatasetsCsv = text; // 動作確認用
+    downloadTextFile('datasets.csv', text, 'text/csv;charset=utf-8');
+    const n = DATASETS.filter(d => !LOCAL_DATASETS.has(d.id)).length;
+    showToast(`datasets.csv を書き出しました(${n}件)。サーバーの datasets.csv と置き換えると、ほかの端末にも反映されます`);
+  });
+  $('pp-add').addEventListener('click', async () => {
+    const id = $('pp-new-id').value.trim();
+    const label = $('pp-new-label').value.replace(/[,\r\n]/g, '、').trim();
+    const msg = $('pp-add-msg');
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(id)) { msg.textContent = 'id は半角の英数字(と - _)で入れてください'; return; }
+    if (DATASETS.some(d => d.id === id)) { msg.textContent = `id ${id} はすでに一覧にあります`; return; }
+    msg.textContent = `id ${id} を確かめています…`;
+    let ok = false;
+    try {
+      const r = await fetch(tilesetUrl(id), { cache: 'no-cache' });
+      if (r.ok) { const j = await r.json(); ok = !!(j && j.root); }
+    } catch (e) { ok = false; }
+    if (!ok) { msg.textContent = `id ${id} のデータが見つかりませんでした(id を確かめてください。通信できない時も追加できません)`; return; }
+    if (DATASETS.some(d => d.id === id)) { msg.textContent = `id ${id} はすでに一覧にあります`; return; }
+    const ds = { id, label: label || id, xOffset: 0, yOffset: 0, zOffset: 0, yawOffset: 0,
+      heightAdjust: 0, xAdjust: 0, zAdjust: 0, _added: true, _needPose: true, _csv: null };
+    DATASETS.push(ds);
+    placeRecord(ds);
+    buildDatasetButtons(); updateDatasetButtons();
+    $('pp-new-id').value = ''; $('pp-new-label').value = '';
+    msg.textContent = `${id}: ${ds.label} を追加しました。モデルの位置と初期位置を決めて、書き出してください`;
+    chooseDataset(id);
+  });
+  // PC のキー: [ ] = 高さ Y、; : = 東西 X、, . = 南北 Z(Shift で 0.01)、R = 初期位置へ
   window.addEventListener('keydown', (e) => {
-    if (!devModes.heightadjust) return;
-    if (localAlign.active) return; // ローカルデータの位置合わせ中([ ] を共用)
+    if (!devModes.place) return;
+    if (localAlign.active) return; // 端末の3Dデータの位置合わせ中([ ] を共用)
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (gate.active || isTypingTarget(e.target)) return;
-    // ステップ量: 遅く 0.01m / ふつう 0.1m / 速く 1m。Shift で微調整(0.01m)。
-    let step;
-    if (e.shiftKey) step = 0.01;            // 微調整
-    else step = 0.1 * (boostLevel >= 3 ? 10 : (boostLevel < 1 ? 0.1 : 1));
     const k = e.key;
-    // 各軸キーの判定(e.key優先、フォールバックで e.code)。日本語配列対応。
-    // [ ] = Y(高さ) 下/上, ; : = X 減/増, , . = Z 減/増
-    const yDown  = (k === '[') || (k === '' && e.code === 'BracketLeft');
-    const yUp    = (k === ']') || (k === '' && e.code === 'BracketRight');
-    const xMinus = (k === ';') || (k === '' && e.code === 'Semicolon');
-    const xPlus  = (k === ':') || (k === '' && e.code === 'Quote');   // : は Shift+; (JISでは別キーのことも)
-    const zMinus = (k === ',') || (k === '<') || (k === '' && e.code === 'Comma');
-    const zPlus  = (k === '.') || (k === '>') || (k === '' && e.code === 'Period');
-    if (yDown)       { currentHeightAdjust -= step; applyWorldScale(); refresh(); }
-    else if (yUp)    { currentHeightAdjust += step; applyWorldScale(); refresh(); }
-    else if (xMinus) { currentXAdjust -= step; applyWorldScale(); refresh(); }
-    else if (xPlus)  { currentXAdjust += step; applyWorldScale(); refresh(); }
-    else if (zMinus) { currentZAdjust -= step; applyWorldScale(); refresh(); }
-    else if (zPlus)  { currentZAdjust += step; applyWorldScale(); refresh(); }
-    else if (k === 'y' || k === 'Y' || e.code === 'KeyY') { // Y = CSV行コピー(全補正込み)
-      if (!e.repeat) copyAdjustRow(document.getElementById('copy-adj-btn'));
-    }
+    const is = (ch, code) => k === ch || (k === '' && e.code === code);
+    if (is('[', 'BracketLeft')) nudge('y', -1, e.shiftKey);
+    else if (is(']', 'BracketRight')) nudge('y', 1, e.shiftKey);
+    else if (is(';', 'Semicolon')) nudge('x', -1, e.shiftKey);
+    else if (is(':', 'Quote')) nudge('x', 1, e.shiftKey);
+    else if (k === ',' || k === '<' || (k === '' && e.code === 'Comma')) nudge('z', -1, e.shiftKey);
+    else if (k === '.' || k === '>' || (k === '' && e.code === 'Period')) nudge('z', 1, e.shiftKey);
+    else if (e.code === 'KeyR' && !e.repeat) goPose();
   });
+  function applyVisibility() {
+    panel.hidden = !devModes.place;
+    if (devModes.place) refresh();
+  }
+  onDevModeChange((name) => { if (name === 'place') applyVisibility(); });
+  applyVisibility();
+  setInterval(() => { if (devModes.place) refresh(); }, 150);
+  window.__placeRefresh = () => { if (devModes.place) refresh(); };
 })();
+// 動作確認用
+window.__v12 = { buildDatasetsCsv, placeLoadStore, placeIsDirty, datasets: () => DATASETS,
+  setBudget: (n) => setPointBudget(n), density: () => pointDensity, pcStats: () => pcVis.stats };
 
 // ── 説明パネル表示トグル ──
 (function setupAnnotationToggle() {
@@ -11632,7 +11953,8 @@ document.addEventListener('click', (e) => {
   const detailWrap = document.getElementById('gsi-detail-wrap');
   // 平面表示時は地形の細かさをグレーアウト(平面では起伏がないので効果が無い)
   function updateDetailEnabled() {
-    if (detailWrap) detailWrap.classList.toggle('disabled', !gsiState.solid);
+    // 地図の細かさは平面表示でも地図の精細さに効くので、操作できるままにする
+    if (detailWrap) detailWrap.classList.remove('disabled');
   }
   if (solidBtn) {
     solidBtn.addEventListener('click', () => {
@@ -11645,44 +11967,24 @@ document.addEventListener('click', (e) => {
   }
   updateDetailEnabled(); // 初期状態を反映
 
-  // 地形の細かさスライダー: 1(粗い/軽い)〜5(細かい/重い)。STEP値に変換。
-  // 細かさ5→step2, 4→4, 3→6, 2→10, 1→16 (大きいstep=粗い)
+  // 地図の細かさ(1本): 1(軽い)〜5(細かい)。地形の細かさ(メッシュの間隔 STEP)と地図の精細さ(ズーム)をまとめて決める。
+  // 平面表示の時は地図の精細さだけが効く
   const detailSlider = document.getElementById('gsi-detail-slider');
   const detailVal = document.getElementById('gsi-detail-val');
-  const STEP_MAP = { 1: 16, 2: 10, 3: 6, 4: 4, 5: 2 };
-  const LABEL_MAP = { 1: '最も粗い', 2: '粗い', 3: '標準', 4: '細かい', 5: '最も細かい' };
+  const MAP_LEVELS = { 1: { step: 16, zoom: 'auto' }, 2: { step: 10, zoom: 'auto' }, 3: { step: 6, zoom: 'auto' }, 4: { step: 4, zoom: 15 }, 5: { step: 2, zoom: 16 } };
+  const LABEL_MAP = { 1: '最も軽い', 2: '軽い', 3: '標準', 4: '細かい', 5: '最も細かい' };
   if (detailSlider) {
-    // 初期: 細かさ3(標準) = step6
-    gsiState.step = STEP_MAP[3];
+    gsiState.step = MAP_LEVELS[3].step;
     detailSlider.addEventListener('input', () => {
-      const lv = parseInt(detailSlider.value, 10);
-      if (detailVal) detailVal.textContent = LABEL_MAP[lv] || '標準';
+      if (detailVal) detailVal.textContent = LABEL_MAP[parseInt(detailSlider.value, 10)] || '標準';
     });
     detailSlider.addEventListener('change', () => {
-      const lv = parseInt(detailSlider.value, 10);
-      gsiState.step = STEP_MAP[lv] || 6;
-      if (gsiState.built) rebuildGsiMesh();
-    });
-  }
-
-  // 地図の精細さ(ズーム)選択スライダー: 0=自動, 1〜4=ズーム14〜17。
-  const zoomSlider = document.getElementById('gsi-zoom-slider');
-  const zoomVal = document.getElementById('gsi-zoom-val');
-  const ZOOM_MAP = { 0: 'auto', 1: 14, 2: 15, 3: 16, 4: 17 };
-  const ZOOM_LABEL = { 0: '基準', 1: 'ズーム14', 2: 'ズーム15', 3: 'ズーム16', 4: 'ズーム17' };
-  if (zoomSlider) {
-    zoomSlider.addEventListener('input', () => {
-      const lv = parseInt(zoomSlider.value, 10);
-      if (zoomVal) zoomVal.textContent = ZOOM_LABEL[lv] || '自動';
-    });
-    zoomSlider.addEventListener('change', () => {
-      const lv = parseInt(zoomSlider.value, 10);
-      gsiState.zoomMode = ZOOM_MAP[lv] ?? 'auto';
-      // 表示中で、適切ズームが現在の構築ズームと違えば再取得
-      if (gsiState.visible && gsiState.centerEcef &&
-          decideGsiParams().zoom !== gsiState.builtZoom) {
-        buildGsiGround(gsiState.centerEcef);
-      }
+      const m = MAP_LEVELS[parseInt(detailSlider.value, 10)] || MAP_LEVELS[3];
+      const stepChanged = gsiState.step !== m.step;
+      gsiState.step = m.step;
+      gsiState.zoomMode = m.zoom;
+      if (gsiState.visible && gsiState.centerEcef && decideGsiParams().zoom !== gsiState.builtZoom) buildGsiGround(gsiState.centerEcef);
+      else if (stepChanged && gsiState.built) rebuildGsiMesh();
     });
   }
 })();
@@ -12103,7 +12405,7 @@ function drawExportOverlays(ctx, W, H, s) {
 
   function isTimerPaused() {
     if (gate.active) return true;            // 読込画面の表示中
-    if (devModes.debug || devModes.annotate || devModes.heightadjust) return true; // 作業モード中は自動で初期位置に戻さない
+    if (devModes.place || devModes.annotate) return true; // 作業モード中は自動で初期位置に戻さない
     if (measureState.tool) return true;      // 計測中も
     if (renderer.xr.isPresenting) return true;
     if (preloadState.job && preloadState.job.running) return true; // 先読み中
@@ -12216,7 +12518,16 @@ function perfTick() {
   updatePreloadInfo();
 }
 
+let _renderPausedForChooser = false;
+window.__renderPaused = () => _renderPausedForChooser; // 動作確認用
 renderer.setAnimationLoop(() => {
+  // データを選ぶ画面の間は 3D を描かない(画面はほぼ隠れている。通信や準備に処理を回す)。VR 中は除く
+  if (chooser.open && !renderer.xr.isPresenting) {
+    clock.getDelta();
+    _renderPausedForChooser = true;
+    return;
+  }
+  if (_renderPausedForChooser) { _renderPausedForChooser = false; levelAutoReset(); }
   const dt = Math.min(clock.getDelta(), 0.1);
 
   // 初期位置リセットアニメ中: dolly を補間で更新し、通常の移動入力は抑制する

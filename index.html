@@ -1744,6 +1744,59 @@
       .ch-actions { flex-wrap: wrap; }
       .ch-actions .ch-btn { flex: 1 1 28%; }
     }
+
+    /* ══ tiles_010 ══ */
+    /* 一覧の上: 全データの保存・すべて削除(ボタンは折り返して並べ、潰さない) */
+    .ch-fullall { display: block; margin: -2px 0 10px; }
+    .ch-fa-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ch-fa-btns .ch-btn { flex: 0 1 auto; white-space: nowrap; }
+    .ch-fa-btns .ch-btn[hidden] { display: none; }
+    .ch-fullall .ch-sub { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 6px; font-size: 12px; color: rgba(200,221,232,0.8); }
+    .ch-btn.warn:disabled, .ch-fa-btns .ch-btn:disabled { opacity: 0.4; cursor: default; }
+    .ch-btn[data-act^="save"].on { border-color: #ff9a9a; color: #ff9a9a; }
+    .ch-actions .ch-btn { white-space: nowrap; }
+    .fd-actions .fd-danger { background: rgba(255,90,90,0.22); color: #fff; border-color: #ff8a8a; }
+    /* VR に対応していない端末では VR ボタンを出さない */
+    body.no-vr button.three-vr { display: none !important; }
+    /* 操作説明(左下): 端末にあるものだけ(VR は対応している時、PC は VR ヘッドセットのブラウザ以外) */
+    #vr-help .vh-vr { display: none; }
+    body.vr-ok #vr-help .vh-vr { display: block; }
+    body.vr-browser #vr-help .vh-pc { display: none; }
+    body:not(.vr-ok) #vr-help .vh-pc > div:first-child { margin-top: 0 !important; }
+    body.vr-browser:not(.vr-ok) #vr-help { display: none; }
+    /* 描画中の表示: 画面の下(クレジットの上)。VR ボタンがある時はその上、スマホは右下(左下はスティック) */
+    body.no-vr #load-progress { bottom: var(--credit-h, 34px); }
+    body.touch #load-progress {
+      left: auto; right: 8px; transform: none; bottom: var(--credit-h, 48px);
+      min-width: 0; width: min(260px, calc(100vw - 150px)); box-sizing: border-box;
+    }
+    body.topdown-open #load-progress { bottom: var(--td-bottom, 200px) !important; }
+    /* 作業モードのパネル(座標表示・アノテーション配置・モデル位置調整)は1か所にまとめて縦に並べる。
+       PC: 左の列(ボタン列・計測・速さ・操作説明)と右の設定パネルの間 / スマホ・タブレット: 上の帯の下(ボタン列の左) */
+    #work-panels {
+      position: fixed; z-index: 200; top: 80px; left: 392px; right: 358px; max-width: 540px;
+      display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: auto; pointer-events: none;
+    }
+    #work-panels > * { position: static !important; pointer-events: auto; max-width: none !important; min-width: 0 !important; box-sizing: border-box; }
+    #work-panels > [hidden] { display: none !important; }
+    body.touch #work-panels { top: var(--top-ui, 56px); left: 8px; right: 62px; max-width: none; max-height: 42vh; }
+    body.touch #work-panels > * { font-size: 10px !important; }
+    @media (orientation: landscape) and (max-height: 500px) {
+      body.touch #work-panels { right: 118px; max-height: 48vh; } /* 下半分は左手の移動操作用に空けておく */
+    }
+    /* 設定パネルの一番下: 初期値に戻す */
+    .cp-reset { margin: 4px 0 10px; padding-top: 10px; border-top: 1px solid rgba(0,200,255,0.2); }
+    .cp-reset .dbg-btn { display: block; width: 260px; padding: 8px 4px; }
+    body.touch #controls-body .cp-reset .dbg-btn, body.touch #controls-body .cp-reset .cp-note { width: 100% !important; box-sizing: border-box; }
+    #controls .cp-body .dbg-range-row { width: 260px; }
+    #controls .cp-body .dbg-range-row input[type="range"] { flex: 1; width: auto; min-width: 0; }
+    body.touch #controls .cp-body .dbg-range-row { width: 100%; }
+    @media (max-width: 560px) {
+      .ch-actions .ch-btn { flex: 1 0 auto; }
+    }
+    /* 描画中の表示: 段階名は折り返さず、詳細は1行に収める */
+    #load-progress .lp-stage { white-space: nowrap; flex: none; }
+    #load-progress .lp-detail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -1763,6 +1816,7 @@
   min-width: 240px;
 ">
   <button type="button" class="vh-toggle" id="vr-help-toggle">たたむ</button>
+  <div class="vh-sec vh-vr">
   <div style="margin-bottom:6px; letter-spacing:1px; font-weight:bold; font-size:14px;">VR CONTROLS</div>
   <div style="color:#c8dde8;">
     <b style="color:#ff6b35;">L Stick</b> 向いてる方向に移動<br>
@@ -1775,6 +1829,8 @@
     <b style="color:#ff6b35;">L Grip + X</b> 点を疎に(密度を下げる)<br>
     <b style="color:#ff6b35;">L Grip + Y</b> 点を密に(密度を上げる)
   </div>
+  </div>
+  <div class="vh-sec vh-pc">
   <div style="margin:10px 0 6px; letter-spacing:1px; font-weight:bold; font-size:14px;">PC CONTROLS</div>
   <div style="color:#c8dde8;">
     <b style="color:#ff6b35;">W A S D</b> 移動 / <b style="color:#ff6b35;">↑ ↓</b> 上昇・下降<br>
@@ -1782,6 +1838,7 @@
     <b style="color:#ff6b35;">右ドラッグ</b> 平行移動 / <b style="color:#ff6b35;">ホイール</b> カーソルの所へ<br>
     <b style="color:#ff6b35;">ダブルクリック</b> その地点へ移動<br>
     <b style="color:#ff6b35;">Shift</b> ゆっくり / <b style="color:#ff6b35;">?</b> 操作ガイド
+  </div>
   </div>
 </div>
 
@@ -1841,10 +1898,10 @@
         <b>いま</b>: 実際に描いている点の数とフレームレート。<br>
         起動画面で選んだレベルが、先読みする範囲と自動調整の出発点になります。
       </div>
-      <button type="button" class="lv-more" id="lv-more" aria-expanded="false">画質・点の密度を個別に調整 ▼</button>
+      <button type="button" class="lv-more" id="lv-more" aria-expanded="false">画質・点の密度などを個別に調整 ▼</button>
     </div>
     <div id="lv-advanced" hidden>
-      <div class="cp-note">ここを変えると表示レベルは「カスタム」になり、自動調整は止まります。</div>
+      <div class="cp-note">画質・点の密度・描く点の上限を変えると、表示レベルは「カスタム」になり、自動調整は止まります。描画解像度とメモリに残す量は、表示レベルを選び直すとその標準に戻ります。</div>
       <!-- 画質(内部の errorTarget 8〜80 を 1〜20 の段階で表示。値↑=高品質) -->
       <div class="ctrl-group">
         <div class="ctrl-label">
@@ -1872,6 +1929,61 @@
           全体が均一に薄くなるので、画質を下げた時のような粗さの段差は出ません。描画が追いつかずカクつく時に下げてください。
         </div>
       </div>
+      <!-- 描く点の上限(ポイント予算) -->
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span>描く点の上限</span>
+          <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-budget" aria-label="描く点の上限の説明">ⓘ</button>
+          <span id="budget-current" class="cp-val"></span>
+        </div>
+        <div class="dbg-grid cols-4 cp-grid" id="budget-btns">
+          <button type="button" class="dbg-btn" data-budget="0" aria-pressed="true">無制限</button>
+          <button type="button" class="dbg-btn" data-budget="1000000" aria-pressed="false">100万</button>
+          <button type="button" class="dbg-btn" data-budget="2000000" aria-pressed="false">200万</button>
+          <button type="button" class="dbg-btn" data-budget="4000000" aria-pressed="false">400万</button>
+        </div>
+        <div id="info-budget" class="ctrl-info-body" hidden>
+          1回の描画で描く点の数に上限を設けます(ポイント予算)。超える分は、細かいタイルから一時的に描かないようにします
+          (読み込んだデータは残るので、上限を戻すとすぐ元に戻ります)。重さを確実に抑えたい時に使います。
+          表示レベルごとに標準の上限があり、自動の時はレベルに合わせて変わります。
+        </div>
+      </div>
+      <!-- 描画解像度 -->
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span>描画解像度</span>
+          <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-dpr" aria-label="描画解像度の説明">ⓘ</button>
+        </div>
+        <div class="dbg-grid cp-grid"><button type="button" class="dbg-btn" id="dpr-cap-btn" aria-pressed="false">上限 2x(OFF)</button></div>
+        <div class="cp-valrow"><span id="dpr-info" class="cp-hint" style="margin-left:0"></span></div>
+        <div id="info-dpr" class="ctrl-info-body" hidden>
+          画面の細かさ(画素密度)に合わせて、何倍の解像度で描くかです。画面倍率が2を超えるスマホなどで「上限 2x」を ON にすると、
+          見た目はほとんど変わらずに描く画素の数を減らせ、GPU の負担と発熱を抑えられます。
+        </div>
+      </div>
+      <!-- メモリに残す量(キャッシュ上限) -->
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span>メモリに残す量</span>
+          <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-cache" aria-label="メモリに残す量の説明">ⓘ</button>
+        </div>
+        <div class="cp-sublabel">タイル数</div>
+        <div class="dbg-range-row">
+          <input id="cache-tiles-slider" type="range" min="300" max="8000" step="100" value="2000" aria-label="メモリに残すタイル数">
+          <span class="dbg-val"><span id="cache-tiles-val">2000</span> 枚</span>
+        </div>
+        <div class="cp-sublabel">容量</div>
+        <div class="dbg-range-row">
+          <input id="cache-bytes-slider" type="range" min="256" max="4096" step="128" value="1536" aria-label="メモリに残す容量">
+          <span class="dbg-val"><span id="cache-bytes-val">1536</span> MB</span>
+        </div>
+        <div id="info-cache" class="ctrl-info-body" hidden>
+          一度読み込んだタイルを、見えなくなってもメモリに残しておく量です(キャッシュ上限)。多いほど、振り返ったり戻ったりした時に
+          読み直さずにすみますが、メモリを多く使います。上限の90%までは捨てずに残します。<br>
+          初期値は、表示レベルの必要量と、この端末のメモリから決めた量(約<span id="cache-device-mb">-</span> MB)の大きい方です。
+          スマホで増やしすぎると、ページが落ちることがあります。
+        </div>
+      </div>
     </div>
 
     <!-- 点のサイズ: 大きさ(画面px)・隙間の埋め具合(%)・点の形 -->
@@ -1885,9 +1997,9 @@
       <div class="cp-valrow">
         <input id="size-num" type="number" min="0.5" max="50" step="0.5" value="2" class="cp-num" aria-label="点の大きさ(px)"> px
       </div>
-      <div class="cp-sublabel">隙間の埋め具合 <span id="gapfill-val" class="cp-mono">100%</span></div>
-      <input id="gapfill-slider" type="range" min="0" max="150" step="5" value="100" style="width:260px; accent-color:#00c8ff;" aria-label="隙間の埋め具合">
-      <div class="cp-valrow"><span class="cp-hint" style="margin-left:0">0%: 埋めない · 100%: 点どうしが接する · それ以上: 重ねて面らしく</span></div>
+      <div class="cp-sublabel">隙間の埋め具合 <span id="gapfill-val" class="cp-mono">0%</span></div>
+      <input id="gapfill-slider" type="range" min="0" max="150" step="5" value="0" style="width:260px; accent-color:#00c8ff;" aria-label="隙間の埋め具合">
+      <div class="cp-valrow"><span class="cp-hint" style="margin-left:0">0%(初期値): すべての点が同じ大きさ · 100%: 点どうしが接する · それ以上: 重ねて面らしく</span></div>
       <div class="cp-sublabel">点の形</div>
       <div class="dbg-grid cp-grid">
         <button type="button" class="dbg-btn" data-point-shape="cube" aria-pressed="true">立方体</button>
@@ -1896,7 +2008,8 @@
       <div id="info-size" class="ctrl-info-body" hidden>
         <b>大きさ</b>: 点のいちばん小さい時の大きさを、画面上のピクセル数で決めます。モデルの大きさや距離に関係なく同じ大きさに見えるので、
         遠くの点も消えません。<br>
-        <b>隙間の埋め具合</b>: 点の間に隙間が見える所だけ、点を大きくして面のように見せます。表示している点群の点の間隔と距離から、
+        <b>隙間の埋め具合</b>: 0%(初期値)では、すべての点を「大きさ」の同じピクセル数で描きます。
+        上げると、点の間に隙間が見える所だけ、点を大きくして面のように見せます。表示している点群の点の間隔と距離から、
         場所ごとに必要な大きさを自動で計算するので、大きくまばらなモデルでも近づいた所・離れた所のどちらにも効きます。
         まばらで隙間が目立つ時は上げ、ブロックのように見える時は下げてください。<br>
         <b>点の形</b>: 立方体は陰影で面の向きが分かりやすく、丸はなめらかに見えます。<br>
@@ -1999,7 +2112,7 @@
     <div class="cp-body" hidden>
     <div class="ctrl-group">
       <button type="button" class="dbg-btn cp-wide" id="open-chooser-btn">データの一覧を開く</button>
-      <div class="cp-note">データセットの切り替え、ダウンロード時間と保存状況の確認・削除、全部保存(オフライン用)、近くのデータを重ねて表示ができます(画面上のデータ名からも開けます)。</div>
+      <div class="cp-note">データセットの切り替え、ダウンロード時間と保存状況の確認・削除、保存(レベル分・完全保存)と削除、近くのデータを重ねて表示ができます(画面上のデータ名からも開けます)。</div>
     </div>
     <div class="ctrl-group" id="overlay-group">
       <div class="ctrl-label">
@@ -2043,87 +2156,77 @@
   <!-- ════════ 作業用(データ作成・確認向け) ════════ -->
   <section class="cp-sec" data-sec="work">
     <button type="button" class="cp-head" aria-expanded="false">
-      <span class="cp-title">作業用</span><span class="cp-sub">座標表示・CSV作成・性能モニタなど</span><span class="cp-chev">▾</span>
+      <span class="cp-title">作業用</span><span class="cp-sub">作業モード・CSVの行・保存データ・性能モニタ</span><span class="cp-chev">▾</span>
     </button>
     <div class="cp-body" hidden>
   <div class="ctrl-group" id="debug-group">
     <div class="ctrl-label">
       <span>作業モード</span>
-      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-debug" aria-label="作業用の説明">ⓘ</button>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-debug" aria-label="作業モードの説明">ⓘ</button>
     </div>
     <div class="dbg-grid">
       <button type="button" class="dbg-btn dbg-mode" data-mode="debug" aria-pressed="false">座標表示</button>
       <button type="button" class="dbg-btn dbg-mode" data-mode="annotate" aria-pressed="false">アノテーション配置</button>
-      
       <button type="button" class="dbg-btn dbg-mode" data-mode="heightadjust" aria-pressed="false">モデル位置調整</button>
     </div>
-
-    <div class="dbg-sub">CSV行をコピー</div>
+    <div id="info-debug" class="ctrl-info-body" hidden>
+      データセットや説明パネルを作る人、動作を確かめる人向けです。ふだん見るだけなら使いません。<br>
+      <b>座標表示</b>: カメラの位置と向き、datasets.csv の行を表示します。R で初期位置へ戻り、C で行をコピーします。<br>
+      <b>アノテーション配置</b>: 3m 先に黄色い立方体を出し、A で annotations.csv の行をコピーします
+      (このモード中だけ A は左移動ではなくコピー)。I J K L を押している間は立方体の周りを回ります。<br>
+      <b>モデル位置調整</b>: [ ] ; : , . で点群を動かして地図と合わせ、Y で補正込みの行をコピーします。<br>
+      説明のパネルは、ボタン列・設定パネルと重ならない場所にまとめて出ます。状態は URL(?debug=1 など)にも反映され、再読込しても続きます。
+    </div>
+  </div>
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>CSV の行をコピー</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-copy" aria-label="CSVの行をコピーの説明">ⓘ</button>
+    </div>
     <div class="dbg-grid cols-3">
       <button type="button" class="dbg-btn" id="copy-ds-btn" title="現在のカメラ位置・向きを datasets.csv 形式でコピー">datasets<br><span class="k">C</span></button>
       <button type="button" class="dbg-btn" id="copy-ann-btn" title="カメラ3m先(オービット中は立方体)を annotations.csv 形式でコピー">annotations<br><span class="k">A</span></button>
       <button type="button" class="dbg-btn" id="copy-adj-btn" title="モデル位置補正込みの datasets.csv 行をコピー">補正込み行<br><span class="k">Y</span></button>
     </div>
-
-    <div class="dbg-sub">プロファイル <span id="profile-current" class="dbg-val"></span></div>
-    <div class="dbg-grid cols-5" id="profile-btns">
-      <button type="button" class="dbg-btn" data-profile="auto" aria-pressed="true">Auto</button>
-      <button type="button" class="dbg-btn" data-profile="low" aria-pressed="false">Low</button>
-      <button type="button" class="dbg-btn" data-profile="mid" aria-pressed="false">Mid</button>
-      <button type="button" class="dbg-btn" data-profile="high" aria-pressed="false">High</button>
-      <button type="button" class="dbg-btn" data-profile="ultra" aria-pressed="false">Ultra</button>
+    <div id="info-copy" class="ctrl-info-body" hidden>
+      CSV にそのまま貼り付けられる形でコピーします。<b>datasets</b>: 今のカメラの位置と向き(初期位置)。
+      <b>annotations</b>: 3m 先(回るモードでは立方体)の説明パネルの設置点。<b>補正込み行</b>: モデル位置調整の補正を含めた datasets の行。
+      キー(C / A / Y)でも同じです。
     </div>
-
-    <div class="dbg-sub">ポイント予算(描画する点の上限) <span id="budget-current" class="dbg-val"></span></div>
-    <div class="dbg-grid cols-4" id="budget-btns">
-      <button type="button" class="dbg-btn" data-budget="0" aria-pressed="true">無制限</button>
-      <button type="button" class="dbg-btn" data-budget="1000000" aria-pressed="false">100万</button>
-      <button type="button" class="dbg-btn" data-budget="2000000" aria-pressed="false">200万</button>
-      <button type="button" class="dbg-btn" data-budget="4000000" aria-pressed="false">400万</button>
+  </div>
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>保存データ</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-preload" aria-label="保存データの説明">ⓘ</button>
     </div>
-
-    <div class="dbg-sub">描画解像度 <span id="dpr-info" class="dbg-val"></span></div>
-    <div class="dbg-grid">
-      <button type="button" class="dbg-btn" id="dpr-cap-btn" aria-pressed="false">上限 2x(OFF)</button>
-    </div>
-
-    <div class="dbg-sub">キャッシュ上限(展開済みタイル)</div>
-    <div class="dbg-range-row">
-      <input id="cache-tiles-slider" type="range" min="300" max="8000" step="100" value="2000">
-      <span class="dbg-val"><span id="cache-tiles-val">2000</span> 枚</span>
-    </div>
-    <div class="dbg-range-row" style="margin-top:4px;">
-      <input id="cache-bytes-slider" type="range" min="256" max="4096" step="128" value="1536">
-      <span class="dbg-val"><span id="cache-bytes-val">1536</span> MB</span>
-    </div>
-
-    <div class="dbg-sub">先読みデータ</div>
     <div id="preload-info">-</div>
     <div class="dbg-grid">
       <button type="button" class="dbg-btn" id="preload-redo-btn">再ダウンロード</button>
-      <button type="button" class="dbg-btn warn" id="preload-clear-btn">保存データを全削除</button>
+      <button type="button" class="dbg-btn warn" id="preload-clear-btn">すべて削除</button>
     </div>
-
-    <div class="dbg-sub">性能モニタ</div>
+    <div id="info-preload" class="ctrl-info-body" hidden>
+      今開いているデータセットの、この端末への保存状況です。<b>再ダウンロード</b>は保存データを捨てて取り直します(データが更新された時に)。
+      <b>すべて削除</b>は全データセットの保存したタイルを削除します(確認あり。端末の3Dデータは残ります)。
+      データセットごとの保存・削除は「データの一覧」でもできます。
+    </div>
+  </div>
+  <div class="ctrl-group">
+    <div class="ctrl-label">
+      <span>性能モニタ</span>
+      <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-perf" aria-label="性能モニタの説明">ⓘ</button>
+    </div>
     <pre id="perf-mon">計測中…</pre>
-
-    <div id="info-debug" class="ctrl-info-body" hidden>
-      データセットや説明パネルを作る人、動作を確かめる人向けの機能です。ふだん見るだけなら触る必要はありません。<br>
-      <b>座標表示</b>: 左上にカメラの位置と向きを表示します。R で初期位置へ戻り、C で datasets.csv の行をコピーします。<br>
-      <b>アノテーション配置</b>: 3m 先に黄色い立方体を出し、A で annotations.csv の行をコピーします
-      (このモード中だけ A は左移動ではなくコピー)。I J K L を押している間は立方体の周りを回ります。<br>
-      <b>モデル位置調整</b>: [ ] ; : , . で点群を動かして地図と合わせ、Y で補正込みの行をコピーします。<br>
-      <b>プロファイル</b>: 画質・同時ダウンロード数・キャッシュ上限をまとめて切り替えます(Auto は端末と回線から判定)。<br>
-      <b>ポイント予算</b>: 描く点の数に上限を設け、細かいタイルから一時的に隠します。見た目が変わるので既定は「無制限」。<br>
-      <b>描画解像度</b>: 画面倍率が2を超えるスマホなどで描画解像度を2倍までに抑え、GPU の負担を減らします。<br>
-      <b>キャッシュ上限</b>: 展開したタイルをメモリに残す量です。<br>
-      <b>先読みデータ</b>: 開いたデータセットのタイルを端末に保存し、次回からダウンロードを省きます。
-      データセットごとの削除は「データの一覧」からもできます。<br>
-      これらのボタンの状態は URL(?debug=1 など)にも反映され、再読込しても続きます。
+    <div id="info-perf" class="ctrl-info-body" hidden>
+      描画の解像度・描いている点の数・フレームレート・表示レベル・メモリ上のタイル(展開済み・保持)・読み直しの回数などです。
+      <b>読み直し</b>は一度読み込んだタイルをもう一度読み込んだ回数で、少ないほど移動中の欠けや待ちが減ります。
     </div>
   </div>
     </div>
   </section>
+  <div class="cp-reset">
+    <button type="button" class="dbg-btn" id="settings-reset-btn">設定を初期値に戻す</button>
+    <div class="cp-note" style="margin-top:6px">表示レベル・点のサイズ・表示するもの・視点・移動の速さ・表示倍率などを最初の状態に戻します(保存したデータ・重ねて表示・端末の3Dデータはそのまま)。</div>
+  </div>
   </div>
 </div>
 
@@ -2192,6 +2295,7 @@
 <div id="gsi-attribution" hidden>地理院タイル（標準地図・標高タイル（基盤地図情報数値標高モデル））を加工して作成<br>出典：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer">国土地理院</a></div>
 
 <!-- モデル位置調整モード(デバッグ欄 / ?heightadjust=1)のパネル。点群を動かしCSVの補正値を測る。 -->
+<div id="work-panels"></div>
 <div id="heightadjust-panel" hidden>
   <div style="font-weight:bold; color:#ffd24a; margin-bottom:4px;">モデル位置調整モード</div>
   <div style="margin-bottom:6px;">
@@ -2248,7 +2352,14 @@
         <div class="ch-level-desc" id="ch-level-desc"></div>
       </div>
       <div class="ch-sec">データセット</div>
-      <div class="ch-fullall"><button type="button" class="ch-btn" id="ch-full-all">すべて全部保存</button><span class="ch-sub" id="ch-full-all-info"></span></div>
+      <div class="ch-fullall">
+        <div class="ch-fa-btns">
+          <button type="button" class="ch-btn" id="ch-save-all-level" title="すべてのデータセットについて、今の表示レベルで見るのに必要なタイルを保存します">全データをレベル5で保存</button>
+          <button type="button" class="ch-btn" id="ch-save-all-full" title="すべてのデータセットの全タイルを保存します(オフラインでも全部見られます)">全データを完全保存</button>
+          <button type="button" class="ch-btn warn" id="ch-delete-all" title="この端末に保存したタイルをすべて削除します(確認あり)">すべて削除</button>
+        </div>
+        <div class="ch-sub" id="ch-full-all-info"></div>
+      </div>
       <div id="ch-sum" class="ch-sum" hidden></div>
       <div id="ch-datasets" class="ch-list"></div>
       <div class="ch-sec">端末の3Dデータ <span class="ch-sub">この端末に取り込んだ点群・3Dモデル</span></div>
@@ -2386,11 +2497,11 @@
 <div id="nav-toast" role="status" hidden></div>
 
 
-<!-- 全部保存の確認(件数・容量・時間・端末の空き容量) -->
+<!-- 保存・削除の確認(件数・容量・時間・端末の空き容量) -->
 <div id="fulldl-dialog" role="dialog" aria-modal="true" aria-labelledby="fd-title" hidden>
   <div class="fd-card">
-    <div class="fd-title" id="fd-title">全部保存しますか？</div>
-    <div class="fd-lead">すべてのタイルをこの端末に保存します。保存した後は通信せずに表示でき、オフラインでも全部見られます。</div>
+    <div class="fd-title" id="fd-title">保存しますか？</div>
+    <div class="fd-lead" id="fd-lead"></div>
     <div id="fd-body"></div>
     <div class="fd-actions">
       <button type="button" class="dbg-btn" id="fd-cancel">やめる</button>
@@ -2398,10 +2509,10 @@
     </div>
   </div>
 </div>
-<!-- 全部保存の進み具合(画面上部のデータ名の右。押すと一覧、× で中止) -->
+<!-- 保存の進み具合(画面上部のデータ名の右。押すと一覧、× で中止) -->
 <span id="fulldl-chip" class="fd-chip" hidden>
   <button type="button" class="fd-chip-main">⤓</button>
-  <button type="button" class="fd-chip-x" aria-label="全部保存を中止">×</button>
+  <button type="button" class="fd-chip-x" aria-label="保存を中止">×</button>
 </span>
 
 <!-- 端末の3Dデータ: 取り込みダイアログ。ファイルはこの端末の中だけで処理・保存する -->
@@ -4315,14 +4426,15 @@ function setGsiVisible(v) {
 }
 
 
-// VRボタン
+// VRボタン(VR に対応していない端末では出さない: body.no-vr)
+if (isVRBrowser) document.body.classList.add('vr-browser');
 const vrBtn = VRButton.createButton(renderer);
 vrBtn.className = 'three-vr';
 document.body.appendChild(vrBtn);
 (async () => {
   let ok = false;
   try { ok = !!(navigator.xr && await navigator.xr.isSessionSupported('immersive-vr')); } catch (e) { ok = false; }
-  if (!ok) document.body.classList.add('no-vr');
+  document.body.classList.add(ok ? 'vr-ok' : 'no-vr');
 })();
 
 // コントローラー（モデル表示用）。入力自体は session.inputSources から取得するため
@@ -4786,7 +4898,7 @@ renderer.xr.addEventListener('sessionend', applyRenderScale);
 // 点のサイズは「画面上のピクセル数」で指定する。モデルが大きくても遠くても同じように効く。
 // それだけだと、データの細かさの限界まで近づいた時に点の間に隙間が見えるので、末端の点群(それ以上細かい階層が無いもの)は
 // 「点の間隔」から画面上の間隔を求め、基本サイズより広い所は点を大きくして隙間を埋める(Potree の適応サイズの考え方を参考に自作)。
-let gapFillPct = 100;        // 隙間の埋め具合(%)。100 で点どうしがちょうど接する
+let gapFillPct = 0;          // 隙間の埋め具合(%)。0 ですべての点が同じ大きさ、100 で点どうしがちょうど接する
 let pointShape = 'cube';     // 点の形('cube' | 'round')
 const _pointDbSize = new THREE.Vector2();
 // 毎フレーム描画の前に呼ぶ(解像度・VR に合わせて uniform を更新)
@@ -8939,12 +9051,12 @@ if (sizeNum) {
 function updateSizeSlider() { applyPointUI(pointSize, false); }
 // 初期値: 前回の値。無ければ PC 2px / スマホ・タブレット 2.5px
 applyPointUI(Number(savedSettings.sizePx) || (isTouchDevice ? 2.5 : 2), false, { save: false });
-// 隙間の埋め具合(0〜150%)と点の形(立方体/丸)。前の「隙間を埋める」OFF は 0%、ON は 100% として引き継ぐ
+// 隙間の埋め具合(0〜150%。既定 0%)と点の形(立方体/丸)
 {
   const sl = document.getElementById('gapfill-slider');
   const val = document.getElementById('gapfill-val');
   const saved = Number(savedSettings.fillPct);
-  gapFillPct = Number.isFinite(saved) ? Math.max(0, Math.min(150, saved)) : (savedSettings.gapFill === false ? 0 : 100);
+  gapFillPct = Number.isFinite(saved) ? Math.max(0, Math.min(150, saved)) : 0; // 既定は 0%(すべての点が同じ大きさ)
   const show = () => { if (val) val.textContent = gapFillPct ? `${gapFillPct}%` : '0%(埋めない)'; };
   if (sl) {
     sl.value = String(gapFillPct);
@@ -9066,27 +9178,7 @@ document.getElementById('preload-redo-btn')?.addEventListener('click', () => {
 // 全削除: 全データセットの保存データ(Cache Storage)を削除する。表示中のタイルはそのまま。
 // window.confirm は埋め込み表示(サンドボックス)や一部のVR/キオスク用ブラウザで出せないため、
 // 「3秒以内にもう一度押すと削除」の2回押し方式で確認する。
-document.getElementById('preload-clear-btn')?.addEventListener('click', async (e) => {
-  const btn = e.currentTarget;
-  const origText = btn.dataset.origText || (btn.dataset.origText = btn.textContent);
-  if (btn.dataset.armed !== '1') {
-    btn.dataset.armed = '1';
-    btn.textContent = 'もう一度押すと削除';
-    clearTimeout(btn._armTimer);
-    btn._armTimer = setTimeout(() => { btn.dataset.armed = ''; btn.textContent = origText; }, 3000);
-    return;
-  }
-  clearTimeout(btn._armTimer);
-  btn.dataset.armed = '';
-  btn.disabled = true;
-  btn.textContent = '削除中…';
-  await clearAllPreloadData();
-  hidePreloadChip(); // 裏で先読み中だった場合、その進捗表示も消す
-  updatePreloadInfo(true);
-  btn.textContent = '✓ 削除しました';
-  setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 1200);
-  console.log('[先読み] 保存データを全削除しました');
-});
+document.getElementById('preload-clear-btn')?.addEventListener('click', () => openDeleteAllDialog());
 
 // ── ネットワーク/端末プロファイル(自動チューニング) ──
 // 回線・CPU・メモリから lod(画質1-20)/jobs(DL並列)/tiles・mb(LRU上限) を自動振り分け。
@@ -9400,7 +9492,7 @@ function levelAutoTick(dt) {
   more?.addEventListener('click', () => {
     adv.hidden = !adv.hidden;
     more.setAttribute('aria-expanded', adv.hidden ? 'false' : 'true');
-    more.textContent = adv.hidden ? '画質・点の密度を個別に調整 ▼' : '画質・点の密度を個別に調整 ▲';
+    more.textContent = adv.hidden ? '画質・点の密度などを個別に調整 ▼' : '画質・点の密度などを個別に調整 ▲';
   });
   // 個別の値を手で変えたらカスタム(プログラムからの変更は isTrusted=false なので除外)
   lodSlider.addEventListener('input', (e) => { if (e.isTrusted) markLevelCustom(); });
@@ -10181,8 +10273,8 @@ function showToast(text, ms = 2200) {
       「遅く・ふつう・速く」で全体の倍率を変えられます</dd>
     <dt>計測</dt><dd>左の道具から 座標・距離・高さ・面積・角度 を選び、点をクリック(タップ)。距離・面積はダブルクリック(ダブルタップ)か「完了」で確定</dd>
     <dt>表示レベル</dt><dd>1(軽い)〜10(きれい)。「自動」は動きの滑らかさを見て調整します</dd>
-    <dt>⌂</dt><dd>初期位置に戻る</dd><dt>上のデータ名</dt><dd>データの一覧(切り替え・ダウンロード時間・全部保存・近くのデータを重ねて表示)</dd>
-    <dt>全部保存</dt><dd>データの一覧で、すべてのタイルを端末に保存します(保存後はオフラインでも全部見られます)。保存中もデータを開けます</dd>` +
+    <dt>⌂</dt><dd>初期位置に戻る</dd><dt>上のデータ名</dt><dd>データの一覧(切り替え・ダウンロード時間・保存・近くのデータを重ねて表示)</dd>
+    <dt>レベルNで保存 / 完全保存</dt><dd>データの一覧で、そのレベルで見る分 / すべてのタイルを端末に保存します(完全保存はオフラインでも全部見られます)。保存中もデータを開けます</dd>` +
     (isTouchDevice ? '<dt>⚙</dt><dd>設定(表示レベル・点のサイズ・表示するもの など)</dd>' : '') + `</dl>`;
   const vrHtml = `
     <h3>VR</h3>
@@ -10649,7 +10741,8 @@ function renderChooser() {
         <div class="ch-actions">
           <button type="button" class="ch-btn primary" data-act="open">開く</button>
           <button type="button" class="ch-btn" data-act="overlay" hidden title="今のデータに重ねて一緒に表示します">重ねる</button>
-          <button type="button" class="ch-btn" data-act="full" disabled title="すべてのタイルをこの端末に保存します(保存後はオフラインでも全部見られます)">全部保存</button>
+          <button type="button" class="ch-btn" data-act="save-level" disabled title="今の表示レベルで見るのに必要なタイル(離れて見る分)を、この端末に保存します">レベル5で保存</button>
+          <button type="button" class="ch-btn" data-act="save-full" disabled title="すべてのタイルをこの端末に保存します(保存後はオフラインでも全部見られます)">完全保存</button>
           <button type="button" class="ch-btn" data-act="redo" title="保存データを消して、サーバーから取り直して開きます">再読み込み</button>
           <button type="button" class="ch-btn warn" data-act="delete" title="この端末に保存したデータを削除します">削除</button>
         </div>`;
@@ -10658,7 +10751,7 @@ function renderChooser() {
     const info = dsInfo.get(ds.id);
     const badges = (ds.id === currentDataset ? '<span class="ch-badge now">表示中</span>' : '') +
                    (overlayHas(ds.id) ? '<span class="ch-badge ov">重ねて表示中</span>' : '') +
-                   (fullDlIsComplete(ds.id) ? '<span class="ch-badge full">全部保存済み</span>' : '') +
+                   (fullDlIsComplete(ds.id) ? '<span class="ch-badge full">完全保存済み</span>' : '') +
                    (ds.id === last && ds.id !== currentDataset ? '<span class="ch-badge">前回</span>' : '');
     card.querySelector('.ch-name').innerHTML = `${escapeHtml(ds.label ? `${ds.id}: ${ds.label}` : ds.id)}${badges}`;
     card.querySelector('.ch-info').innerHTML = dsCardInfoHtml(ds.id);
@@ -10678,22 +10771,30 @@ function renderChooser() {
       card.querySelector('.ch-info').insertAdjacentHTML('beforeend',
         `<div class="ch-line ch-dist">${escapeHtml(overlayLabel(currentDataset))}から ${fmtDistance(dist)}${dist > OVERLAY_MAX_M ? '(離れているため重ねられません)' : ''}</div>`);
     }
-    // 全部保存: ボタン(保存中は中止)・進み具合
-    const fst = fullDlState(ds.id), fe = fullDlEstimate(ds.id);
-    const fb = card.querySelector('[data-act="full"]');
-    if (fb) {
-      fb.hidden = (fullDlIsComplete(ds.id) && !fst) || !!offlineBlocked || !!(info && info.cache === false);
-      fb.disabled = !fe && !fst;
-      fb.textContent = fst === 'running' ? '保存を中止' : fst === 'queued' ? '取りやめる' : '全部保存';
-      fb.classList.toggle('on', !!fst);
+    // 保存: 「レベルNで保存」「完全保存」(保存中はそのボタンが「保存を中止」)・進み具合
+    const job = dlJob(ds.id), fst = fullDlState(ds.id), Ls = levelState.level;
+    const fullDone = fullDlIsComplete(ds.id), lvDone = fullDone || levelSaveIsComplete(ds.id, Ls);
+    const canStore = !offlineBlocked && !(info && info.cache === false);
+    const sbl = card.querySelector('[data-act="save-level"]'), sbf = card.querySelector('[data-act="save-full"]');
+    if (sbl) {
+      sbl.hidden = !canStore || (job ? job.mode !== 'level' : lvDone);
+      sbl.disabled = !job && !saveEstimate(ds.id, 'level', Ls);
+      sbl.textContent = job && job.mode === 'level' ? (fst === 'running' ? '保存を中止' : '取りやめる') : `レベル${Ls}で保存`;
+      sbl.classList.toggle('on', !!(job && job.mode === 'level'));
+    }
+    if (sbf) {
+      sbf.hidden = !canStore || (job ? job.mode !== 'full' : fullDone);
+      sbf.disabled = !job && !fullDlEstimate(ds.id);
+      sbf.textContent = job && job.mode === 'full' ? (fst === 'running' ? '保存を中止' : '取りやめる') : '完全保存';
+      sbf.classList.toggle('on', !!(job && job.mode === 'full'));
     }
     if (fst === 'running') {
       const c = fullDl.cur, pct = fullDlPct(c);
-      card.querySelector('.ch-info').insertAdjacentHTML('beforeend', `<div class="ch-line ch-full"><span class="fd-bar"><i style="width:${pct}%"></i></span>全部保存中 ` +
+      card.querySelector('.ch-info').insertAdjacentHTML('beforeend', `<div class="ch-line ch-full"><span class="fd-bar"><i style="width:${pct}%"></i></span>${dlName(c)}中 ` +
         (c.phase === 'list' ? '(タイル一覧を確認中)' : `${pct}%(${fmtInt(c.done)}/${fmtInt(c.total)}件 · ${formatBytes(c.bytes)})`) +
         (fullDlPaused() ? ' · 開いたデータの読み込みを優先中' : '') + '</div>');
     } else if (fst === 'queued') {
-      card.querySelector('.ch-info').insertAdjacentHTML('beforeend', '<div class="ch-line ch-full">全部保存の順番待ち</div>');
+      card.querySelector('.ch-info').insertAdjacentHTML('beforeend', `<div class="ch-line ch-full">${dlName(job)}の順番待ち</div>`);
     }
   }
   renderChooserOverlaySum();
@@ -10772,7 +10873,11 @@ onLevelUiChange(() => { if (chooser.open) renderChooser(); });
     const id = card.dataset.id;
     const act = e.target.closest('button')?.dataset.act || 'open';
     if (act === 'delete') { e.stopPropagation(); armDelete(e.target.closest('button'), () => deletePreloadData(id)); return; }
-    if (act === 'full') { e.stopPropagation(); if (fullDlState(id)) fullDlCancel(id); else openFullDlDialog([id]); return; }
+    if (act === 'save-level' || act === 'save-full') {
+      e.stopPropagation();
+      if (dlJob(id)) fullDlCancel(id); else openSaveDialog([id], act === 'save-full' ? 'full' : 'level');
+      return;
+    }
     if (act === 'overlay') { e.stopPropagation(); if (overlayHas(id)) overlayRemove(id); else overlayAdd(id); renderChooser(); return; }
     if (card.classList.contains('blocked') && act === 'open') { showToast('オフラインのため開けません'); return; }
     if (act === 'redo') { fullDlCancel(id); chooseDataset(id, { force: true }); }
@@ -10803,20 +10908,26 @@ onLevelUiChange(() => { if (chooser.open) renderChooser(); });
 })();
 
 
-// ═══════════════ 全部保存(フルダウンロード) ═══════════════
-// 一覧の「全部保存」「すべて全部保存」から、確認のあと、そのデータセットの全タイルをこの端末に保存する。
+// ═══════════════ 保存(この端末へのダウンロード) ═══════════════
+// 一覧の各データ: 「レベルNで保存」(今の表示レベルで見るのに必要な分)・「完全保存」(全タイル。オフラインでも全部見られる)。
+// 一覧の上: 「全データをレベルNで保存」「全データを完全保存」「すべて削除」。どれも確認してから始める。
 // ・保存中にデータを開いた時は、開いたデータの読み込み(読込画面・先読み)を優先して止め、終わったら裏で続ける
 //   (見ている間は同時ダウンロード数を 2 に抑える)。一覧を開いている間は通常の速さ。
 // ・途中で止めても保存した分は残り、もう一度押すと続きから保存する。
-// ・全部そろったら、その記録をレベル10(すべてのタイル)の先読み済みとして残す → 次からはすぐ開ける。
+// ・保存し終えたら、そのレベル(完全保存はレベル10=すべてのタイル)を先読み済みとして記録 → 次からはすぐ開ける。
 const fullDl = { queue: [], cur: null, running: false, stopAll: false, lastEmit: 0, slowMs: 0, emitTimer: null };
+// job = { id, mode: 'level' | 'full', level }
+function dlJob(id) {
+  if (fullDl.cur && fullDl.cur.id === id) return fullDl.cur;
+  return fullDl.queue.find(j => j.id === id) || null;
+}
 function fullDlState(id) {
   if (fullDl.cur && fullDl.cur.id === id) return 'running';
-  if (fullDl.queue.includes(id)) return 'queued';
-  return null;
+  return fullDl.queue.some(j => j.id === id) ? 'queued' : null;
 }
 function fullDlActive() { return !!(fullDl.cur || fullDl.queue.length); }
-// 残り(未保存)の見積り。一覧の情報(dsInfo)から
+function dlName(job) { return job.mode === 'full' ? '完全保存' : `レベル${job.level}で保存`; }
+// 完全保存の残り(未保存)の見積り
 function fullDlEstimate(id) {
   const info = dsInfo.get(id);
   if (!info || !info.hist || !info.total) return null;
@@ -10827,12 +10938,27 @@ function fullDlEstimate(id) {
   const sec = bytes != null ? bytes / net.bps + Math.ceil(remain / PRELOAD_CONCURRENCY) * net.rtt : null;
   return { total: info.total, remain, bytes, sec, implicit: !!info.implicit, canStore: info.cache !== false };
 }
+// 保存の種類ごとの見積り(level はそのレベルで見るのに必要な分)
+function saveEstimate(id, mode, L) {
+  if (mode === 'full') return fullDlEstimate(id);
+  const info = dsInfo.get(id);
+  const e = estimateForLevel(id, L);
+  if (!info || !e) return null;
+  return { total: e.need, remain: e.add, bytes: e.bytes, sec: e.sec, implicit: !!info.implicit, canStore: info.cache !== false };
+}
 function fullDlIsComplete(id) {
   const e = fullDlEstimate(id);
   return !!(e && e.total > 0 && e.remain === 0);
 }
-function fullDlEnqueue(ids) {
-  for (const id of ids) if (!fullDlState(id)) fullDl.queue.push(id);
+function levelSaveIsComplete(id, L) {
+  const e = saveEstimate(id, 'level', L);
+  return !!(e && e.total > 0 && e.remain === 0);
+}
+function fullDlEnqueue(jobs) {
+  for (const j of jobs) {
+    if (dlJob(j.id)) continue;
+    fullDl.queue.push({ id: j.id, mode: j.mode === 'full' ? 'full' : 'level', level: j.level || levelState.level });
+  }
   fullDl.stopAll = false;
   if (!fullDl.running) fullDlRun();
   fullDlEmit(true);
@@ -10844,7 +10970,7 @@ function fullDlCancel(id) {
     fullDl.stopAll = true;
     if (fullDl.cur) fullDl.cur.stop = true;
   } else {
-    fullDl.queue = fullDl.queue.filter(x => x !== id);
+    fullDl.queue = fullDl.queue.filter(j => j.id !== id);
     if (fullDl.cur && fullDl.cur.id === id) fullDl.cur.stop = true;
   }
   fullDlEmit(true);
@@ -10862,21 +10988,21 @@ async function fullDlRun() {
   fullDl.running = true;
   try {
     while (fullDl.queue.length && !fullDl.stopAll) {
-      const id = fullDl.queue.shift();
-      const cur = fullDl.cur = { id, total: 0, done: 0, bytes: 0, count: 0, failed: 0, stop: false, phase: 'list' };
+      const job = fullDl.queue.shift();
+      const cur = fullDl.cur = { ...job, total: 0, done: 0, bytes: 0, count: 0, failed: 0, stop: false, phase: 'list' };
       fullDlEmit(true);
       const r = await fullDlOne(cur);
       fullDl.cur = null;
-      const name = overlayLabel(id);
-      if (r.reason === 'ok') showToast(`「${name}」を全部保存しました(${fmtInt(r.total)}件)`);
-      else if (r.reason === 'quota') { showToast('端末の空き容量が足りないため、全部保存を中止しました'); fullDl.queue.length = 0; }
-      else if (r.reason === 'fail') showToast(`「${name}」の一部(${fmtInt(r.failed)}件)を保存できませんでした。もう一度「全部保存」を押すと続きから保存します`);
+      const name = overlayLabel(cur.id), what = dlName(cur);
+      if (r.reason === 'ok') showToast(`「${name}」を${what}しました(${fmtInt(r.total)}件)`);
+      else if (r.reason === 'quota') { showToast('端末の空き容量が足りないため、保存を中止しました'); fullDl.queue.length = 0; }
+      else if (r.reason === 'fail') showToast(`「${name}」の一部(${fmtInt(r.failed)}件)を保存できませんでした。もう一度押すと続きから保存します`);
       else if (r.reason === 'stop') { /* 中止(下でまとめて知らせる) */ }
-      else showToast(`「${name}」を全部保存できませんでした(${r.reason === 'net' ? '通信できません' : r.reason === 'nostore' ? 'この環境では端末に保存できません' : 'タイル一覧を取得できません'})`);
-      dsInfoInvalidate(id);
-      refreshDsInfo(id, { allowNetwork: false });
+      else showToast(`「${name}」を保存できませんでした(${r.reason === 'net' ? '通信できません' : r.reason === 'nostore' ? 'この環境では端末に保存できません' : 'タイル一覧を取得できません'})`);
+      dsInfoInvalidate(cur.id);
+      refreshDsInfo(cur.id, { allowNetwork: false });
     }
-    if (fullDl.stopAll) showToast('全部保存を中止しました(保存した分は残っています)');
+    if (fullDl.stopAll) showToast('保存を中止しました(保存した分は残っています)');
   } finally {
     fullDl.running = false;
     fullDl.cur = null;
@@ -10891,7 +11017,6 @@ async function fullDlOne(cur) {
   try {
     await store.cacheReady;
     if (!store.cache) return { reason: 'nostore' };
-    // 開いたデータの読み込み中は待つ
     while (fullDlPaused() && !stopped()) await sleep(300);
     const rootUrl = tilesetUrl(id);
     let rootBuf = await store.storedRoot();
@@ -10906,7 +11031,9 @@ async function fullDlOne(cur) {
     if (stopped()) return { reason: 'stop' };
     if (!cat || !cat.tiles) return { reason: 'list' };
     for (const u of await store.storedUrlSet()) store.known.add(u);
-    const urls = cat.tiles.map(t => t[0]);
+    // 完全保存はすべて、レベル保存はそのレベルで先読みする分(離れて見る分のタイル)
+    const T = cur.mode === 'full' ? -Infinity : preloadThreshold(cur.level);
+    const urls = cat.tiles.filter(([, pg]) => pg >= T).map(t => t[0]);
     const todo = urls.filter(u => !store.known.has(u));
     cur.total = urls.length;
     cur.done = urls.length - todo.length;
@@ -10929,21 +11056,23 @@ async function fullDlOne(cur) {
     }
     while (active > 0) await sleep(25);
     const complete = !stopped() && !store.quotaExceeded && !store.storeDisabled && cur.failed === 0 && cur.done >= cur.total;
+    const L = cur.mode === 'full' ? 10 : cur.level;
     const man = await store.readManifest() || {};
     await store.writeManifest({
       ...man, v: 2, datasetId: id,
       bytes: (man.bytes || 0) + cur.bytes, dlBytes: (man.dlBytes || 0) + cur.bytes, dlCount: (man.dlCount || 0) + cur.count,
-      doneLevel: complete ? 10 : (man.doneLevel || 0), full: complete || !!man.full,
+      doneLevel: complete ? Math.max(man.doneLevel || 0, L) : (man.doneLevel || 0),
+      full: (complete && cur.mode === 'full') || !!man.full,
       implicit: cat.implicit, savedAt: Date.now(),
     });
     const reason = store.quotaExceeded ? 'quota' : stopped() ? 'stop' : cur.failed ? 'fail' : 'ok';
     return { reason, total: cur.total, failed: cur.failed };
   } catch (e) {
-    console.warn('[全部保存] 失敗', e);
+    console.warn('[保存] 失敗', e);
     return { reason: 'list' };
   }
 }
-// 進み具合の表示(一覧・上のバーの小さな表示)。間引いて更新
+// 進み具合の表示(一覧・上のデータ名の右)。間引いて更新
 function fullDlEmit(force) {
   const now = performance.now();
   if (!force && now - fullDl.lastEmit < 250) {
@@ -10967,87 +11096,142 @@ function renderFullDlChip() {
   const n = (cur ? 1 : 0) + fullDl.queue.length;
   const main = chip.querySelector('.fd-chip-main');
   const pct = cur ? (cur.phase === 'list' ? '準備中' : `${fullDlPct(cur)}%`) : '待機';
-  const paused = fullDlPaused() ? '(表示を優先中)' : '';
-  main.textContent = isTouchDevice ? `⤓ ${pct}` : `⤓ 全部保存中 ${cur ? overlayLabel(cur.id) : ''} ${pct}${n > 1 ? `(残り${n}件)` : ''}`;
-  main.title = `全部保存中: ${cur ? `${overlayLabel(cur.id)} ${fmtInt(cur.done)}/${fmtInt(cur.total)}件` : ''}${n > 1 ? ` · ほか${n - 1}件が順番待ち` : ''}${paused} — 押すとデータの一覧`;
+  main.textContent = isTouchDevice ? `⤓ ${pct}` : `⤓ ${cur ? `${overlayLabel(cur.id)}を${dlName(cur)}中` : '保存の準備中'} ${pct}${n > 1 ? `(残り${n}件)` : ''}`;
+  main.title = `保存中: ${cur ? `${overlayLabel(cur.id)}(${dlName(cur)}) ${fmtInt(cur.done)}/${fmtInt(cur.total)}件` : ''}` +
+    `${n > 1 ? ` · ほか${n - 1}件が順番待ち` : ''}${fullDlPaused() ? '(開いたデータの読み込みを優先中)' : ''} — 押すとデータの一覧`;
 }
-// 確認ダイアログ
-async function openFullDlDialog(ids) {
+
+// ── 確認ダイアログ(保存・削除で共用) ──
+function openDlDialog({ title, lead, bodyHtml, okText, warn = false, onOk, needBytes = null }) {
   const dlg = document.getElementById('fulldl-dialog');
   if (!dlg) return;
+  document.getElementById('fd-title').textContent = title;
+  document.getElementById('fd-lead').textContent = lead;
+  document.getElementById('fd-body').innerHTML = bodyHtml;
+  const ok = document.getElementById('fd-ok');
+  ok.textContent = okText;
+  ok.classList.toggle('fd-danger', warn);
+  ok.disabled = false;
+  dlg._onOk = onOk;
+  dlg.hidden = false;
+  ok.focus();
+  const space = document.getElementById('fd-space');
+  if (!space) return;
+  (async () => {
+    try {
+      const est = navigator.storage && navigator.storage.estimate ? await navigator.storage.estimate() : null;
+      if (est && est.quota) {
+        const free = Math.max(0, est.quota - (est.usage || 0));
+        space.textContent = `端末の空き 約${formatBytes(free)}(このページの使用 ${formatBytes(est.usage || 0)} / 上限 ${formatBytes(est.quota)})`;
+        if (needBytes != null && needBytes > free * 0.95) {
+          space.classList.add('fd-warn');
+          space.textContent += ' — 空き容量が足りません。不要なデータを削除してから保存してください';
+          ok.disabled = true;
+        } else space.classList.remove('fd-warn');
+      } else space.textContent = 'この端末では空き容量を確認できません';
+    } catch (e) { space.textContent = 'この端末では空き容量を確認できません'; }
+  })();
+}
+function closeFullDlDialog() {
+  const dlg = document.getElementById('fulldl-dialog');
+  if (dlg) { dlg.hidden = true; dlg._onOk = null; }
+}
+// 保存の確認(ids: 対象のデータセット、mode: 'level' | 'full')
+function openSaveDialog(ids, mode) {
+  const L = levelState.level;
   const rows = [];
   let n = 0, bytes = 0, sec = 0, unknownBytes = false, implicit = false;
   for (const id of ids) {
-    const e = fullDlEstimate(id);
-    if (!e || !e.canStore || e.remain <= 0 || fullDlState(id)) continue;
+    const e = saveEstimate(id, mode, L);
+    if (!e || !e.canStore || e.remain <= 0 || dlJob(id)) continue;
     rows.push({ id, e });
     n += e.remain;
     if (e.bytes == null) unknownBytes = true; else bytes += e.bytes;
     if (e.sec != null) sec += e.sec;
     if (e.implicit) implicit = true;
   }
-  if (!rows.length) { showToast('保存するものはありません(すべて保存済みか、確認中です)'); return; }
-  const body = document.getElementById('fd-body');
-  body.innerHTML = `
-    <div class="fd-rows">${rows.map(({ id, e }) => `<div class="fd-row"><span class="fd-name">${escapeHtml(overlayLabel(id))}</span>
-      <span class="fd-meta">未保存 ${fmtInt(e.remain)}件 / 全${fmtInt(e.total)}件 · ${e.bytes != null ? `約${formatBytes(e.bytes)}` : '容量不明'}</span></div>`).join('')}</div>
-    <div class="fd-total">合計 <b>${fmtInt(n)}件</b> · <b>${unknownBytes && !bytes ? '容量不明' : `約${formatBytes(bytes)}${unknownBytes ? ' 以上' : ''}`}</b> · 時間の目安 <b>${fmtDuration(sec || null)}</b></div>
-    <div class="fd-space" id="fd-space">端末の空き容量を確認中…</div>
-    <div class="fd-note">保存中もデータを開いて見られます(見ている間は表示を優先して、裏で続けます)。
-      進み具合は画面上部に出て、そこからいつでも中止できます。止めても保存した分は残り、もう一度押すと続きから保存します。
-      ${implicit ? '<br>一部のデータは、見ている時にだけ取得する作りのため、全部保存の対象外です。' : ''}</div>`;
-  const ok = document.getElementById('fd-ok');
-  ok.disabled = false;
-  dlg.hidden = false;
-  ok.focus();
-  dlg._ids = rows.map(r => r.id);
-  const space = document.getElementById('fd-space');
-  try {
-    const est = navigator.storage && navigator.storage.estimate ? await navigator.storage.estimate() : null;
-    if (est && est.quota) {
-      const free = Math.max(0, est.quota - (est.usage || 0));
-      space.textContent = `端末の空き 約${formatBytes(free)}(このページの使用 ${formatBytes(est.usage || 0)} / 上限 ${formatBytes(est.quota)})`;
-      if (bytes > free * 0.95) {
-        space.classList.add('fd-warn');
-        space.textContent += ' — 空き容量が足りません。不要なデータを削除してから保存してください';
-        ok.disabled = true;
-      } else space.classList.remove('fd-warn');
-    } else space.textContent = 'この端末では空き容量を確認できません';
-  } catch (e) { space.textContent = 'この端末では空き容量を確認できません'; }
+  if (!rows.length) { showToast('保存するものはありません(保存済みか、確認中です)'); return; }
+  const all = ids.length > 1;
+  const what = mode === 'full' ? '完全保存' : `レベル${L}で保存`;
+  openDlDialog({
+    title: `${all ? '全データを' : ''}${what}しますか？`,
+    lead: mode === 'full'
+      ? 'すべてのタイルをこの端末に保存します。保存した後は通信せずに表示でき、オフラインでも全部見られます。'
+      : `表示レベル${L}で見るのに必要なタイル(離れて見る分)をこの端末に保存します。開いた時にすぐ表示でき、近くの細部は見ている間に取得します。`,
+    bodyHtml: `
+      <div class="fd-rows">${rows.map(({ id, e }) => `<div class="fd-row"><span class="fd-name">${escapeHtml(overlayLabel(id))}</span>
+        <span class="fd-meta">未保存 ${fmtInt(e.remain)}件 / ${fmtInt(e.total)}件 · ${e.bytes != null ? `約${formatBytes(e.bytes)}` : '容量不明'}</span></div>`).join('')}</div>
+      <div class="fd-total">合計 <b>${fmtInt(n)}件</b> · <b>${unknownBytes && !bytes ? '容量不明' : `約${formatBytes(bytes)}${unknownBytes ? ' 以上' : ''}`}</b> · 時間の目安 <b>${fmtDuration(sec || null)}</b></div>
+      <div class="fd-space" id="fd-space">端末の空き容量を確認中…</div>
+      <div class="fd-note">保存中もデータを開いて見られます(見ている間は表示を優先して、裏で続けます)。
+        進み具合は画面上部に出て、そこからいつでも中止できます。止めても保存した分は残り、もう一度押すと続きから保存します。
+        ${implicit ? '<br>一部のデータは、見ている時にだけ取得する作りのため、保存の対象外です。' : ''}</div>`,
+    okText: '保存を始める',
+    needBytes: unknownBytes ? null : bytes,
+    onOk: () => {
+      // 保存したデータを、ブラウザが容量不足の時に自動で消さないよう求める(対応ブラウザのみ。確認が出ることがあります)
+      try { navigator.storage?.persist?.().then(ok => console.log('[保存] 永続保存:', ok)); } catch (e) {}
+      fullDlEnqueue(rows.map(r => ({ id: r.id, mode, level: L })));
+    },
+  });
 }
-function closeFullDlDialog() {
-  const dlg = document.getElementById('fulldl-dialog');
-  if (dlg) dlg.hidden = true;
+// すべて削除の確認(保存したタイルだけ。端末の3Dデータは残す)
+function openDeleteAllDialog() {
+  const rows = [];
+  let bytes = 0, unknown = false;
+  for (const ds of DATASETS) {
+    const info = dsInfo.get(ds.id);
+    if (!info || !info.storedCount) continue;
+    const b = info.avgBytes ? info.storedCount * info.avgBytes : null;
+    rows.push({ id: ds.id, count: info.storedCount, b });
+    if (b == null) unknown = true; else bytes += b;
+  }
+  openDlDialog({
+    title: '保存したタイルをすべて削除しますか？',
+    lead: 'この端末に保存した、すべてのデータセットのタイルを削除します。端末の3Dデータ(取り込んだファイル)は残ります。次に開く時は、もう一度ダウンロードします。',
+    bodyHtml: rows.length
+      ? `<div class="fd-rows">${rows.map(r => `<div class="fd-row"><span class="fd-name">${escapeHtml(overlayLabel(r.id))}</span>
+          <span class="fd-meta">${fmtInt(r.count)}件 · ${r.b != null ? `約${formatBytes(r.b)}` : '容量不明'}</span></div>`).join('')}</div>
+         <div class="fd-total">合計 <b>${unknown && !bytes ? '容量不明' : `約${formatBytes(bytes)}${unknown ? ' 以上' : ''}`}</b> を削除</div>
+         <div class="fd-space" id="fd-space">端末の空き容量を確認中…</div>`
+      : '<div class="fd-total">一覧で確認できた保存データはありません(確認中のものや、以前の記録が残っている場合は削除します)。</div><div class="fd-space" id="fd-space"></div>',
+    okText: '削除する',
+    warn: true,
+    onOk: async () => {
+      await clearAllPreloadData();
+      if (typeof hidePreloadChip === 'function') hidePreloadChip();
+      if (typeof updatePreloadInfo === 'function') updatePreloadInfo(true);
+      for (const ds of DATASETS) refreshDsInfo(ds.id, { allowNetwork: false });
+      showToast('保存したタイルをすべて削除しました');
+    },
+  });
 }
-(function setupFullDl() {
+(function setupSaveDl() {
   const dlg = document.getElementById('fulldl-dialog');
   document.getElementById('fd-cancel')?.addEventListener('click', closeFullDlDialog);
   dlg?.addEventListener('click', (e) => { if (e.target === dlg) closeFullDlDialog(); });
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && dlg && !dlg.hidden) { e.stopPropagation(); closeFullDlDialog(); } }, true);
   document.getElementById('fd-ok')?.addEventListener('click', () => {
-    const ids = (dlg && dlg._ids) || [];
+    const fn = dlg && dlg._onOk;
     closeFullDlDialog();
-    if (!ids.length) return;
-    // 保存したデータをブラウザが容量不足の時に自動で消さないよう求める(対応ブラウザのみ。確認が出ることがあります)
-    try { navigator.storage?.persist?.().then(ok => console.log('[全部保存] 永続保存:', ok)); } catch (e) {}
-    fullDlEnqueue(ids);
+    if (fn) fn();
   });
-  // 一覧の「すべて全部保存」
-  document.getElementById('ch-full-all')?.addEventListener('click', (e) => {
-    const btn = e.currentTarget;
-    if (fullDlActive()) {
-      // 保存中は「全部保存を中止」(もう一度押すと中止)
-      if (btn.dataset.armed !== '1') {
-        btn.dataset.armed = '1'; btn.textContent = 'もう一度押すと中止';
-        clearTimeout(btn._t); btn._t = setTimeout(() => { btn.dataset.armed = ''; renderChooser(); }, 3000);
-        return;
-      }
-      btn.dataset.armed = '';
-      fullDlCancel(null);
-      return;
+  // 一覧の上: 全データをレベルNで保存 / 全データを完全保存(保存中は「保存を中止」)/ すべて削除
+  const armStop = (btn) => {
+    if (btn.dataset.armed !== '1') {
+      btn.dataset.armed = '1'; btn.textContent = 'もう一度押すと中止';
+      clearTimeout(btn._t); btn._t = setTimeout(() => { btn.dataset.armed = ''; renderChooser(); }, 3000);
+      return false;
     }
-    openFullDlDialog(DATASETS.map(d => d.id));
+    btn.dataset.armed = '';
+    return true;
+  };
+  document.getElementById('ch-save-all-level')?.addEventListener('click', (e) => {
+    if (fullDlActive()) { if (armStop(e.currentTarget)) fullDlCancel(null); return; }
+    openSaveDialog(DATASETS.map(d => d.id), 'level');
   });
+  document.getElementById('ch-save-all-full')?.addEventListener('click', () => openSaveDialog(DATASETS.map(d => d.id), 'full'));
+  document.getElementById('ch-delete-all')?.addEventListener('click', () => openDeleteAllDialog());
   // 画面上部の小さな表示: 押すと一覧、× は2回押しで中止
   const chip = document.getElementById('fulldl-chip');
   chip?.querySelector('.fd-chip-main')?.addEventListener('click', () => { if (!loadingDataset) showChooser({ boot: false }); });
@@ -11055,7 +11239,7 @@ function closeFullDlDialog() {
     const x = e.currentTarget;
     if (x.dataset.armed !== '1') {
       x.dataset.armed = '1'; x.textContent = '中止?';
-      showToast('もう一度押すと全部保存を中止します');
+      showToast('もう一度押すと保存を中止します');
       clearTimeout(x._t); x._t = setTimeout(() => { x.dataset.armed = ''; x.textContent = '×'; }, 3000);
       return;
     }
@@ -11063,34 +11247,48 @@ function closeFullDlDialog() {
     fullDlCancel(null);
   });
 })();
-// 一覧の「全部保存」の行(すべて)
+// 一覧の上の行(全データの保存・すべて削除)
 function renderChooserFullAll() {
-  const btn = document.getElementById('ch-full-all'), info = document.getElementById('ch-full-all-info');
-  if (!btn || !info) return;
-  let n = 0, bytes = 0, sec = 0, pending = 0, unknownBytes = false;
-  for (const ds of DATASETS) {
-    const e = fullDlEstimate(ds.id);
-    if (!e) { pending++; continue; }
-    if (!e.canStore) continue;
-    n += e.remain;
-    if (e.remain && e.bytes == null) unknownBytes = true; else if (e.bytes) bytes += e.bytes;
-    if (e.sec) sec += e.sec;
-  }
+  const bl = document.getElementById('ch-save-all-level'), bf = document.getElementById('ch-save-all-full');
+  const bd = document.getElementById('ch-delete-all'), info = document.getElementById('ch-full-all-info');
+  if (!bl || !bf || !info) return;
+  const L = levelState.level;
+  const sum = (mode) => {
+    let n = 0, bytes = 0, sec = 0, pending = 0, unknownBytes = false;
+    for (const ds of DATASETS) {
+      const e = saveEstimate(ds.id, mode, L);
+      if (!e) { pending++; continue; }
+      if (!e.canStore) continue;
+      n += e.remain;
+      if (e.remain && e.bytes == null) unknownBytes = true; else if (e.bytes) bytes += e.bytes;
+      if (e.sec) sec += e.sec;
+    }
+    return { n, bytes, sec, pending, unknownBytes };
+  };
+  const stored = DATASETS.some(ds => (dsInfo.get(ds.id) || {}).storedCount > 0);
+  if (bd) bd.disabled = !stored && !fullDlActive();
   if (fullDlActive()) {
-    if (btn.dataset.armed !== '1') btn.textContent = '全部保存を中止';
-    btn.disabled = false;
+    if (bl.dataset.armed !== '1') bl.textContent = '保存を中止';
+    bl.disabled = false;
+    bf.hidden = true;
     const cur = fullDl.cur;
-    info.textContent = cur ? `保存中: ${overlayLabel(cur.id)} ${fullDlPct(cur)}%(${fmtInt(cur.done)}/${fmtInt(cur.total)}件)${fullDl.queue.length ? ` · 順番待ち ${fullDl.queue.length}件` : ''}` : '準備中…';
+    info.textContent = cur
+      ? `保存中: ${overlayLabel(cur.id)}(${dlName(cur)}) ${fullDlPct(cur)}%(${fmtInt(cur.done)}/${fmtInt(cur.total)}件)${fullDl.queue.length ? ` · 順番待ち ${fullDl.queue.length}件` : ''}`
+      : '準備中…';
     return;
   }
-  btn.textContent = 'すべて全部保存';
-  btn.disabled = n === 0;
-  info.textContent = n === 0 ? (pending ? '確認中…' : 'すべてのデータセットを保存済みです')
-    : `未保存 合計 ${fmtInt(n)}件 · ${unknownBytes && !bytes ? '容量不明' : `約${formatBytes(bytes)}`} · ${fmtDuration(sec || null)}${pending ? '(確認中のものを除く)' : ''}`;
+  bf.hidden = false;
+  const a = sum('level'), f = sum('full');
+  bl.textContent = `全データをレベル${L}で保存`;
+  bf.textContent = '全データを完全保存';
+  bl.disabled = a.n === 0;
+  bf.disabled = f.n === 0;
+  const line = (s, done) => s.n === 0 ? (s.pending ? '確認中…' : done)
+    : `未保存 ${fmtInt(s.n)}件 · ${s.unknownBytes && !s.bytes ? '容量不明' : `約${formatBytes(s.bytes)}`} · ${fmtDuration(s.sec || null)}${s.pending ? '(確認中を除く)' : ''}`;
+  info.innerHTML = `<span>レベル${L}: ${escapeHtml(line(a, 'すべて保存済み'))}</span><span>完全保存: ${escapeHtml(line(f, 'すべて保存済み'))}</span>`;
 }
-
 // 動作確認用(開発者ツールのコンソールから状態を確認できる)
-window.__v9 = { fullDl, fullDlCancel, fullDlEnqueue, tileLoadStats, CACHE_DEVICE_MB, CACHE_DEVICE_TILES, isMovingRecently, cubeUniforms,
+window.__v9 = { fullDl, fullDlCancel, fullDlEnqueue, openSaveDialog, resetSettingsToDefaults: () => resetSettingsToDefaults(), tileLoadStats, CACHE_DEVICE_MB, CACHE_DEVICE_TILES, isMovingRecently, cubeUniforms,
   gapFill: () => gapFillPct, shape: () => pointShape, levelAutoTick, stopLoop: () => renderer.setAnimationLoop(null) };
 window.__v5 = { dolly, pitch: () => pitchTarget, pickAt, nav: navState, speed: navMoveSpeed, sceneToW,
   measure: measureState, level: levelState, et: () => lodErrorTarget, budget: () => pcVis.budget, dsInfo };
@@ -11111,6 +11309,91 @@ document.getElementById('dpr-cap-btn')?.addEventListener('click', () => {
   syncDprUi();
 });
 syncDprUi();
+
+// ── 画面下・作業モードの配置(tiles_010) ──
+// --credit-h: 下のクレジット行の高さ(描画中の表示などをその上に置く)
+// 作業モードのパネル(#work-panels)が出ている時は、スマホの計測パネルをその下にずらす
+function layoutBottomUi() {
+  const cr = document.getElementById('credit');
+  if (cr) {
+    const r = cr.getBoundingClientRect();
+    const h = r.height ? Math.round(window.innerHeight - r.top + 6) : 34;
+    document.documentElement.style.setProperty('--credit-h', `${Math.max(24, h)}px`);
+  }
+  const wp = document.getElementById('work-panels'), mp = document.getElementById('measure-panel');
+  if (wp && mp) {
+    const shown = [...wp.children].some(c => !c.hidden && getComputedStyle(c).display !== 'none');
+    if (isTouchDevice && shown && !mp.hidden) mp.style.top = `${Math.round(wp.getBoundingClientRect().bottom + 6)}px`;
+    else mp.style.top = '';
+  }
+}
+(function setupLayout10() {
+  const wp = document.getElementById('work-panels');
+  const dp = document.getElementById('dbg-panel');
+  if (wp && dp && dp.parentNode !== wp) wp.insertBefore(dp, wp.firstChild);
+  const ha = document.getElementById('heightadjust-panel');
+  if (wp && ha && ha.parentNode !== wp) wp.appendChild(ha);
+  layoutBottomUi();
+  window.addEventListener('resize', layoutBottomUi);
+  if ('ResizeObserver' in window) {
+    const ro = new ResizeObserver(layoutBottomUi);
+    for (const id of ['credit', 'work-panels']) { const el = document.getElementById(id); if (el) ro.observe(el); }
+  }
+  const mo = new MutationObserver(layoutBottomUi);
+  for (const id of ['measure-panel', 'heightadjust-panel', 'dbg-panel']) {
+    const el = document.getElementById(id);
+    if (el) mo.observe(el, { attributes: true, attributeFilter: ['hidden', 'style'] });
+  }
+})();
+// 真俯瞰図のバーの上端(描画中の表示をその上に置く)
+function noteTopdownBarTop() {
+  const bar = document.getElementById('topdown-bar');
+  if (!bar || bar.hidden) return;
+  const r = bar.getBoundingClientRect();
+  document.documentElement.style.setProperty('--td-bottom', `${Math.round(window.innerHeight - r.top + 8)}px`);
+}
+
+// ── 設定を初期値に戻す(設定パネルの一番下。2回押しで実行) ──
+// 戻す: 表示レベル(端末の標準・自動)と個別の調整、点のサイズ(大きさ・埋め具合 0%・立方体)、
+//       表示するもの(点群・説明パネルを表示、地図は非表示と地図の細かい設定)、視点(歩く)、移動の速さ(ふつう)、表示倍率(1.0)、描画解像度の上限
+// 残す: 保存したデータ・重ねて表示・端末の3Dデータ・パネルの開閉
+function resetSettingsToDefaults() {
+  setNavMode('walk');
+  setLevel(PROFILE_LEVEL[autoProfile.key] || 5, { keepAuto: true });
+  setLevelAuto(true);
+  applyPointUI(isTouchDevice ? 2.5 : 2, false);
+  const fire = (el, v) => { if (!el || el.value === v) return; el.value = v; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); };
+  fire(document.getElementById('gapfill-slider'), '0');
+  document.querySelector('[data-point-shape="cube"]')?.click();
+  const press = (id, want) => { const b = document.getElementById(id); if (b && (b.getAttribute('aria-pressed') === 'true') !== want) b.click(); };
+  press('model-toggle', true);
+  press('annotation-toggle', true);
+  press('gsi-solid-toggle', true);
+  fire(document.getElementById('gsi-detail-slider'), '3');
+  fire(document.getElementById('gsi-zoom-slider'), '0');
+  press('gsi-toggle', false);
+  setSpeedStep('normal');
+  const sc = document.getElementById('scale-slider');
+  if (sc && Math.abs(parseFloat(sc.value) - 1) > 1e-6) { sc.value = '1.0'; sc.dispatchEvent(new Event('input')); }
+  if (renderDprCapOn) document.getElementById('dpr-cap-btn')?.click();
+  showToast('設定を初期値に戻しました');
+}
+document.getElementById('settings-reset-btn')?.addEventListener('click', (e) => {
+  const b = e.currentTarget;
+  if (b.dataset.armed !== '1') {
+    b.dataset.armed = '1';
+    b.textContent = 'もう一度押すと初期値に戻します';
+    clearTimeout(b._t);
+    b._t = setTimeout(() => { b.dataset.armed = ''; b.textContent = '設定を初期値に戻す'; }, 3000);
+    return;
+  }
+  clearTimeout(b._t);
+  b.dataset.armed = '';
+  b.textContent = '設定を初期値に戻す';
+  resetSettingsToDefaults();
+});
+const cdm = document.getElementById('cache-device-mb');
+if (cdm) cdm.textContent = String(CACHE_DEVICE_MB);
 
 // ── 設定パネルのセクション開閉(開閉状態はこの端末に保存) ──
 // 閉じているセクションを開く(端末の3Dデータを取り込んだ直後に「データ」を開く等)
@@ -11363,6 +11646,7 @@ function layoutTopdownBar() {
     if (r.height) top = Math.min(top, r.top);
   }
   bar.style.bottom = `${Math.max(8, Math.round(window.innerHeight - top + 6))}px`;
+  noteTopdownBarTop();
   if (mp && !mp.hidden) {
     const bt = bar.getBoundingClientRect().top, mt = mp.getBoundingClientRect().top;
     mp.style.maxHeight = `${Math.max(120, Math.round(bt - mt - 8))}px`;

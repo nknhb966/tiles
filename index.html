@@ -1797,6 +1797,26 @@
     /* 描画中の表示: 段階名は折り返さず、詳細は1行に収める */
     #load-progress .lp-stage { white-space: nowrap; flex: none; }
     #load-progress .lp-detail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* PC: 設定パネルは見出し「⚙ 設定」で開閉する(閉じると見出しだけが右上に残る) */
+    body:not(.touch) #controls-header {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin: -4px -4px 8px; padding: 0 4px 8px; border-bottom: 1px solid rgba(0,200,255,0.2);
+      cursor: pointer; user-select: none;
+    }
+    body:not(.touch) #controls-header .cp-panel-title { font-size: 13px; color: #fff; }
+    body:not(.touch) #controls-toggle {
+      background: transparent; border: 1px solid rgba(0,200,255,0.45); border-radius: 4px; color: #00c8ff;
+      font: 12px sans-serif; padding: 3px 10px; cursor: pointer; white-space: nowrap;
+    }
+    body:not(.touch) #controls-header:hover #controls-toggle { background: rgba(0,200,255,0.15); }
+    body:not(.touch) #controls.collapsed { width: auto; padding: 6px 8px 6px 12px !important; }
+    body:not(.touch) #controls.collapsed #controls-body { display: none; }
+    body:not(.touch) #controls.collapsed #controls-header { margin: 0; padding: 0; border-bottom: 0; }
+    body.pc-panel-closed #work-panels { right: 180px; }
+    /* 作業モード: 座標表示とアノテーション配置は別々に出す(両方の時は区切り線で並べる) */
+    #dbg-panel .dbg-h { font-weight: bold; margin-bottom: 2px; }
+    #dbg-coord-block:not([hidden]) + #dbg-annotate-block:not([hidden]) { margin-top: 8px; padding-top: 6px; border-top: 1px solid #0a0; }
+    #dbg-annotate-block .dbg-h { color: #ff0; }
   </style>
 </head>
 <body>
@@ -1854,7 +1874,7 @@
   z-index: 100;
   backdrop-filter: blur(8px);
 ">
-  <!-- ヘッダー（スマホ時のみ表示）-->
+  <!-- ヘッダー: スマホは「設定 ×」、PC は「⚙ 設定 たたむ/ひらく」(押すと開閉)-->
   <!-- 左: 「点のサイズ」のミニスライダー(タップ拡張時もそのまま操作可) -->
   <!-- 右: 本体の開閉トグル -->
   <div id="controls-header">
@@ -2173,9 +2193,11 @@
       データセットや説明パネルを作る人、動作を確かめる人向けです。ふだん見るだけなら使いません。<br>
       <b>座標表示</b>: カメラの位置と向き、datasets.csv の行を表示します。R で初期位置へ戻り、C で行をコピーします。<br>
       <b>アノテーション配置</b>: 3m 先に黄色い立方体を出し、A で annotations.csv の行をコピーします
-      (このモード中だけ A は左移動ではなくコピー)。I J K L を押している間は立方体の周りを回ります。<br>
+      (このモード中だけ A は左移動ではなくコピー)。I J K L を押している間は立方体の周りを回ります。
+      座標表示とは別々に ON/OFF でき、両方 ON の時は1枚のパネルに並べて出ます。<br>
       <b>モデル位置調整</b>: [ ] ; : , . で点群を動かして地図と合わせ、Y で補正込みの行をコピーします。<br>
-      説明のパネルは、ボタン列・設定パネルと重ならない場所にまとめて出ます。状態は URL(?debug=1 など)にも反映され、再読込しても続きます。
+      説明のパネルは、ボタン列・設定パネルと重ならない場所にまとめて出ます。作業モード中は、60 秒操作しなくても初期位置に戻りません。
+      状態は URL(?debug=1 など)にも反映され、再読込しても続きます。
     </div>
   </div>
   <div class="ctrl-group">
@@ -3241,8 +3263,17 @@ const keys = {
 };
 // 移動の速さの倍率(「遅く 0.3 / ふつう 1 / 速く 3」)。速さそのものは周りまでの距離で自動(navMoveSpeed)。
 let boostLevel = 1;
+// 入力欄にフォーカスがある間は移動キーを無視する(文字・数値・プルダウンの入力中は全部、スライダーは値を変える矢印キーだけ)
+function moveKeyBlockedByFocus(e) {
+  const t = e.target;
+  if (!t || !t.tagName) return false;
+  if (isTypingTarget(t)) return true;
+  if (e.code && e.code.startsWith('Arrow') && t.tagName === 'INPUT' && t.type === 'range') return true;
+  return false;
+}
 window.addEventListener('keydown', (e) => {
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.fine = true;
+  if (moveKeyBlockedByFocus(e)) return;
   switch (e.code) {
     case 'KeyW':       keys.forward  = true; break;
     case 'KeyS':       keys.back     = true; break;
@@ -3267,6 +3298,23 @@ window.addEventListener('keyup', (e) => {
     case 'ArrowDown':  keys.down     = false; break;
   }
 });
+// ── スライダーやボタンをマウス・指で操作し終えたらフォーカスを外す ──
+// (フォーカスが残ると、矢印キーでスライダーの値が変わってしまうため。Tab キーで選んだ時はそのまま)
+(function setupPointerBlur() {
+  const SEL = 'input[type="range"], input[type="checkbox"], input[type="radio"], button, summary';
+  let downEl = null;
+  window.addEventListener('pointerdown', (e) => { downEl = (e.target instanceof Element) ? e.target.closest(SEL) : null; }, true);
+  const release = () => {
+    const el = downEl; downEl = null;
+    if (!el) return;
+    setTimeout(() => {
+      const a = document.activeElement;
+      if (a && a !== document.body && a.matches && a.matches(SEL) && (a === el || a.contains(el) || el.contains(a))) a.blur();
+    }, 0);
+  };
+  window.addEventListener('pointerup', release, true);
+  window.addEventListener('pointercancel', release, true);
+})();
 // フォーカスが外れた時(Alt+Tab等)はkeyupを取り逃すことがあるので全キーを解除。
 window.addEventListener('blur', () => {
   for (const k in keys) keys[k] = false;
@@ -3417,6 +3465,30 @@ if (isTouchDevice) {
     if (railEl) ro.observe(railEl);
   }
   requestAnimationFrame(placeTouchUi);
+}
+// PC: 設定パネルは右上の見出し「⚙ 設定」で開閉する(閉じると見出しだけ残る)。開閉の状態は次回も引き継ぐ
+if (!isTouchDevice) {
+  const controlsEl = document.getElementById('controls');
+  const headerEl = document.getElementById('controls-header');
+  const toggleEl = document.getElementById('controls-toggle');
+  const titleEl = headerEl?.querySelector('.cp-panel-title');
+  if (titleEl) titleEl.textContent = '⚙ 設定';
+  if (toggleEl) toggleEl.setAttribute('aria-controls', 'controls-body');
+  const setPcPanelOpen = (open, save = true) => {
+    if (!controlsEl) return;
+    controlsEl.classList.toggle('collapsed', !open);
+    document.body.classList.toggle('pc-panel-closed', !open);
+    if (toggleEl) {
+      toggleEl.textContent = open ? 'たたむ ▲' : 'ひらく ▼';
+      toggleEl.setAttribute('aria-expanded', open ? 'true' : 'false');
+      toggleEl.setAttribute('aria-label', open ? '設定をたたむ' : '設定をひらく');
+    }
+    if (headerEl) headerEl.title = open ? '設定をたたむ' : '設定をひらく';
+    if (save) saveSetting('pcPanelOpen', open);
+  };
+  setPcPanelOpen(savedSettings.pcPanelOpen !== false, false);
+  // 見出しのどこを押しても開閉(ボタンもこの中)
+  headerEl?.addEventListener('click', () => setPcPanelOpen(controlsEl.classList.contains('collapsed')));
 }
 
 // 仮想スティック状態：正規化された -1〜1
@@ -8707,7 +8779,7 @@ async function copyText(text, btn) {
 }
 
 // ── 座標表示パネル(#dbg-panel) ──
-// 起動時に作っておき、debug/annotate のどちらかが ON の間だけ表示する。
+// 起動時に作っておき、debug/annotate のどちらかが ON の間だけ表示する(中身はそれぞれ ON のものだけ)。
 const dbgPanel = document.createElement('div');
 dbgPanel.id = 'dbg-panel';
 dbgPanel.style.cssText = `
@@ -8719,22 +8791,22 @@ dbgPanel.style.cssText = `
   min-width:280px; display:none;
 `;
 dbgPanel.innerHTML = `
-  <div><b id="dbg-title">DEBUG MODE</b></div>
-  <div>現在: <span id="dbg-id">-</span></div>
-  <div>x=<span id="dbg-x">0</span> y=<span id="dbg-y">0</span> z=<span id="dbg-z">0</span> yaw=<span id="dbg-yaw">0</span>°</div>
-  <div style="margin-top:6px; color:#9f9;">
-    WASD/矢印キーで視点を動かし、希望の見え方になったら下記値を CSV に貼り付けてください
-  </div>
-  <div style="margin-top:4px;">
-    <span style="color:#9f9;">datasets.csv行:</span>
-    <span id="dbg-csv" style="color:#fff; user-select:all;">-</span>
-  </div>
-  <div style="margin-top:4px; color:#9f9;">R: 初期位置リセット &nbsp; C: datasets行コピー</div>
-  <div id="dbg-annotate-block" hidden>
-    <div style="margin-top:8px; padding-top:6px; border-top:1px solid #0a0; color:#ff0;">
-      <b>アノテーション配置モード</b><br>
-      黄色い立方体 = カメラ3m先の設置点
+  <div id="dbg-coord-block" hidden>
+    <div class="dbg-h">座標表示</div>
+    <div>現在: <span id="dbg-id">-</span></div>
+    <div>x=<span id="dbg-x">0</span> y=<span id="dbg-y">0</span> z=<span id="dbg-z">0</span> yaw=<span id="dbg-yaw">0</span>°</div>
+    <div style="margin-top:6px; color:#9f9;">
+      WASD/矢印キーで視点を動かし、希望の見え方になったら下記値を CSV に貼り付けてください
     </div>
+    <div style="margin-top:4px;">
+      <span style="color:#9f9;">datasets.csv行:</span>
+      <span id="dbg-csv" style="color:#fff; user-select:all;">-</span>
+    </div>
+    <div style="margin-top:4px; color:#9f9;">R: 初期位置リセット &nbsp; C: datasets行コピー</div>
+  </div>
+  <div id="dbg-annotate-block" hidden>
+    <div class="dbg-h">アノテーション配置 <span style="color:#9f9; font-weight:normal;">現在: <span id="dbg-ann-id">-</span></span></div>
+    <div style="color:#ff0;">黄色い立方体 = カメラ3m先の設置点</div>
     <div style="margin-top:2px;">
       <span style="color:#9f9;">annotations.csv行:</span>
       <span id="dbg-ann" style="color:#fff; user-select:all;">-</span>
@@ -8748,7 +8820,8 @@ dbgPanel.innerHTML = `
   </div>
 `;
 document.body.appendChild(dbgPanel);
-const dbgTitle = document.getElementById('dbg-title');
+const dbgCoordBlock = document.getElementById('dbg-coord-block');
+const dbgAnnId = document.getElementById('dbg-ann-id');
 const dbgId    = document.getElementById('dbg-id');
 const dbgX     = document.getElementById('dbg-x');
 const dbgY     = document.getElementById('dbg-y');
@@ -8839,6 +8912,7 @@ function refreshDebug() {
   dbgZ.textContent   = o.z.toFixed(2);
   dbgYaw.textContent = o.yawDeg.toFixed(1);
   dbgCsv.textContent = datasetsRowText() ?? '-';
+  if (dbgAnnId) dbgAnnId.textContent = o.id ?? '-';
 
   if (devModes.annotate) {
     // 設置点マーカーを更新。オービット中は「ロックした立方体位置」、通常は3m先。
@@ -8859,7 +8933,7 @@ setInterval(() => { if (isDebugPanelOn()) refreshDebug(); }, 60);
 function applyDebugPanelVisibility(refresh = true) {
   const on = isDebugPanelOn();
   dbgPanel.style.display = on ? '' : 'none';
-  dbgTitle.textContent = devModes.annotate ? 'ANNOTATE MODE' : 'DEBUG MODE';
+  dbgCoordBlock.hidden = !devModes.debug;
   dbgAnnBlock.hidden = !devModes.annotate;
   placeMarker.visible = devModes.annotate;
   if (on && refresh) refreshDebug();
@@ -8982,7 +9056,7 @@ window.addEventListener('keydown', (e) => {
   // 通常のWASD/矢印キー操作は阻害しない(Alt/Ctrl/Metaは無視、Shiftだけは許容)
   if (e.altKey || e.ctrlKey || e.metaKey) return;
   if (gate.active || isTypingTarget(e.target)) return;
-  const dbgOn = isDebugPanelOn();
+  const dbgOn = devModes.debug; // R / C は座標表示の時だけ(アノテーション配置とは別)
   if (dbgOn && e.code === 'KeyR') {
     const id = currentDataset ?? loadingDataset;
     const ds = id != null ? getDataset(id) : null;
@@ -10275,7 +10349,8 @@ function showToast(text, ms = 2200) {
     <dt>表示レベル</dt><dd>1(軽い)〜10(きれい)。「自動」は動きの滑らかさを見て調整します</dd>
     <dt>⌂</dt><dd>初期位置に戻る</dd><dt>上のデータ名</dt><dd>データの一覧(切り替え・ダウンロード時間・保存・近くのデータを重ねて表示)</dd>
     <dt>レベルNで保存 / 完全保存</dt><dd>データの一覧で、そのレベルで見る分 / すべてのタイルを端末に保存します(完全保存はオフラインでも全部見られます)。保存中もデータを開けます</dd>` +
-    (isTouchDevice ? '<dt>⚙</dt><dd>設定(表示レベル・点のサイズ・表示するもの など)</dd>' : '') + `</dl>`;
+    (isTouchDevice ? '<dt>⚙</dt><dd>設定(表示レベル・点のサイズ・表示するもの など)</dd>'
+                   : '<dt>⚙ 設定</dt><dd>右上の見出しを押すと、設定パネル(表示レベル・点のサイズ・表示するもの など)をたたむ・ひらく</dd>') + `</dl>`;
   const vrHtml = `
     <h3>VR</h3>
     <dl><dt>左スティック</dt><dd>向いている方向に移動(速さは周囲までの距離に合わせて自動)</dd><dt>右スティック ← →</dt><dd>向きを変える</dd>
@@ -11937,7 +12012,7 @@ function drawExportOverlays(ctx, W, H, s) {
 // ── 初期位置リセット & アイドルタイマー ─────────────────
 // 機能: ①「初期位置」ボタンクリック ②60秒の無操作 で dolly を初期位置にアニメで戻す。
 //       5秒前から画面中央上部にカウントダウン表示。
-//       VR中・先読み中・データセット切替中はタイマー停止(誤発動防止)。
+//       VR中・先読み中・データセット切替中・作業モード中はタイマー停止(誤発動防止)。
 (() => {
   const IDLE_TIMEOUT_MS  = 60_000;  // アイドル判定時間
   const IDLE_WARN_MS     = 5_000;   // 何秒前から警告表示するか
@@ -12028,7 +12103,7 @@ function drawExportOverlays(ctx, W, H, s) {
 
   function isTimerPaused() {
     if (gate.active) return true;            // 読込画面の表示中
-    if (devModes.annotate) return true;      // 配置作業中は自動リセットしない
+    if (devModes.debug || devModes.annotate || devModes.heightadjust) return true; // 作業モード中は自動で初期位置に戻さない
     if (measureState.tool) return true;      // 計測中も
     if (renderer.xr.isPresenting) return true;
     if (preloadState.job && preloadState.job.running) return true; // 先読み中

@@ -1893,6 +1893,91 @@
 
     /* PC: 作業モードのパネルの幅と位置は JS(layoutWorkPanels)で決める */
     body:not(.touch) #work-panels { max-width: none; }
+    /* ══ tiles_013 ══ */
+    /* (配置の調整のパネルと同じ見た目) */
+    #dbg-panel {
+      position: fixed; left: 16px; bottom: 16px; z-index: 200;
+      background: rgba(0,0,0,0.88); color: #e0e8ee;
+      font-family: sans-serif; font-size: 12px; line-height: 1.5;
+      padding: 8px 12px 10px; border: 1px solid #ffd24a; border-radius: 4px;
+    }
+    #dbg-panel .pp-h { font-weight: bold; color: #ffd24a; font-size: 13px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+    #dbg-panel .pp-id { color: #9ff; font-weight: normal; }
+    #dbg-panel .pp-state { font-weight: normal; font-size: 11px; padding: 0 6px; border-radius: 3px; }
+    #dbg-panel .pp-state.dirty { color: #111; background: #ffd24a; }
+    #dbg-panel .pp-state.clean { color: #9ab; border: 1px solid #456; }
+    #dbg-panel .pp-sec { margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,210,74,0.3); color: #ffd24a; font-weight: bold; }
+    #dbg-panel .pp-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    #dbg-panel input[type="text"] {
+      flex: 1 1 auto; min-width: 0; background: rgba(255,255,255,0.08); color: #fff;
+      border: 1px solid rgba(0,200,255,0.4); border-radius: 3px; padding: 3px 6px; font: inherit;
+    }
+    #dbg-panel .pp-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 16px; }
+    #dbg-panel .pp-col > .pp-sec:first-child { margin-top: 6px; }
+    #dbg-panel .pp-grid { display: grid; grid-template-columns: 52px 34px 64px 34px; justify-content: start; gap: 4px 6px; align-items: center; margin-top: 4px; }
+    #dbg-panel .pp-k { color: #9ab; }
+    #dbg-panel details { margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,210,74,0.3); }
+    #dbg-panel summary { cursor: pointer; color: #ffd24a; font-weight: bold; }
+    #dbg-panel .pp-grid button, #dbg-panel .pp-btns button, #dbg-panel .pp-add button { min-height: 30px; }
+    #dbg-panel .pp-grid button { padding: 0; font-size: 16px; }
+    #dbg-panel .pp-v { font-family: monospace; color: #fff; text-align: right; }
+    #dbg-panel .pp-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    #dbg-panel .pp-btns .dbg-btn, #dbg-panel .pp-add .dbg-btn { flex: 1 1 auto; white-space: nowrap; }
+    #dbg-panel .pp-pose { font-family: monospace; font-size: 11px; color: #cde; margin-top: 2px; }
+    #dbg-panel .pp-hint { color: #9ab; font-size: 11px; margin-top: 3px; }
+    #dbg-panel .pp-warn { color: #ffb36b; font-size: 11px; margin-top: 3px; }
+    #dbg-panel .pp-note { color: #cde; margin-top: 4px; }
+    #dbg-panel .pp-add { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    #dbg-panel .pp-add input[id="pp-new-id"] { flex: 0 1 96px; }
+    #dbg-panel .pp-add input[id="pp-new-label"] { flex: 1 1 150px; }
+    /* 表: datasets.csv / 初期位置(一時保存) / いま */
+    .pp-tbl { border-collapse: collapse; margin-top: 4px; font-family: monospace; font-size: 11px; }
+    .pp-tbl th { color: #9ab; font-weight: normal; padding: 0 6px 1px; text-align: right; font-family: sans-serif; }
+    .pp-tbl td { padding: 1px 6px; text-align: right; color: #fff; white-space: nowrap; }
+    .pp-tbl td:first-child { text-align: left; color: #9ab; font-family: sans-serif; padding-left: 0; }
+    .pp-tbl tr.r-csv td { color: #b8c4cc; }
+    .pp-tbl td.chg { color: #ffd24a; font-weight: bold; }
+    .pp-tbl tr.r-now td.chg { color: #7fe3ff; }
+    #place-panel .pp-grid, #dbg-panel .pp-grid { grid-template-columns: 52px 40px 40px; }
+    #place-panel .pp-cols { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    /* アノテーション配置のパネル(配置の調整と同じ見た目・水色の枠) */
+    #dbg-panel { border-color: #00c8ff; }
+    #dbg-panel .pp-h { color: #00c8ff; }
+    #dbg-panel .pp-sec { color: #7fe3ff; border-top-color: rgba(0,200,255,0.3); }
+    #dbg-panel .ap-list { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; max-height: 150px; overflow-y: auto; }
+    #dbg-panel .ap-item {
+      display: flex; align-items: baseline; gap: 6px; text-align: left; cursor: pointer;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(0,200,255,0.25); border-radius: 3px;
+      color: #dde6ee; padding: 4px 6px; font: 12px sans-serif;
+    }
+    #dbg-panel .ap-item.sel { border-color: #ffd24a; background: rgba(255,210,74,0.14); }
+    #dbg-panel .ap-xyz { margin-left: auto; color: #9ab; font-family: monospace; font-size: 10px; white-space: nowrap; }
+    #dbg-panel textarea {
+      flex: 1 1 auto; min-width: 0; background: rgba(255,255,255,0.08); color: #fff; resize: vertical;
+      border: 1px solid rgba(0,200,255,0.4); border-radius: 3px; padding: 3px 6px; font: inherit;
+    }
+    #dbg-panel .ap-body-row { align-items: flex-start; }
+    #dbg-panel .ap-nums input[type="number"] {
+      width: 64px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(0,200,255,0.4);
+      border-radius: 3px; padding: 3px 4px; font: inherit;
+    }
+    #dbg-panel .dbg-btn.warn, #place-panel .dbg-btn.warn { border-color: #ff9a9a; color: #ff9a9a; }
+    /* データの一覧: Web 上のデータを追加・外したデータ・書き出し */
+    .ch-more { margin: 8px 0 4px; }
+    .ch-more > summary { cursor: pointer; color: #00c8ff; font-size: 13px; padding: 4px 0; }
+    .ch-add { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 4px; }
+    .ch-add input {
+      flex: 1 1 150px; min-width: 0; background: rgba(255,255,255,0.06); color: #fff;
+      border: 1px solid rgba(0,200,255,0.4); border-radius: 4px; padding: 6px 8px; font: 13px sans-serif;
+    }
+    .ch-add input#ch-new-id { flex: 0 1 110px; }
+    .ch-removed .ch-rm-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 13px; }
+    .ch-export { margin: 4px 0 10px; }
+    .ch-export #ch-export-info > div { margin-bottom: 6px; line-height: 1.5; }
+    .ch-dim { color: #8fa3ae; }
+    body.touch #dbg-panel .pp-pc { display: none; }
+    /* 一覧のカード: ボタンが増えたので、広い画面ではボタンを2段に折り返し、名前と件数の欄を広く */
+    @media (min-width: 561px) { #ch-datasets .ch-actions { flex: 0 1 370px; flex-wrap: wrap; justify-content: flex-end; } }
   </style>
 </head>
 <body>
@@ -2045,7 +2130,7 @@
       </div>
     </div>
 
-    <!-- 点のサイズ: 大きさ(画面px)・隙間の埋め具合(%)・点の形 -->
+    <!-- 点のサイズ: 大きさ(画面px)・点の形 -->
     <div id="size-row" class="ctrl-group">
       <div class="ctrl-label">
         <span>点のサイズ</span>
@@ -2056,21 +2141,14 @@
       <div class="cp-valrow">
         <input id="size-num" type="number" min="0.5" max="50" step="0.5" value="2" class="cp-num" aria-label="点の大きさ(px)"> px
       </div>
-      <div class="cp-sublabel">隙間の埋め具合 <span id="gapfill-val" class="cp-mono">0%</span></div>
-      <input id="gapfill-slider" type="range" min="0" max="150" step="5" value="0" style="width:260px; accent-color:#00c8ff;" aria-label="隙間の埋め具合">
-      <div class="cp-valrow"><span class="cp-hint" style="margin-left:0">0%(初期値): すべての点が同じ大きさ · 100%: 点どうしが接する · それ以上: 重ねて面らしく</span></div>
       <div class="cp-sublabel">点の形</div>
       <div class="dbg-grid cp-grid">
         <button type="button" class="dbg-btn" data-point-shape="cube" aria-pressed="true">立方体</button>
         <button type="button" class="dbg-btn" data-point-shape="round" aria-pressed="false">丸</button>
       </div>
       <div id="info-size" class="ctrl-info-body" hidden>
-        <b>大きさ</b>: 点のいちばん小さい時の大きさを、画面上のピクセル数で決めます。モデルの大きさや距離に関係なく同じ大きさに見えるので、
-        遠くの点も消えません。<br>
-        <b>隙間の埋め具合</b>: 0%(初期値)では、すべての点を「大きさ」の同じピクセル数で描きます。
-        上げると、点の間に隙間が見える所だけ、点を大きくして面のように見せます。表示している点群の点の間隔と距離から、
-        場所ごとに必要な大きさを自動で計算するので、大きくまばらなモデルでも近づいた所・離れた所のどちらにも効きます。
-        まばらで隙間が目立つ時は上げ、ブロックのように見える時は下げてください。<br>
+        <b>大きさ</b>: すべての点を、画面上の同じピクセル数で描きます。モデルの大きさや距離に関係なく同じ大きさに見えるので、
+        遠くの点も消えません。点の間に隙間が目立つ時は大きくしてください。<br>
         <b>点の形</b>: 立方体は陰影で面の向きが分かりやすく、丸はなめらかに見えます。<br>
         VR では X / Y ボタンで大きさを変えられます。
       </div>
@@ -2227,11 +2305,11 @@
     </div>
     <div id="info-debug" class="ctrl-info-body" hidden>
       データセットや説明パネルを作る人、動作を確かめる人向けです。ふだん見るだけなら使いません。<br>
-      <b>配置の調整</b>: モデルの位置(地図に合わせる)と、最初に見る場所・向きを決めます。値はモデルごとにこの端末に一時保存され、
-      この端末ではすぐに使われます。「datasets.csv を書き出す」で全データの CSV を保存し、サーバーの datasets.csv と置き換えると、ほかの端末にも反映されます。
-      Web 上の新しいデータ(id と名前)の追加もここでできます。端末に取り込んだ3Dデータは対象外です。<br>
-      <b>アノテーション配置</b>: 3m 先に黄色い立方体を出し、A で annotations.csv の行をコピーします
-      (このモード中だけ A は左移動ではなくコピー)。I J K L を押している間は立方体の周りを回ります。<br>
+      <b>配置の調整</b>: モデルの位置(地図に合わせる)と、最初に見る場所・向きを決めます。datasets.csv の値・初期位置・いまを並べて表示し、
+      「初期位置にする」でモデルごとにこの端末へ一時保存します(この端末ではすぐに使われます)。端末に取り込んだ3Dデータは対象外です。<br>
+      <b>アノテーション配置</b>: 3m 先の黄色い立方体の所に説明パネルを追加し、一覧から選んで位置・タイトル・本文などを直せます(1件削除・全部削除も)。
+      編集するとすぐ、モデルごとにこの端末へ一時保存します。A キーでも追加でき(このモード中だけ A は左移動ではなく追加)、I J K L を押している間は立方体の周りを回ります。<br>
+      <b>書き出し</b>: datasets.csv・annotations.csv は、データの一覧の「書き出し」で、全データまとめて書き出します。Web 上のデータの追加・一覧から外すのも、データの一覧で行います。<br>
       パネルは、ボタン列・設定パネルと重ならない場所にまとめて出ます。作業モード中は、60 秒操作しなくても初期位置に戻りません。
       状態は URL(?place=1 など)にも反映され、再読込しても続きます。
     </div>
@@ -2322,50 +2400,56 @@
 
 <!-- モデル位置調整モード(デバッグ欄 / ?heightadjust=1)のパネル。点群を動かしCSVの補正値を測る。 -->
 <div id="work-panels"></div>
-<!-- 作業モード「配置の調整」: モデルの位置(地図に合わせる)と、最初に見る場所・向きを決め、datasets.csv を書き出す -->
+<!-- 作業モード「配置の調整」: モデルの位置(地図に合わせる)と、最初に見る場所・向きを決める。書き出しはデータの一覧で -->
 <div id="place-panel" hidden>
   <div class="pp-h">配置の調整 <span id="pp-id" class="pp-id">-</span><span id="pp-state" class="pp-state"></span></div>
   <div id="pp-local-note" class="pp-note" hidden>
     端末に取り込んだ3Dデータ(位置情報なし)は、datasets.csv の書き出しの対象外です。位置は「端末の3Dデータ」の位置合わせで決めてください。
   </div>
   <div id="pp-main">
+    <div class="pp-row">名前 <input id="pp-label" type="text" maxlength="40" autocomplete="off" aria-label="名前(datasets.csv の label)"></div>
     <div class="pp-cols">
       <div class="pp-col">
-        <div class="pp-row">名前 <input id="pp-label" type="text" maxlength="40" autocomplete="off" aria-label="名前(datasets.csv の label)"></div>
         <div class="pp-sec">モデルの位置(地図に合わせる)</div>
+        <table class="pp-tbl" aria-label="モデルの位置">
+          <tr><th></th><th>東西 X</th><th>高さ Y</th><th>南北 Z</th></tr>
+          <tr class="r-csv"><td>datasets.csv</td><td id="pm-cx"></td><td id="pm-cy"></td><td id="pm-cz"></td></tr>
+          <tr class="r-init"><td>初期位置</td><td id="pm-ix"></td><td id="pm-iy"></td><td id="pm-iz"></td></tr>
+          <tr class="r-now"><td>いま</td><td id="pm-nx"></td><td id="pm-ny"></td><td id="pm-nz"></td></tr>
+        </table>
         <div class="pp-grid">
-          <span>東西 X</span><button type="button" class="dbg-btn" data-pp="x-1" aria-label="東西 X を減らす">−</button><span id="pp-x" class="pp-v">0.00</span><button type="button" class="dbg-btn" data-pp="x1" aria-label="東西 X を増やす">＋</button>
-          <span>高さ Y</span><button type="button" class="dbg-btn" data-pp="y-1" aria-label="高さ Y を下げる">−</button><span id="pp-y" class="pp-v">0.00</span><button type="button" class="dbg-btn" data-pp="y1" aria-label="高さ Y を上げる">＋</button>
-          <span>南北 Z</span><button type="button" class="dbg-btn" data-pp="z-1" aria-label="南北 Z を減らす">−</button><span id="pp-z" class="pp-v">0.00</span><button type="button" class="dbg-btn" data-pp="z1" aria-label="南北 Z を増やす">＋</button>
+          <span>東西 X</span><button type="button" class="dbg-btn" data-pp="x-1" aria-label="東西 X を減らす">−</button><button type="button" class="dbg-btn" data-pp="x1" aria-label="東西 X を増やす">＋</button>
+          <span>高さ Y</span><button type="button" class="dbg-btn" data-pp="y-1" aria-label="高さ Y を下げる">−</button><button type="button" class="dbg-btn" data-pp="y1" aria-label="高さ Y を上げる">＋</button>
+          <span>南北 Z</span><button type="button" class="dbg-btn" data-pp="z-1" aria-label="南北 Z を減らす">−</button><button type="button" class="dbg-btn" data-pp="z1" aria-label="南北 Z を増やす">＋</button>
         </div>
-        <div class="pp-hint">1回 <span id="pp-step">0.1</span> m(移動の速さ: 遅く 0.01 / ふつう 0.1 / 速く 1)<span class="pp-pc"><br>キー [ ] ; : , .(Shift で 0.01)</span></div>
+        <div class="pp-hint">1回 <span id="pp-step">0.1</span> m(移動の速さ: 遅く 0.01 / ふつう 0.1 / 速く 1)<span class="pp-pc"> · キー [ ] ; : , .(Shift で 0.01)</span></div>
+        <div class="pp-btns">
+          <button type="button" class="dbg-btn" id="pp-set-model">今の位置を初期位置にする</button>
+          <button type="button" class="dbg-btn" id="pp-go-model">初期位置に戻す</button>
+        </div>
       </div>
       <div class="pp-col">
         <div class="pp-sec">最初に見る場所と向き</div>
-        <div class="pp-pose"><span class="pp-k">初期位置</span> <span id="pp-init">-</span><br><span class="pp-k">いま</span> <span id="pp-now">-</span></div>
+        <table class="pp-tbl" aria-label="最初に見る場所と向き">
+          <tr><th></th><th>x</th><th>y</th><th>z</th><th>向き</th></tr>
+          <tr class="r-csv"><td>datasets.csv</td><td id="pv-cx"></td><td id="pv-cy"></td><td id="pv-cz"></td><td id="pv-cw"></td></tr>
+          <tr class="r-init"><td>初期位置</td><td id="pv-ix"></td><td id="pv-iy"></td><td id="pv-iz"></td><td id="pv-iw"></td></tr>
+          <tr class="r-now"><td>いま</td><td id="pv-nx"></td><td id="pv-ny"></td><td id="pv-nz"></td><td id="pv-nw"></td></tr>
+        </table>
         <div id="pp-scale-warn" class="pp-warn" hidden>表示倍率が 1.0 ではありません。初期位置は表示倍率 1.0 で決めてください。</div>
         <div class="pp-btns">
           <button type="button" class="dbg-btn" id="pp-set-pose">今の視点を初期位置にする</button>
           <button type="button" class="dbg-btn" id="pp-go-pose">初期位置へ<span class="pp-pc">(R)</span></button>
         </div>
-        <div class="pp-sec">一時保存と書き出し</div>
-        <div class="pp-btns">
-          <button type="button" class="dbg-btn" id="pp-revert">datasets.csv の値に戻す</button>
-          <button type="button" class="dbg-btn" id="pp-export">datasets.csv を書き出す</button>
-        </div>
       </div>
     </div>
-    <div id="pp-summary" class="pp-hint"></div>
-  </div>
-  <details id="pp-add-box">
-    <summary>＋ Web 上のデータを追加</summary>
-    <div class="pp-add">
-      <input id="pp-new-id" type="text" placeholder="id(例 1881)" autocomplete="off" aria-label="追加する id">
-      <input id="pp-new-label" type="text" placeholder="名前(例 武生公会堂記念館)" maxlength="40" autocomplete="off" aria-label="追加する名前">
-      <button type="button" class="dbg-btn" id="pp-add">追加して開く</button>
+    <div class="pp-sec">このモデルの一時保存</div>
+    <div class="pp-hint">「初期位置にする」で、この端末に一時保存します(この端末ではすぐ使われます)。保存せずに別のモデルを開くと、動かした分は戻ります。</div>
+    <div class="pp-btns">
+      <button type="button" class="dbg-btn" id="pp-revert">datasets.csv の値に戻す</button>
+      <button type="button" class="dbg-btn" data-open-export>一覧で書き出す</button>
     </div>
-    <div id="pp-add-msg" class="pp-hint">産総研の 3D Tiles の id と、一覧に出す名前を入れてください。</div>
-  </details>
+  </div>
 </div>
 
 <!-- ロード進捗オーバーレイ -->
@@ -2415,6 +2499,27 @@
       </div>
       <div id="ch-sum" class="ch-sum" hidden></div>
       <div id="ch-datasets" class="ch-list"></div>
+      <details class="ch-more" id="ch-add-box">
+        <summary>＋ Web 上のデータを追加</summary>
+        <div class="ch-add">
+          <input id="ch-new-id" type="text" placeholder="id(例 1881)" autocomplete="off" aria-label="追加する id">
+          <input id="ch-new-label" type="text" placeholder="名前(例 武生公会堂記念館)" maxlength="40" autocomplete="off" aria-label="追加する名前">
+          <button type="button" class="ch-btn" id="ch-add-btn">一覧に追加</button>
+        </div>
+        <div class="ch-sub" id="ch-add-msg">産総研の 3D Tiles の id と、一覧に出す名前を入れてください。</div>
+      </details>
+      <details class="ch-more" id="ch-removed-box" hidden>
+        <summary>外したデータ(<span id="ch-removed-n">0</span>件)</summary>
+        <div id="ch-removed" class="ch-removed"></div>
+      </details>
+      <div class="ch-sec" id="ch-export-sec">書き出し <span class="ch-sub">配置の調整・アノテーション・一覧の変更を CSV にする</span></div>
+      <div class="ch-export">
+        <div id="ch-export-info" class="ch-sub"></div>
+        <div class="ch-fa-btns">
+          <button type="button" class="ch-btn" id="ch-export-ds">datasets.csv を書き出す</button>
+          <button type="button" class="ch-btn" id="ch-export-ann">annotations.csv を書き出す</button>
+        </div>
+      </div>
       <div class="ch-sec">端末の3Dデータ <span class="ch-sub">この端末に取り込んだ点群・3Dモデル</span></div>
       <div id="ch-local" class="ch-list"></div>
       <div class="ch-upload">
@@ -2501,10 +2606,6 @@
   <div id="joystick-knob"></div>
 </div>
 
-<div id="vert-buttons" class="touch-ui">
-  <div class="vert-btn" id="btn-up">▲</div>
-  <div class="vert-btn" id="btn-down">▼</div>
-</div>
 
 <!-- スマホ用 高速移動トグル(ON中は移動量×10)。ジョイスティック上部に配置。 -->
 <!-- 高速移動ボタン群(×10/×30)。PC・スマホ共通。排他選択。 -->
@@ -3543,30 +3644,7 @@ const touchVert = { up: false, down: false };
 
 // (スティック・スワイプ・2本指の操作は「視点操作」の部品 setupTouchNav で行う)
 
-// --- 右下：上昇/下降ボタン ---
-{
-  const setupBtn = (el, onChange) => {
-    let pid = null;
-    el.addEventListener('pointerdown', (e) => {
-      pid = e.pointerId;
-      el.setPointerCapture(e.pointerId);
-      el.classList.add('active');
-      onChange(true);
-      e.preventDefault();
-    });
-    const end = (e) => {
-      if (e.pointerId !== pid) return;
-      pid = null;
-      el.classList.remove('active');
-      onChange(false);
-    };
-    el.addEventListener('pointerup', end);
-    el.addEventListener('pointercancel', end);
-    el.addEventListener('pointerleave', end);
-  };
-  setupBtn(document.getElementById('btn-up'),   (on) => { touchVert.up = on; });
-  setupBtn(document.getElementById('btn-down'), (on) => { touchVert.down = on; });
-}
+// (歩く時の上下ボタン ▲▼ は tiles_013 で無くした。上下は2本指でなぞる平行移動で)
 
 // ── 速さボタン(遅く/ふつう/速く)の位置 ──
 (function setupBoostButtons() {
@@ -4875,8 +4953,6 @@ const CUBE_VERT = /* glsl */`
   uniform float uSizePx;      // 点の基本サイズ(画面上のピクセル数。CSS px)。モデルの大きさや距離に関係なく同じように効く
   uniform float uPxScale;     // CSS px → 描画バッファの px(端末の倍率。VR では解像度に応じた値)
   uniform float uViewportH;   // 描画バッファの高さ(px)。距離 → 画面上のピクセル数の換算に使う
-  uniform float uSpacing;     // この点群(タイル・ノード)の点の間隔(座標の単位)。隙間補完に使う。0=不明
-  uniform float uFill;        // 隙間補完の強さ(0=しない)。点の密度を下げた分も補う
   uniform float uMaxPx;       // 1点の最大サイズ(描画バッファ px)
   uniform float uDensity; // 0.0〜1.0 (POINT DENSITY: 描画する点の割合)
   uniform float uOrtho;   // 1.0=正射投影(真俯瞰), 0.0=透視投影
@@ -4916,14 +4992,6 @@ const CUBE_VERT = /* glsl */`
     vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
     // 基本サイズ: 画面上で常に同じピクセル数(遠くの点も見え、大きなモデルでもスライダーが同じように効く)
     float px = uSizePx * uPxScale;
-    // 隙間補完: 点の間隔が画面上で何 px になるかを求め、基本サイズより広ければその分だけ大きくして隙間を埋める
-    // (近づくほど点が大きくなり、面として見える。正射投影では距離によらず縮尺だけで決まる)
-    if (uFill > 0.0 && uSpacing > 0.0) {
-      float pxPerUnit = uViewportH * 0.5 * projectionMatrix[1][1];
-      float dist = (uOrtho > 0.5) ? 1.0 : max(-mvPos.z, 1e-4);
-      float spacingView = uSpacing * length(modelViewMatrix[0].xyz);
-      px = max(px, spacingView * pxPerUnit / dist * uFill);
-    }
     gl_PointSize = clamp(px, 1.0, uMaxPx);
     gl_Position = projectionMatrix * mvPos;
   }
@@ -4975,13 +5043,11 @@ const CUBE_FRAG = /* glsl */`
   }
 `;
 
-// uniform(点サイズ・密度間引き・断面・隙間補完)。全 Points で共有
+// uniform(点サイズ・密度間引き・断面)。全 Points で共有
 const cubeUniforms = {
   uSizePx:  { value: 2.0 },   // 点の基本サイズ(CSS px)
   uPxScale: { value: 1.0 },   // CSS px → 描画バッファ px(毎フレーム updatePointUniforms で設定)
   uViewportH: { value: 1000 },// 描画バッファの高さ(毎フレーム設定)
-  uSpacing: { value: 0.0 },   // 描画中の点群の点間隔(各 Points の描画直前に設定)
-  uFill:    { value: 1.0 },   // 隙間補完の強さ
   uMaxPx:   { value: 128.0 }, // 1点の最大サイズ
   uDensity: { value: 1.0 },
   uOrtho:   { value: 0.0 },   // 真俯瞰(正射)中は1.0に
@@ -5007,7 +5073,6 @@ renderer.xr.addEventListener('sessionend', applyRenderScale);
 // 点のサイズは「画面上のピクセル数」で指定する。モデルが大きくても遠くても同じように効く。
 // それだけだと、データの細かさの限界まで近づいた時に点の間に隙間が見えるので、末端の点群(それ以上細かい階層が無いもの)は
 // 「点の間隔」から画面上の間隔を求め、基本サイズより広い所は点を大きくして隙間を埋める(Potree の適応サイズの考え方を参考に自作)。
-let gapFillPct = 0;          // 隙間の埋め具合(%)。0 ですべての点が同じ大きさ、100 で点どうしがちょうど接する
 let pointShape = 'cube';     // 点の形('cube' | 'round')
 const _pointDbSize = new THREE.Vector2();
 // 毎フレーム描画の前に呼ぶ(解像度・VR に合わせて uniform を更新)
@@ -5025,73 +5090,13 @@ function updatePointUniforms() {
   // 1点の最大: 画面の高さの8%(40〜96 CSS px)。まばらなモデルに近づいた時も埋まるように
   const cssH = cubeUniforms.uViewportH.value / cubeUniforms.uPxScale.value;
   cubeUniforms.uMaxPx.value = Math.max(40, Math.min(96, cssH * 0.08)) * cubeUniforms.uPxScale.value;
-  cubeUniforms.uFill.value = gapFillPct > 0 ? (gapFillPct / 100) / Math.sqrt(Math.max(0.05, pointDensity)) : 0;
 }
-// 点群の点の間隔の目安(座標の単位)。点が面の上に並んでいると見なし、範囲の箱の表面積の半分 ÷ 点数 の平方根。
-// 全点は走査せず、最大4096点の抜き取りで範囲を求める(タイル読込時に1回だけ)。
-function estimatePointSpacing(geometry) {
-  const pos = geometry && geometry.attributes && geometry.attributes.position;
-  if (!pos || pos.count < 2) return 0;
-  const n = pos.count, step = Math.max(1, Math.floor(n / 4096));
-  let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
-  for (let i = 0; i < n; i += step) {
-    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-    if (x < x0) x0 = x; if (x > x1) x1 = x;
-    if (y < y0) y0 = y; if (y > y1) y1 = y;
-    if (z < z0) z0 = z; if (z > z1) z1 = z;
-  }
-  const dx = x1 - x0, dy = y1 - y0, dz = z1 - z0;
-  const area = dx * dy + dy * dz + dz * dx;
-  if (!(area > 0)) return 0;
-  return Math.sqrt(area / n);
-}
-// 各 Points の描画直前に、その点群の点間隔を uniform に入れる(値が変わった時だけ再送)
-function pcSpacingBeforeRender() {
-  const s = this.userData.fillSpacing ?? this.userData.spacing ?? 0;
-  if (cubeUniforms.uSpacing.value !== s) {
-    cubeUniforms.uSpacing.value = s;
-    sharedCubeMaterial.uniformsNeedUpdate = true;
-  }
-}
-function attachPointSpacing(points, spacing) {
-  points.userData.spacing = spacing;
-  points.userData.fillSpacing = spacing;
-  points.onBeforeRender = pcSpacingBeforeRender;
-}
-// 3D Tiles: 点の間隔はどのタイルでも読込時に求めておき、隙間補完は毎フレーム
-// 「表示中で、より細かい子タイルが表示されていないタイル」だけに使う(その場所で一番細かく出ている点群が埋まる)。
-// → 遠くの粗いタイルも、近くの細かいタイルも埋まる。親と子を重ねて描く作り(ADD)のデータでは、
-//   子が出ている所の親は大きくしない(細部を隠さないように)。強さは「隙間の埋め具合」(uFill)。
-function updateTileFillSpacing() {
-  for (const t of allTileRenderers()) {
-    const vis = t.visibleTiles;
-    if (!vis || !vis.size) continue;
-    for (const tile of vis) {
-      const pts = tile.__pts;
-      if (!pts) continue;
-      let child = false;
-      const ch = tile.children;
-      if (ch) for (let i = 0; i < ch.length; i++) if (vis.has(ch[i])) { child = true; break; }
-      for (let i = 0; i < pts.length; i++) {
-        const ud = pts[i].userData;
-        ud.fillSpacing = child ? 0 : (ud.spacing || 0);
-      }
-    }
-  }
-}
-// タイル読込時(load-model)に呼ぶ: 点間隔を求めて登録(読み直しの計測も)
+// タイル読込時(load-model)に呼ぶ: タイルの点群を覚えておく(周りまでの距離の計算用)・読み直しの計測
 function registerTileSpacing(tileScene, tile) {
   noteTileLoaded(tile);
   const list = [];
-  let minS = Infinity;
-  tileScene.traverse(obj => {
-    if (!obj.isPoints) return;
-    const s = estimatePointSpacing(obj.geometry);
-    attachPointSpacing(obj, s);
-    list.push(obj);
-    if (s > 0 && s < minS) minS = s;
-  });
-  if (tile) { tile.__pts = list; tile.__sp = Number.isFinite(minS) ? minS : 0; }
+  tileScene.traverse(obj => { if (obj.isPoints) list.push(obj); });
+  if (tile) { tile.__pts = list; tile.__sp = 0; }
 }
 
 // 全タイルの Points で1つのマテリアルを共有する。
@@ -6438,6 +6443,8 @@ function loadTileset(id, opts = {}) {
   if (topdownState.active) {
     exitTopdown();
   }
+  // 別のモデルを開く時は計測結果を消す(計測の点は前のモデルの座標に置かれているため)
+  if (id !== currentDataset) measureClearAll();
   // 断面表示もOFFに戻す
   topdownState.sliceOn = false;
   { const sb = document.getElementById('slice-toggle');
@@ -7816,13 +7823,6 @@ class LocalPointCloud {
         this.loadNode(n);
       }
     }
-    // 隙間補完: 表示中のノードのうち、より細かい子ノードが表示されていないものだけ点を大きくする
-    for (const n of this.shown) {
-      if (!n.obj) continue;
-      let child = false;
-      for (const c of n.children) if (this.shown.has(c)) { child = true; break; }
-      n.obj.userData.fillSpacing = child ? 0 : n.spacing;
-    }
     const pending = selected.some(n => !n.obj && !n.failed);
     this.idleFrames = (pending || this.loading) ? 0 : this.idleFrames + 1;
     this.stats.nodes = this.shown.size; this.stats.points = shownPts; this.stats.loading = this.loading;
@@ -7846,7 +7846,6 @@ class LocalPointCloud {
       const p = new THREE.Points(g, sharedCubeMaterial);
       p.frustumCulled = false;
       p.matrixAutoUpdate = false;
-      attachPointSpacing(p, n.spacing); // 隙間補完を使うかは update で毎回決める(細かい子ノードが出ていない所だけ)
       n.obj = p;
       this.loaded.add(n);
       pcRegisterNode(p, null, true);   // 初描画の分散(表示管理)に登録
@@ -8026,6 +8025,7 @@ function gateBeginLocal(item) {
 async function openLocalItem(id) {
   const item = localItems.get(id);
   if (!item || loadingDataset) return;
+  if (localStandaloneId !== id) measureClearAll(); // 別のモデルを開く時は計測結果を消す
   teardownCurrentScene();
   currentDataset = null;
   loadingDataset = id;
@@ -8765,7 +8765,8 @@ window.__local3d = {
 
   // datasets と annotations を並行で読み込む(annotationsは失敗しても続行)
   await Promise.all([loadDatasetsCSV(), loadAnnotationsCSV()]);
-  applyPlacementEdits(); // 配置の調整で一時保存した値・追加したデータ
+  applyPlacementEdits();  // 配置の調整で一時保存した値・追加/外したデータ
+  applyAnnotationEdits(); // アノテーション配置で一時保存した内容
   buildDatasetButtons();
   // 表示するデータを選ぶ画面を出す(選ぶまでの間に、以降の準備を進める)
   showChooser({ boot: true });
@@ -8880,38 +8881,48 @@ async function copyText(text, btn) {
   return ok;
 }
 
-// ── 座標表示パネル(#dbg-panel) ──
-// 起動時に作っておき、debug/annotate のどちらかが ON の間だけ表示する(中身はそれぞれ ON のものだけ)。
+// ── アノテーション配置のパネル(#dbg-panel) ──
+// 起動時に作っておき、アノテーション配置が ON の間だけ表示する。中身の操作は setupAnnotationEditor で行う。
 const dbgPanel = document.createElement('div');
 dbgPanel.id = 'dbg-panel';
-dbgPanel.style.cssText = `
-  position:fixed; top:80px; left:16px;
-  background:rgba(0,0,0,0.85); color:#0f0;
-  font-family:monospace; font-size:11px;
-  padding:8px 12px; border:1px solid #0f0;
-  border-radius:4px; z-index:200; line-height:1.5;
-  min-width:280px; display:none;
-`;
+dbgPanel.style.display = 'none';
 dbgPanel.innerHTML = `
   <div id="dbg-annotate-block" hidden>
-    <div class="dbg-h">アノテーション配置 <span style="color:#9f9; font-weight:normal;">現在: <span id="dbg-ann-id">-</span></span></div>
-    <div style="color:#ff0;">黄色い立方体 = カメラ3m先の設置点</div>
-    <div style="margin-top:2px;">
-      <span style="color:#9f9;">annotations.csv行:</span>
-      <span id="dbg-ann" style="color:#fff; user-select:all;">-</span>
+    <div class="pp-h">アノテーション配置 <span id="ap-id" class="pp-id">-</span><span id="ap-state" class="pp-state"></span></div>
+    <div class="pp-hint">黄色い立方体 = 設置点(カメラの3m先)<span class="pp-pc">。I / J / K / L を押している間は立方体の周りを回ります</span></div>
+    <div class="pp-btns"><button type="button" class="dbg-btn" id="ap-add">＋ 立方体の所に追加<span class="pp-pc">(A)</span></button></div>
+    <div id="ap-list" class="ap-list" role="listbox" aria-label="このモデルのアノテーション"></div>
+    <div id="ap-edit" hidden>
+      <div class="pp-sec">選んだアノテーション <span id="ap-sel-no" class="pp-id"></span></div>
+      <div class="pp-row">タイトル <input id="ap-title" type="text" maxlength="60" autocomplete="off" aria-label="タイトル"></div>
+      <div class="pp-row ap-body-row">本文 <textarea id="ap-body" rows="3" maxlength="800" aria-label="本文"></textarea></div>
+      <table class="pp-tbl" aria-label="アノテーションの位置">
+        <tr><th></th><th>x</th><th>y</th><th>z</th></tr>
+        <tr><td>位置</td><td id="ap-x"></td><td id="ap-y"></td><td id="ap-z"></td></tr>
+      </table>
+      <div class="pp-grid">
+        <span>x</span><button type="button" class="dbg-btn" data-ap="x-1" aria-label="x を減らす">−</button><button type="button" class="dbg-btn" data-ap="x1" aria-label="x を増やす">＋</button>
+        <span>y</span><button type="button" class="dbg-btn" data-ap="y-1" aria-label="y を下げる">−</button><button type="button" class="dbg-btn" data-ap="y1" aria-label="y を上げる">＋</button>
+        <span>z</span><button type="button" class="dbg-btn" data-ap="z-1" aria-label="z を減らす">−</button><button type="button" class="dbg-btn" data-ap="z1" aria-label="z を増やす">＋</button>
+      </div>
+      <div class="pp-hint">1回 <span id="ap-step">0.1</span> m(移動の速さ: 遅く 0.01 / ふつう 0.1 / 速く 1)</div>
+      <div class="pp-btns">
+        <button type="button" class="dbg-btn" id="ap-to-cube">立方体の所へ移す</button>
+        <button type="button" class="dbg-btn" id="ap-go">見に行く</button>
+      </div>
+      <div class="pp-row ap-nums">球の大きさ <input id="ap-radius" type="number" min="0.05" max="5" step="0.05" aria-label="球の大きさ(m)"> m　開く距離 <input id="ap-dist" type="number" min="1" max="500" step="1" aria-label="パネルを開く距離(m)"> m</div>
+      <div class="pp-btns"><button type="button" class="dbg-btn warn" id="ap-del">このアノテーションを削除</button></div>
     </div>
-    <div style="margin-top:4px; color:#9f9;">
-      A: annotations行コピー (3m先に設置)<br>
-      I/K: 押している間 上/下 から回り込み(見下ろし/見上げ)<br>
-      J/L: 押している間 左/右 から回り込み<br>
-      (1秒で90度・最大90度、離すと正面に戻る。同時押しで斜めも可)
+    <div class="pp-sec">このモデルのアノテーション</div>
+    <div class="pp-hint">編集するとすぐ、この端末に一時保存します(この端末ではすぐ使われます)。</div>
+    <div class="pp-btns">
+      <button type="button" class="dbg-btn warn" id="ap-del-all">全部削除</button>
+      <button type="button" class="dbg-btn" id="ap-revert">annotations.csv の値に戻す</button>
+      <button type="button" class="dbg-btn" data-open-export>一覧で書き出す</button>
     </div>
-    <button type="button" class="dbg-btn" id="copy-ann-btn" style="margin-top:6px;">annotations の行をコピー(A)</button>
   </div>
 `;
 document.body.appendChild(dbgPanel);
-const dbgAnnId = document.getElementById('dbg-ann-id');
-const dbgAnn   = document.getElementById('dbg-ann');
 const dbgAnnBlock = document.getElementById('dbg-annotate-block');
 
 // dolly の yaw を -180〜+180 に正規化(CSV値とそのまま比較しやすいように)
@@ -8988,9 +8999,6 @@ function copyAdjustRow(btn) {
 
 const _dbgMarkerTmp = new THREE.Vector3();
 function refreshDebug() {
-  const o = currentCam();
-  if (dbgAnnId) dbgAnnId.textContent = o.id ?? '-';
-
   if (devModes.annotate) {
     // 設置点マーカーを更新。オービット中は「ロックした立方体位置」、通常は3m先。
     const p = orbitState.active ? orbitState.target : annotationPlacePoint();
@@ -9000,8 +9008,8 @@ function refreshDebug() {
     }
     placeMarker.position.copy(_dbgMarkerTmp);
     placeMarker.scale.setScalar(worldScale);
-    dbgAnn.textContent = annotationRowText() ?? '-';
   }
+  if (window.__annRefresh) window.__annRefresh();
 }
 // 表示中だけ 60ms 間隔で更新(非表示中は何もしない)
 setInterval(() => { if (isDebugPanelOn()) refreshDebug(); }, 60);
@@ -9133,7 +9141,7 @@ window.addEventListener('keydown', (e) => {
   if (gate.active || isTypingTarget(e.target)) return;
   // (R = 初期位置へ は「配置の調整」で扱う)
   if (devModes.annotate && e.code === 'KeyA') {
-    if (!e.repeat) copyAnnotationRow(document.getElementById('copy-ann-btn'));
+    if (!e.repeat && window.__annAddAtCube) window.__annAddAtCube(); // A = 立方体の所にアノテーションを追加
   } else if (devModes.annotate && e.code === 'KeyI') { orbitKeys.up = true; }
   else if (devModes.annotate && e.code === 'KeyK') { orbitKeys.down = true; }
   else if (devModes.annotate && e.code === 'KeyJ') { orbitKeys.left = true; }
@@ -9190,19 +9198,8 @@ if (sizeNum) {
 function updateSizeSlider() { applyPointUI(pointSize, false); }
 // 初期値: 前回の値。無ければ PC 2px / スマホ・タブレット 2.5px
 applyPointUI(Number(savedSettings.sizePx) || (isTouchDevice ? 2.5 : 2), false, { save: false });
-// 隙間の埋め具合(0〜150%。既定 0%)と点の形(立方体/丸)
+// 点の形(立方体/丸)
 {
-  const sl = document.getElementById('gapfill-slider');
-  const val = document.getElementById('gapfill-val');
-  const saved = Number(savedSettings.fillPct);
-  gapFillPct = Number.isFinite(saved) ? Math.max(0, Math.min(150, saved)) : 0; // 既定は 0%(すべての点が同じ大きさ)
-  const show = () => { if (val) val.textContent = gapFillPct ? `${gapFillPct}%` : '0%(埋めない)'; };
-  if (sl) {
-    sl.value = String(gapFillPct);
-    sl.addEventListener('input', () => { gapFillPct = parseInt(sl.value, 10) || 0; show(); });
-    sl.addEventListener('change', () => saveSetting('fillPct', gapFillPct));
-  }
-  show();
   const setShape = (shape) => {
     pointShape = shape === 'round' ? 'round' : 'cube';
     cubeUniforms.uShape.value = pointShape === 'round' ? 1.0 : 0.0;
@@ -10880,7 +10877,8 @@ function renderChooser() {
           <button type="button" class="ch-btn" data-act="save-level" disabled title="今の表示レベルで見るのに必要なタイル(離れて見る分)を、この端末に保存します">レベル5で保存</button>
           <button type="button" class="ch-btn" data-act="save-full" disabled title="すべてのタイルをこの端末に保存します(保存後はオフラインでも全部見られます)">完全保存</button>
           <button type="button" class="ch-btn" data-act="redo" title="保存データを消して、サーバーから取り直して開きます">再読み込み</button>
-          <button type="button" class="ch-btn warn" data-act="delete" title="この端末に保存したデータを削除します">削除</button>
+          <button type="button" class="ch-btn warn" data-act="delete" title="この端末に保存したタイルを削除します">保存を削除</button>
+          <button type="button" class="ch-btn warn" data-act="remove" title="この端末の一覧から外します(書き出す CSV からも外れ、保存したタイルも削除します。「外したデータ」から戻せます)">一覧から外す</button>
         </div>`;
       box.appendChild(card);
     }
@@ -10889,11 +10887,18 @@ function renderChooser() {
                    (overlayHas(ds.id) ? '<span class="ch-badge ov">重ねて表示中</span>' : '') +
                    (fullDlIsComplete(ds.id) ? '<span class="ch-badge full">完全保存済み</span>' : '') +
                    (ds.id === last && ds.id !== currentDataset ? '<span class="ch-badge">前回</span>' : '') +
-                   (ds._added ? '<span class="ch-badge edit">追加・未出力</span>' : (placeIsDirty(ds) ? '<span class="ch-badge edit">配置を調整中</span>' : ''));
+                   (ds._added ? '<span class="ch-badge edit">追加・未出力</span>' : (placeIsDirty(ds) ? '<span class="ch-badge edit">配置を調整中</span>' : '')) +
+                   (annIsDirty(ds.id) ? '<span class="ch-badge edit">アノテーションを調整中</span>' : '');
     card.querySelector('.ch-name').innerHTML = `${escapeHtml(ds.label ? `${ds.id}: ${ds.label}` : ds.id)}${badges}`;
     card.querySelector('.ch-info').innerHTML = dsCardInfoHtml(ds.id);
     const del = card.querySelector('[data-act="delete"]');
     if (del.dataset.armed !== '1') del.disabled = !(info && (info.storedCount || info.storedRoot));
+    const rmb = card.querySelector('[data-act="remove"]');
+    if (rmb && rmb.dataset.armed !== '1') {
+      rmb.disabled = ds.id === currentDataset;
+      rmb.title = ds.id === currentDataset ? '表示中のデータは外せません(別のデータを開いてから外してください)'
+        : 'この端末の一覧から外します(書き出す CSV からも外れ、保存したタイルも削除します。「外したデータ」から戻せます)';
+    }
     const offlineBlocked = info && info.state === 'error' && !info.hist;
     card.classList.toggle('blocked', !!offlineBlocked);
     // 重ねる: 主データの近く(OVERLAY_MAX_M 以内)のものだけ
@@ -10937,7 +10942,13 @@ function renderChooser() {
   renderChooserOverlaySum();
   renderChooserFullAll();
   for (const c of [...box.querySelectorAll('.ch-card')]) if (!have.has(c.dataset.id)) c.remove();
+  // カードの並びをデータの並びにそろえる(外したデータを戻した時など)
+  const wantOrder = DATASETS.map(d => d.id), nowOrder = [...box.querySelectorAll('.ch-card')].map(c => c.dataset.id);
+  if (wantOrder.join('\n') !== nowOrder.join('\n')) {
+    for (const id of wantOrder) { const c = box.querySelector(`.ch-card[data-id="${CSS.escape(id)}"]`); if (c) box.appendChild(c); }
+  }
   renderChooserLocal();
+  renderChooserEdit();
   // 端末の使用量・回線
   const foot = document.getElementById('ch-foot');
   const net = netEstimate();
@@ -10993,16 +11004,17 @@ onLevelUiChange(() => { if (chooser.open) renderChooser(); });
 // ── 操作 ──
 (function setupChooser() {
   const box = document.getElementById('ch-datasets');
-  const armDelete = (btn, onConfirm) => {
+  const armDelete = (btn, onConfirm, o = {}) => {
+    const label = btn.dataset.label || (btn.dataset.label = btn.textContent);
     if (btn.dataset.armed !== '1') {
-      btn.dataset.armed = '1'; btn.textContent = 'もう一度押すと削除';
+      btn.dataset.armed = '1'; btn.textContent = o.confirm || 'もう一度押すと削除';
       clearTimeout(btn._t);
-      btn._t = setTimeout(() => { btn.dataset.armed = ''; btn.textContent = '削除'; }, 3000);
+      btn._t = setTimeout(() => { btn.dataset.armed = ''; btn.textContent = label; }, 3000);
       return;
     }
     clearTimeout(btn._t);
-    btn.dataset.armed = ''; btn.textContent = '削除中…'; btn.disabled = true;
-    Promise.resolve(onConfirm()).finally(() => { btn.textContent = '削除'; });
+    btn.dataset.armed = ''; btn.textContent = o.busy || '削除中…'; btn.disabled = true;
+    Promise.resolve(onConfirm()).finally(() => { btn.textContent = label; });
   };
   box.addEventListener('click', (e) => {
     const card = e.target.closest('.ch-card');
@@ -11010,6 +11022,18 @@ onLevelUiChange(() => { if (chooser.open) renderChooser(); });
     const id = card.dataset.id;
     const act = e.target.closest('button')?.dataset.act || 'open';
     if (act === 'delete') { e.stopPropagation(); armDelete(e.target.closest('button'), () => deletePreloadData(id)); return; }
+    if (act === 'remove') {
+      e.stopPropagation();
+      if (id === currentDataset) return;
+      armDelete(e.target.closest('button'), async () => {
+        fullDlCancel(id);
+        if (overlayHas(id)) overlayRemove(id);
+        await deletePreloadData(id).catch(() => {});
+        placeRemoveDataset(id);
+        showToast('一覧から外しました(「外したデータ」から戻せます)');
+      }, { confirm: 'もう一度押すと外す', busy: '外しています…' });
+      return;
+    }
     if (act === 'save-level' || act === 'save-full') {
       e.stopPropagation();
       if (dlJob(id)) fullDlCancel(id); else openSaveDialog([id], act === 'save-full' ? 'full' : 'level');
@@ -11426,7 +11450,7 @@ function renderChooserFullAll() {
 }
 // 動作確認用(開発者ツールのコンソールから状態を確認できる)
 window.__v9 = { fullDl, fullDlCancel, fullDlEnqueue, openSaveDialog, resetSettingsToDefaults: () => resetSettingsToDefaults(), tileLoadStats, CACHE_DEVICE_MB, CACHE_DEVICE_TILES, isMovingRecently, cubeUniforms,
-  gapFill: () => gapFillPct, shape: () => pointShape, levelAutoTick, stopLoop: () => renderer.setAnimationLoop(null) };
+  gapFill: () => 0, shape: () => pointShape, levelAutoTick, stopLoop: () => renderer.setAnimationLoop(null) };
 window.__v5 = { dolly, pitch: () => pitchTarget, pickAt, nav: navState, speed: navMoveSpeed, sceneToW,
   measure: measureState, level: levelState, et: () => lodErrorTarget, budget: () => pcVis.budget, dsInfo };
 
@@ -11531,7 +11555,7 @@ function noteTopdownBarTop() {
 }
 
 // ── 設定を初期値に戻す(設定パネルの一番下。2回押しで実行) ──
-// 戻す: 表示レベル(端末の標準・自動)と個別の調整、点のサイズ(大きさ・埋め具合 0%・立方体)、
+// 戻す: 表示レベル(端末の標準・自動)と個別の調整、点のサイズ(大きさ・立方体)、
 //       表示するもの(点群・説明パネルを表示、地図は非表示と地図の細かい設定)、視点(歩く)、移動の速さ(ふつう)、表示倍率(1.0)、描画解像度の上限
 // 残す: 保存したデータ・重ねて表示・端末の3Dデータ・パネルの開閉
 function resetSettingsToDefaults() {
@@ -11541,7 +11565,6 @@ function resetSettingsToDefaults() {
   setLevelAuto(true);
   applyPointUI(isTouchDevice ? 2.5 : 2, false);
   const fire = (el, v) => { if (!el || el.value === v) return; el.value = v; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); };
-  fire(document.getElementById('gapfill-slider'), '0');
   document.querySelector('[data-point-shape="cube"]')?.click();
   const press = (id, want) => { const b = document.getElementById(id); if (b && (b.getAttribute('aria-pressed') === 'true') !== want) b.click(); };
   press('model-toggle', true);
@@ -11635,18 +11658,105 @@ document.addEventListener('click', (e) => {
   // top は #dataset-switch 真下に固定で再計算不要。
 });
 
-// ═══════════════ 作業モード「配置の調整」(tiles_012) ═══════════════
+// ═══════════════ データの一覧: Web 上のデータを追加・外したデータ・書き出し(tiles_013) ═══════════════
+function renderChooserEdit() {
+  const $ = (id) => document.getElementById(id);
+  const box = $('ch-removed-box');
+  if (!box) return;
+  box.hidden = !REMOVED_DATASETS.length;
+  $('ch-removed-n').textContent = String(REMOVED_DATASETS.length);
+  $('ch-removed').innerHTML = REMOVED_DATASETS.map(ds =>
+    `<div class="ch-rm-item"><span>${escapeHtml(ds.label ? `${ds.id}: ${ds.label}` : ds.id)}</span>` +
+    `<button type="button" class="ch-btn" data-restore="${escapeHtml(ds.id)}">一覧に戻す</button></div>`).join('');
+  // 書き出し: この端末で変えたもの(datasets.csv・annotations.csv との違い)
+  const name = (ds) => (ds.label ? `${ds.id} ${ds.label}` : ds.id);
+  const dsLines = [], annLines = [];
+  for (const ds of DATASETS) {
+    if (LOCAL_DATASETS.has(ds.id)) continue;
+    if (ds._added) dsLines.push(`${name(ds)}(追加)`);
+    else if (placeIsDirty(ds)) dsLines.push(`${name(ds)}(配置・名前)`);
+  }
+  for (const ds of REMOVED_DATASETS) dsLines.push(`${name(ds)}(一覧から外した)`);
+  const removed = new Set(REMOVED_DATASETS.map(d => d.id));
+  for (const id of annDirtyIds()) {
+    if (removed.has(id)) continue;
+    const ds = DATASETS.find(d => d.id === id);
+    annLines.push(`${ds ? name(ds) : id}(${annList(id).length}件)`);
+  }
+  const m = lsGet(EXPORT_META_KEY) || {};
+  const tm = (t) => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  const last = (k) => (m[k] ? `最後に書き出した日時 ${tm(m[k])}${m.changedAt && m.changedAt > m[k] ? '(その後に変更あり)' : ''}` : 'まだ書き出していません');
+  $('ch-export-info').innerHTML =
+    `<div><b>datasets.csv との違い</b>: ${dsLines.length ? escapeHtml(dsLines.join(' · ')) : 'なし'}<br><span class="ch-dim">${last('dsAt')}</span></div>` +
+    `<div><b>annotations.csv との違い</b>: ${annLines.length ? escapeHtml(annLines.join(' · ')) : 'なし'}<br><span class="ch-dim">${last('annAt')}</span></div>` +
+    `<div class="ch-dim">書き出すのは一覧の全データです(外したデータ・端末の3Dデータは含みません)。サーバーの CSV と置き換えると、ほかの端末にも反映されます。</div>`;
+}
+(function setupChooserEdit() {
+  const $ = (id) => document.getElementById(id);
+  if (!$('ch-add-btn')) return;
+  $('ch-add-btn').addEventListener('click', async () => {
+    const id = $('ch-new-id').value.trim();
+    const label = $('ch-new-label').value.replace(/[,\r\n]/g, '、').trim();
+    const msg = $('ch-add-msg');
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(id)) { msg.textContent = 'id は半角の英数字(と - _)で入れてください'; return; }
+    if (REMOVED_DATASETS.some(d => d.id === id)) { msg.textContent = `id ${id} は「外したデータ」にあります。そこから一覧に戻せます`; return; }
+    if (DATASETS.some(d => d.id === id)) { msg.textContent = `id ${id} はすでに一覧にあります`; return; }
+    msg.textContent = `id ${id} を確かめています…`;
+    let ok = false;
+    try {
+      const r = await fetch(tilesetUrl(id), { cache: 'no-cache' });
+      if (r.ok) { const j = await r.json(); ok = !!(j && j.root); }
+    } catch (e) { ok = false; }
+    if (!ok) { msg.textContent = `id ${id} のデータが見つかりませんでした(id を確かめてください。通信できない時も追加できません)`; return; }
+    if (DATASETS.some(d => d.id === id)) { msg.textContent = `id ${id} はすでに一覧にあります`; return; }
+    const ds = { id, label: label || id, xOffset: 0, yOffset: 0, zOffset: 0, yawOffset: 0,
+      heightAdjust: 0, xAdjust: 0, zAdjust: 0, _added: true, _needPose: true, _csv: null };
+    DATASETS.push(ds);
+    placeRecord(ds);
+    buildDatasetButtons(); updateDatasetButtons();
+    $('ch-new-id').value = ''; $('ch-new-label').value = '';
+    msg.textContent = `${id}: ${ds.label} を一覧に追加しました。開いて、作業用の「配置の調整」で位置と初期位置を決めてください`;
+    renderChooser();
+  });
+  $('ch-removed').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-restore]');
+    if (!b) return;
+    placeRestoreDataset(b.dataset.restore);
+    showToast('一覧に戻しました');
+  });
+  $('ch-export-ds').addEventListener('click', () => {
+    downloadTextFile('datasets.csv', window.__lastDatasetsCsv = buildDatasetsCsv(), 'text/csv;charset=utf-8');
+    exportMetaExported('dsAt');
+    renderChooser();
+    showToast('datasets.csv を書き出しました。サーバーの datasets.csv と置き換えてください');
+  });
+  $('ch-export-ann').addEventListener('click', () => {
+    downloadTextFile('annotations.csv', window.__lastAnnotationsCsv = buildAnnotationsCsv(), 'text/csv;charset=utf-8');
+    exportMetaExported('annAt');
+    renderChooser();
+    showToast('annotations.csv を書き出しました。サーバーの annotations.csv と置き換えてください');
+  });
+})();
+
+// ═══════════════ 作業モード「配置の調整」(tiles_012 → 013) ═══════════════
 // モデルの位置(heightAdjust / xAdjust / zAdjust)・最初に見る場所と向き(xOffset / yOffset / zOffset / yawOffset)・名前(label)を
-// モデルごとにこの端末へ一時保存し(localStorage)、この端末では常にその値を使う。全データを datasets.csv として書き出せる。
-// Web 上の新しい id と名前の追加もここで行う。端末に取り込んだ3Dデータ(LOCAL_DATASETS)は対象外。
-// 以前の「座標表示」(?debug=1)と「モデル位置調整」(?heightadjust=1)をまとめたもの(行のコピーはやめた)。
+// モデルごとにこの端末へ一時保存し(localStorage)、この端末では常にその値を使う。
+// モデルの位置も見る場所も「初期位置にする」で一時保存する(動かしただけでは保存しない。保存せずに別のモデルを開くと戻る)。
+// データの一覧から、Web 上の新しいデータの追加・一覧から外す・datasets.csv の書き出しを行う。
+// 端末に取り込んだ3Dデータ(LOCAL_DATASETS)は対象外。
 const PLACE_KEY = 'tilesViewer.placement.v1';
+const EXPORT_META_KEY = 'tilesViewer.export.v1';
 const PLACE_FIELDS = ['label', 'xOffset', 'yOffset', 'zOffset', 'yawOffset', 'heightAdjust', 'xAdjust', 'zAdjust'];
+const REMOVED_DATASETS = []; // 一覧から外したデータ(datasets.csv にあるもの。「外したデータ」から戻せる)
+let _dsCsvOrder = [];        // datasets.csv の並び(戻す時の位置)
 function placeLoadStore() {
   const s = lsGet(PLACE_KEY);
   return (s && typeof s === 'object' && s.items && typeof s.items === 'object') ? s : { items: {} };
 }
 function placeSaveStore(s) { lsSet(PLACE_KEY, s); }
+// 書き出しの記録(最後に変えた時刻・書き出した時刻)
+function exportMetaTouch() { const m = lsGet(EXPORT_META_KEY) || {}; m.changedAt = Date.now(); lsSet(EXPORT_META_KEY, m); }
+function exportMetaExported(kind) { const m = lsGet(EXPORT_META_KEY) || {}; m[kind] = Date.now(); lsSet(EXPORT_META_KEY, m); }
 const placeSame = (a, b) => Math.abs((Number(a) || 0) - (Number(b) || 0)) < 1e-6;
 // datasets.csv の値から変わっているか(追加したデータは常に「未出力」)
 function placeIsDirty(ds) {
@@ -11656,19 +11766,23 @@ function placeIsDirty(ds) {
   if (!c) return false;
   return PLACE_FIELDS.some(f => (f === 'label' ? (ds.label || '') !== (c.label || '') : !placeSame(ds[f], c[f])));
 }
-// 起動時(datasets.csv の読込後): 一時保存した値を反映し、追加したデータを一覧に足す。CSV と同じになったものは消す
+// 起動時(datasets.csv の読込後): 一時保存した値を反映し、追加したデータを足し、外したデータを除く。CSV と同じになったものは消す
 function applyPlacementEdits() {
   const st = placeLoadStore();
+  _dsCsvOrder = DATASETS.map(d => d.id);
   for (const ds of DATASETS) ds._csv = Object.fromEntries(PLACE_FIELDS.map(f => [f, ds[f]]));
   let changed = false;
   for (const [id, it] of Object.entries(st.items)) {
     if (!it || typeof it !== 'object') { delete st.items[id]; changed = true; continue; }
     const ds = DATASETS.find(d => d.id === id);
-    if (ds) {
+    if (ds && it.removed) {
+      DATASETS.splice(DATASETS.indexOf(ds), 1);
+      REMOVED_DATASETS.push(ds);
+    } else if (ds) {
       for (const f of PLACE_FIELDS) if (it[f] !== undefined) ds[f] = f === 'label' ? String(it[f]) : (Number(it[f]) || 0);
       if (!placeIsDirty(ds)) { delete st.items[id]; changed = true; }
       else if (it.added) { it.added = false; changed = true; } // datasets.csv に載った(以後は「調整あり」として扱う)
-    } else if (it.added) {
+    } else if (it.added && !it.removed) {
       const nd = { id, _added: true, _csv: null };
       for (const f of PLACE_FIELDS) nd[f] = f === 'label' ? String(it.label || id) : (Number(it[f]) || 0);
       if (it.needPose) nd._needPose = true;
@@ -11677,7 +11791,7 @@ function applyPlacementEdits() {
   }
   if (changed) placeSaveStore(st);
   const n = Object.keys(st.items).length;
-  if (n) console.log(`[配置の調整] この端末で調整した値を使います(${n}件)`);
+  if (n) console.log(`[配置の調整] この端末で変えた内容を使います(${n}件)`);
 }
 // 1つのデータの今の値を一時保存する(datasets.csv と同じなら消す)
 function placeRecord(ds) {
@@ -11690,13 +11804,48 @@ function placeRecord(ds) {
     st.items[ds.id] = it;
   } else delete st.items[ds.id];
   placeSaveStore(st);
+  exportMetaTouch();
+  placeEmit();
+}
+// 一覧から外す(追加したデータは追加の取り消し)。datasets.csv・annotations.csv の書き出しからも除く
+function placeRemoveDataset(id) {
+  const ds = DATASETS.find(d => d.id === id);
+  if (!ds) return false;
+  const st = placeLoadStore();
+  DATASETS.splice(DATASETS.indexOf(ds), 1);
+  if (ds._added) delete st.items[id];
+  else {
+    st.items[id] = { removed: true };
+    for (const f of PLACE_FIELDS) ds[f] = ds._csv[f]; // 戻した時は datasets.csv の値から
+    REMOVED_DATASETS.push(ds);
+  }
+  placeSaveStore(st);
+  exportMetaTouch();
+  dsInfo.delete(id);
+  saveDsSummary(id, { snap: null });
+  buildDatasetButtons(); updateDatasetButtons();
+  placeEmit();
+  return true;
+}
+// 外したデータを一覧に戻す(datasets.csv の並びの位置へ)
+function placeRestoreDataset(id) {
+  const i = REMOVED_DATASETS.findIndex(d => d.id === id);
+  if (i < 0) return;
+  const ds = REMOVED_DATASETS.splice(i, 1)[0];
+  const st = placeLoadStore(); delete st.items[id]; placeSaveStore(st);
+  const ord = (x) => { const k = _dsCsvOrder.indexOf(x.id); return k < 0 ? 1e9 : k; };
+  let at = DATASETS.findIndex(d => ord(d) > ord(ds));
+  if (at < 0) at = DATASETS.length;
+  DATASETS.splice(at, 0, ds);
+  exportMetaTouch();
+  buildDatasetButtons(); updateDatasetButtons();
   placeEmit();
 }
 function placeEmit() {
-  if (typeof chooser !== 'undefined' && chooser.open) renderChooser();
+  if (typeof chooser !== 'undefined' && chooser.open) { chooserRefreshAll(); renderChooser(); } // 追加・戻したデータの件数も確かめる
   if (window.__placeRefresh) window.__placeRefresh();
 }
-// datasets.csv(全データ。端末の3Dデータは含めない)
+// datasets.csv(一覧の全データ。外したデータ・端末の3Dデータは含めない)
 function placeFmt(v, d) { return String(Number((Number(v) || 0).toFixed(d))); }
 function buildDatasetsCsv() {
   const head = 'id,label,xOffset,yOffset,zOffset,yawOffset,heightAdjust,xAdjust,zAdjust';
@@ -11714,6 +11863,12 @@ function downloadTextFile(name, text, type) {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
+// 作業パネルの「一覧で書き出す」: データの一覧を開き、書き出しの欄を見せる
+function openExportInChooser() {
+  showChooser({ boot: !currentDataset && !localStandaloneId });
+  requestAnimationFrame(() => document.getElementById('ch-export-sec')?.scrollIntoView({ block: 'start' }));
+}
+document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('[data-open-export]')) openExportInChooser(); });
 
 (function setupPlacePanel() {
   const panel = document.getElementById('place-panel');
@@ -11725,7 +11880,15 @@ function downloadTextFile(name, text, type) {
   const stepNow = (fine) => (fine ? 0.01 : (boostLevel >= 3 ? 1 : (boostLevel < 1 ? 0.01 : 0.1)));
   const r2 = (v) => Math.round(v * 100) / 100;
   const f2 = (v) => (Number(v) || 0).toFixed(2);
-  const poseText = (x, y, z, yaw) => `x ${f2(x)}  y ${f2(y)}  z ${f2(z)}  向き ${(Number(yaw) || 0).toFixed(1)}°`;
+  const f1 = (v) => `${(Number(v) || 0).toFixed(1)}°`;
+  // 表の1マス: 値と、上の行(datasets.csv → 初期位置 → いま)から変わっているかの印
+  function cell(id, v, fmt, prev) {
+    const el = $(id); if (!el) return;
+    const t = v == null ? '—' : fmt(v);
+    if (el.textContent !== t) el.textContent = t;
+    el.classList.toggle('chg', v != null && prev != null && !placeSame(v, prev));
+  }
+  const modelUnsaved = (ds) => !placeSame(currentXAdjust, ds.xAdjust) || !placeSame(currentHeightAdjust, ds.heightAdjust) || !placeSame(currentZAdjust, ds.zAdjust);
 
   function refresh() {
     const ds = curDs();
@@ -11734,47 +11897,42 @@ function downloadTextFile(name, text, type) {
     $('pp-local-note').hidden = !local;
     $('pp-main').hidden = !ds || local;
     const stEl = $('pp-state');
-    if (ds && !local) {
-      const dirty = placeIsDirty(ds);
-      stEl.textContent = ds._added ? '追加・未出力' : (dirty ? '調整あり・未出力' : 'datasets.csv と同じ');
-      stEl.className = 'pp-state ' + (dirty ? 'dirty' : 'clean');
-      const lab = $('pp-label');
-      if (document.activeElement !== lab) lab.value = ds.label || '';
-      $('pp-x').textContent = f2(currentXAdjust);
-      $('pp-y').textContent = f2(currentHeightAdjust);
-      $('pp-z').textContent = f2(currentZAdjust);
-      $('pp-init').textContent = poseText(ds.xOffset, ds.yOffset, ds.zOffset, ds.yawOffset);
-      const o = currentCam();
-      $('pp-now').textContent = poseText(o.x - currentXAdjust, o.y - currentHeightAdjust, o.z - currentZAdjust, o.yawDeg);
-      const rv = $('pp-revert');
-      if (rv.dataset.armed !== '1') rv.textContent = ds._added ? 'この追加を取り消す' : 'datasets.csv の値に戻す';
-      rv.disabled = !dirty;
-    } else { stEl.textContent = ''; stEl.className = 'pp-state'; }
+    if (!ds || local) { stEl.textContent = ''; stEl.className = 'pp-state'; return; }
+    const dirty = placeIsDirty(ds), unsaved = modelUnsaved(ds);
+    stEl.textContent = (ds._added ? '追加・未出力' : (dirty ? 'datasets.csv から変更あり' : 'datasets.csv と同じ')) + (unsaved ? ' · モデルの位置は未保存' : '');
+    stEl.className = 'pp-state ' + (dirty || unsaved ? 'dirty' : 'clean');
+    const lab = $('pp-label');
+    if (document.activeElement !== lab) lab.value = ds.label || '';
+    const c = ds._csv;
+    // モデルの位置
+    cell('pm-cx', c ? c.xAdjust : null, f2); cell('pm-cy', c ? c.heightAdjust : null, f2); cell('pm-cz', c ? c.zAdjust : null, f2);
+    cell('pm-ix', ds.xAdjust, f2, c ? c.xAdjust : null); cell('pm-iy', ds.heightAdjust, f2, c ? c.heightAdjust : null); cell('pm-iz', ds.zAdjust, f2, c ? c.zAdjust : null);
+    cell('pm-nx', currentXAdjust, f2, ds.xAdjust); cell('pm-ny', currentHeightAdjust, f2, ds.heightAdjust); cell('pm-nz', currentZAdjust, f2, ds.zAdjust);
+    // 最初に見る場所と向き(いま = モデルの位置の分を引いた、モデルから見た位置)
+    const o = currentCam();
+    cell('pv-cx', c ? c.xOffset : null, f2); cell('pv-cy', c ? c.yOffset : null, f2); cell('pv-cz', c ? c.zOffset : null, f2); cell('pv-cw', c ? c.yawOffset : null, f1);
+    cell('pv-ix', ds.xOffset, f2, c ? c.xOffset : null); cell('pv-iy', ds.yOffset, f2, c ? c.yOffset : null); cell('pv-iz', ds.zOffset, f2, c ? c.zOffset : null); cell('pv-iw', ds.yawOffset, f1, c ? c.yawOffset : null);
+    cell('pv-nx', o.x - currentXAdjust, f2, ds.xOffset); cell('pv-ny', o.y - currentHeightAdjust, f2, ds.yOffset); cell('pv-nz', o.z - currentZAdjust, f2, ds.zOffset); cell('pv-nw', o.yawDeg, f1, ds.yawOffset);
+    const rv = $('pp-revert');
+    if (rv.dataset.armed !== '1') rv.textContent = ds._added ? 'この追加を取り消す' : 'datasets.csv の値に戻す';
+    rv.disabled = !dirty && !unsaved;
     $('pp-step').textContent = String(stepNow(false));
     $('pp-scale-warn').hidden = Math.abs(worldScale - 1) < 1e-6;
-    const list = DATASETS.filter(placeIsDirty);
-    $('pp-summary').textContent = list.length
-      ? `未出力の変更 ${list.length}件: ${list.map(d => d.label || d.id).join('、')}`
-      : '未出力の変更はありません';
   }
-  // 書き込みはまとめて(キーの押しっぱなしで何度も保存しない)
-  let recTimer = null, recDs = null;
-  function recordSoon(ds) {
-    if (recDs && recDs !== ds) placeRecord(recDs);
-    recDs = ds; clearTimeout(recTimer);
-    recTimer = setTimeout(() => { const d = recDs; recDs = null; if (d) placeRecord(d); }, 300);
-  }
-  // モデルを動かす(地図に合わせる)
+  // モデルを動かす(いまの位置だけ。「今の位置を初期位置にする」で一時保存)
   function nudge(axis, dir, fine) {
     const ds = curDs();
     if (!ds || isLocalDs(ds)) return;
     const step = stepNow(fine) * dir;
-    if (axis === 'x') { currentXAdjust = r2(currentXAdjust + step); ds.xAdjust = currentXAdjust; }
-    else if (axis === 'y') { currentHeightAdjust = r2(currentHeightAdjust + step); ds.heightAdjust = currentHeightAdjust; }
-    else { currentZAdjust = r2(currentZAdjust + step); ds.zAdjust = currentZAdjust; }
+    if (axis === 'x') currentXAdjust = r2(currentXAdjust + step);
+    else if (axis === 'y') currentHeightAdjust = r2(currentHeightAdjust + step);
+    else currentZAdjust = r2(currentZAdjust + step);
     applyWorldScale();
-    recordSoon(ds);
     refresh();
+  }
+  function flash(b, text, back) {
+    b.textContent = text; clearTimeout(b._t);
+    b._t = setTimeout(() => { b.textContent = back; }, 1400);
   }
   // 初期位置へ(R キーも同じ)
   function goPose() {
@@ -11792,6 +11950,20 @@ function downloadTextFile(name, text, type) {
     const s = b.dataset.pp;
     nudge(s[0], Number(s.slice(1)), false);
   });
+  $('pp-set-model').addEventListener('click', (e) => {
+    const ds = curDs();
+    if (!ds || isLocalDs(ds)) return;
+    ds.xAdjust = currentXAdjust; ds.heightAdjust = currentHeightAdjust; ds.zAdjust = currentZAdjust;
+    placeRecord(ds);
+    flash(e.currentTarget, '✓ 初期位置にしました', '今の位置を初期位置にする');
+  });
+  $('pp-go-model').addEventListener('click', () => {
+    const ds = curDs();
+    if (!ds || isLocalDs(ds)) return;
+    currentXAdjust = ds.xAdjust || 0; currentHeightAdjust = ds.heightAdjust || 0; currentZAdjust = ds.zAdjust || 0;
+    applyWorldScale();
+    refresh();
+  });
   $('pp-set-pose').addEventListener('click', (e) => {
     const ds = curDs();
     if (!ds || isLocalDs(ds)) return;
@@ -11802,23 +11974,20 @@ function downloadTextFile(name, text, type) {
     ds.yawOffset = Math.round(o.yawDeg * 10) / 10;
     delete ds._needPose;
     placeRecord(ds);
-    const b = e.currentTarget;
-    b.textContent = '✓ 初期位置にしました';
-    clearTimeout(b._t);
-    b._t = setTimeout(() => { b.textContent = '今の視点を初期位置にする'; }, 1400);
+    flash(e.currentTarget, '✓ 初期位置にしました', '今の視点を初期位置にする');
   });
   $('pp-go-pose').addEventListener('click', goPose);
+  let labelTimer = null;
   $('pp-label').addEventListener('input', () => {
     const ds = curDs();
     if (!ds || isLocalDs(ds)) return;
     ds.label = $('pp-label').value.replace(/[,\r\n]/g, '、');
-    recordSoon(ds);
-    clearTimeout(panel._lt);
-    panel._lt = setTimeout(() => updateDatasetButtons(), 300);
+    clearTimeout(labelTimer);
+    labelTimer = setTimeout(() => { placeRecord(ds); updateDatasetButtons(); }, 300);
   });
   $('pp-revert').addEventListener('click', (e) => {
     const ds = curDs();
-    if (!ds || isLocalDs(ds) || !placeIsDirty(ds)) return;
+    if (!ds || isLocalDs(ds) || (!placeIsDirty(ds) && !modelUnsaved(ds))) return;
     const b = e.currentTarget;
     if (b.dataset.armed !== '1') {
       b.dataset.armed = '1';
@@ -11829,13 +11998,11 @@ function downloadTextFile(name, text, type) {
     }
     clearTimeout(b._t);
     b.dataset.armed = '';
-    if (recDs === ds) { clearTimeout(recTimer); recDs = null; }
+    clearTimeout(labelTimer);
     if (ds._added) {
-      const i = DATASETS.indexOf(ds);
-      if (i >= 0) DATASETS.splice(i, 1);
-      const st = placeLoadStore(); delete st.items[ds.id]; placeSaveStore(st);
-      buildDatasetButtons(); updateDatasetButtons();
-      showToast(`「${ds.label || ds.id}」の追加を取り消しました`);
+      const name = ds.label || ds.id;
+      placeRemoveDataset(ds.id);
+      showToast(`「${name}」の追加を取り消しました`);
       showChooser({ boot: false });
       refresh();
       return;
@@ -11846,37 +12013,6 @@ function downloadTextFile(name, text, type) {
     placeRecord(ds);
     updateDatasetButtons();
     showToast('datasets.csv の値に戻しました');
-  });
-  $('pp-export').addEventListener('click', () => {
-    if (recDs) { clearTimeout(recTimer); const d = recDs; recDs = null; placeRecord(d); }
-    const text = buildDatasetsCsv();
-    window.__lastDatasetsCsv = text; // 動作確認用
-    downloadTextFile('datasets.csv', text, 'text/csv;charset=utf-8');
-    const n = DATASETS.filter(d => !LOCAL_DATASETS.has(d.id)).length;
-    showToast(`datasets.csv を書き出しました(${n}件)。サーバーの datasets.csv と置き換えると、ほかの端末にも反映されます`);
-  });
-  $('pp-add').addEventListener('click', async () => {
-    const id = $('pp-new-id').value.trim();
-    const label = $('pp-new-label').value.replace(/[,\r\n]/g, '、').trim();
-    const msg = $('pp-add-msg');
-    if (!/^[A-Za-z0-9_-]{1,40}$/.test(id)) { msg.textContent = 'id は半角の英数字(と - _)で入れてください'; return; }
-    if (DATASETS.some(d => d.id === id)) { msg.textContent = `id ${id} はすでに一覧にあります`; return; }
-    msg.textContent = `id ${id} を確かめています…`;
-    let ok = false;
-    try {
-      const r = await fetch(tilesetUrl(id), { cache: 'no-cache' });
-      if (r.ok) { const j = await r.json(); ok = !!(j && j.root); }
-    } catch (e) { ok = false; }
-    if (!ok) { msg.textContent = `id ${id} のデータが見つかりませんでした(id を確かめてください。通信できない時も追加できません)`; return; }
-    if (DATASETS.some(d => d.id === id)) { msg.textContent = `id ${id} はすでに一覧にあります`; return; }
-    const ds = { id, label: label || id, xOffset: 0, yOffset: 0, zOffset: 0, yawOffset: 0,
-      heightAdjust: 0, xAdjust: 0, zAdjust: 0, _added: true, _needPose: true, _csv: null };
-    DATASETS.push(ds);
-    placeRecord(ds);
-    buildDatasetButtons(); updateDatasetButtons();
-    $('pp-new-id').value = ''; $('pp-new-label').value = '';
-    msg.textContent = `${id}: ${ds.label} を追加しました。モデルの位置と初期位置を決めて、書き出してください`;
-    chooseDataset(id);
   });
   // PC のキー: [ ] = 高さ Y、; : = 東西 X、, . = 南北 Z(Shift で 0.01)、R = 初期位置へ
   window.addEventListener('keydown', (e) => {
@@ -11903,9 +12039,257 @@ function downloadTextFile(name, text, type) {
   setInterval(() => { if (devModes.place) refresh(); }, 150);
   window.__placeRefresh = () => { if (devModes.place) refresh(); };
 })();
+
+// ═══════════════ アノテーション配置(tiles_013) ═══════════════
+// 作業パネルで、このモデルのアノテーションを選んで位置・タイトル・本文・球の大きさ・開く距離を編集し、追加・1件削除・全部削除ができる。
+// 編集するとすぐ、モデルごとにこの端末へ一時保存し(localStorage)、この端末では常にその内容を使う。
+// annotations.csv はデータの一覧の「書き出し」から書き出す。
+const ANN_KEY = 'tilesViewer.annotations.v1';
+const ANN_FIELDS = ['x', 'y', 'z', 'title', 'body', 'radius', 'dist'];
+let ANNOTATIONS_CSV = []; // annotations.csv の内容(戻す時に使う)
+function annLoadStore() {
+  const s = lsGet(ANN_KEY);
+  return (s && typeof s === 'object' && s.models && typeof s.models === 'object') ? s : { models: {} };
+}
+function annSaveStore(s) { lsSet(ANN_KEY, s); }
+const annPick = (a) => Object.fromEntries(ANN_FIELDS.map(f => [f, a[f]]));
+function annSameList(a, b) {
+  if (a.length !== b.length) return false;
+  return a.every((p, i) => ANN_FIELDS.every(f => (typeof p[f] === 'number' ? placeSame(p[f], b[i][f]) : String(p[f] ?? '') === String(b[i][f] ?? ''))));
+}
+const annList = (id) => ANNOTATIONS.filter(a => a.datasetId === id);
+const annCsvList = (id) => ANNOTATIONS_CSV.filter(a => a.datasetId === id);
+function annIsDirty(id) { return !!annLoadStore().models[id]; }
+function annDirtyIds() { return Object.keys(annLoadStore().models); }
+// 起動時(annotations.csv の読込後): 一時保存した内容で置き換える。CSV と同じになったものは消す
+function applyAnnotationEdits() {
+  ANNOTATIONS_CSV = ANNOTATIONS.map(a => ({ ...a }));
+  const st = annLoadStore();
+  let changed = false;
+  for (const [id, list] of Object.entries(st.models)) {
+    if (!Array.isArray(list)) { delete st.models[id]; changed = true; continue; }
+    const items = list.map(a => ({ datasetId: id, x: Number(a.x) || 0, y: Number(a.y) || 0, z: Number(a.z) || 0,
+      title: String(a.title ?? ''), body: String(a.body ?? ''), radius: Number(a.radius) || 0.25, dist: Number(a.dist) || 10 }));
+    if (annSameList(annCsvList(id), items)) { delete st.models[id]; changed = true; continue; }
+    ANNOTATIONS = ANNOTATIONS.filter(a => a.datasetId !== id).concat(items);
+  }
+  if (changed) annSaveStore(st);
+}
+// 1つのモデルの今の内容を一時保存する(annotations.csv と同じなら消す)
+function annRecord(id) {
+  const list = annList(id).map(annPick);
+  const st = annLoadStore();
+  if (annSameList(annCsvList(id), list)) delete st.models[id]; else st.models[id] = list;
+  annSaveStore(st);
+  exportMetaTouch();
+  if (typeof chooser !== 'undefined' && chooser.open) renderChooser();
+}
+// 1つのモデルの 3D の説明パネルを作り直す(表示中なら付け替える)
+function annRebuild(id) {
+  const old = annotationCache.get(id);
+  if (old) {
+    if (id === currentDataset) clearAnnotations();
+    for (const it of old) it.group.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+    });
+    annotationCache.delete(id);
+  }
+  if (id === currentDataset) rebuildAnnotations(id);
+}
+function annRevert(id) {
+  ANNOTATIONS = ANNOTATIONS.filter(a => a.datasetId !== id).concat(annCsvList(id).map(a => ({ ...a })));
+  const st = annLoadStore(); delete st.models[id]; annSaveStore(st);
+  exportMetaTouch();
+  annRebuild(id);
+  if (typeof chooser !== 'undefined' && chooser.open) renderChooser();
+}
+// annotations.csv(一覧の並び順。外したデータ・端末の3Dデータの分は含めない)
+function buildAnnotationsCsv() {
+  const head = 'datasetId,x,y,z,title,body,radius,dist';
+  const q = (s) => { s = String(s ?? ''); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const row = (a) => [a.datasetId, (Number(a.x) || 0).toFixed(2), (Number(a.y) || 0).toFixed(2), (Number(a.z) || 0).toFixed(2),
+    q(a.title), q(a.body), placeFmt(a.radius, 3), placeFmt(a.dist, 1)].join(',');
+  const order = DATASETS.filter(d => !LOCAL_DATASETS.has(d.id)).map(d => d.id);
+  const known = new Set(order), removed = new Set(REMOVED_DATASETS.map(d => d.id));
+  const rows = [];
+  for (const id of order) for (const a of annList(id)) rows.push(row(a));
+  // 一覧に無いデータ向けの行(annotations.csv にもともとあるもの)は残す
+  for (const a of ANNOTATIONS) if (!known.has(a.datasetId) && !removed.has(a.datasetId) && !LOCAL_DATASETS.has(a.datasetId)) rows.push(row(a));
+  return [head, ...rows].join('\n') + '\n';
+}
+
+(function setupAnnotationEditor() {
+  const $ = (id) => document.getElementById(id);
+  const listEl = $('ap-list');
+  if (!listEl) return;
+  let sel = -1, lastId = null;
+  const curId = () => currentDataset ?? loadingDataset;
+  const isLocalId = (id) => id != null && LOCAL_DATASETS.has(id);
+  const stepNow = () => (boostLevel >= 3 ? 1 : (boostLevel < 1 ? 0.01 : 0.1));
+  const r2 = (v) => Math.round(v * 100) / 100;
+  // 設置点(黄色い立方体)をモデルの座標に(モデルの位置の分を引く)
+  function cubeModelPoint() {
+    const p = (orbitState.active) ? orbitState.target : annotationPlacePoint();
+    return { x: r2(p.x - currentXAdjust), y: r2(p.y - currentHeightAdjust), z: r2(p.z - currentZAdjust) };
+  }
+  function selA() { const id = curId(); const l = id != null ? annList(id) : []; return sel >= 0 && sel < l.length ? l[sel] : null; }
+  // 選んだものの球を黄色に
+  function paintSelection() {
+    annotationItems.forEach((it, i) => { if (it.sphere && it.sphere.material) it.sphere.material.color.set(i === sel ? 0xffd24a : 0x00c8ff); });
+  }
+  function renderList() {
+    const id = curId();
+    const l = id != null && !isLocalId(id) ? annList(id) : [];
+    listEl.innerHTML = l.length ? l.map((a, i) =>
+      `<button type="button" class="ap-item${i === sel ? ' sel' : ''}" data-i="${i}" role="option" aria-selected="${i === sel}">` +
+      `<b>${i + 1}.</b> ${escapeHtml(a.title || '(タイトルなし)')}<span class="ap-xyz">${a.x.toFixed(2)}, ${a.y.toFixed(2)}, ${a.z.toFixed(2)}</span></button>`).join('')
+      : `<div class="pp-hint">${isLocalId(id) ? '端末の3Dデータには置けません' : 'まだありません。「＋ 立方体の所に追加」で置けます'}</div>`;
+    const a = selA();
+    $('ap-edit').hidden = !a;
+    if (a) {
+      $('ap-sel-no').textContent = `${sel + 1}件目`;
+      if (document.activeElement !== $('ap-title')) $('ap-title').value = a.title;
+      if (document.activeElement !== $('ap-body')) $('ap-body').value = a.body;
+      if (document.activeElement !== $('ap-radius')) $('ap-radius').value = String(a.radius);
+      if (document.activeElement !== $('ap-dist')) $('ap-dist').value = String(a.dist);
+    }
+    $('ap-add').disabled = id == null || isLocalId(id);
+    $('ap-del-all').disabled = !l.length;
+    refreshLive();
+    paintSelection();
+  }
+  // 60ms おき(refreshDebug から): 状態・位置・1回の量
+  function refreshLive() {
+    const id = curId();
+    if (id !== lastId) { lastId = id; sel = -1; renderList(); return; }
+    $('ap-id').textContent = id ?? '-';
+    const st = $('ap-state');
+    if (id == null || isLocalId(id)) { st.textContent = ''; st.className = 'pp-state'; }
+    else {
+      const dirty = annIsDirty(id);
+      const t = dirty ? 'annotations.csv から変更あり' : 'annotations.csv と同じ';
+      if (st.textContent !== t) { st.textContent = t; st.className = 'pp-state ' + (dirty ? 'dirty' : 'clean'); }
+      const rv = $('ap-revert'); if (rv.dataset.armed !== '1') rv.disabled = !dirty;
+    }
+    const a = selA();
+    if (a) { $('ap-x').textContent = a.x.toFixed(2); $('ap-y').textContent = a.y.toFixed(2); $('ap-z').textContent = a.z.toFixed(2); }
+    $('ap-step').textContent = String(stepNow());
+  }
+  function select(i) { sel = i; renderList(); }
+  // 位置だけ変えた時は作り直さず動かす
+  function movedSel(id) {
+    const a = selA(), it = annotationItems[sel];
+    if (a && it) { it.pos.set(a.x, a.y, a.z); applyAnnotationScale(); }
+    recordSoon(id);
+    renderList();
+  }
+  let recTimer = null, recId = null;
+  function recordSoon(id) {
+    if (recId != null && recId !== id) annRecord(recId);
+    recId = id; clearTimeout(recTimer);
+    recTimer = setTimeout(() => { const x = recId; recId = null; if (x != null) annRecord(x); }, 300);
+  }
+  function flushRecord() { if (recId != null) { clearTimeout(recTimer); const x = recId; recId = null; annRecord(x); } }
+  // 追加(A キーも同じ)
+  function addAtCube() {
+    const id = curId();
+    if (id == null || isLocalId(id)) return;
+    flushRecord();
+    const p = cubeModelPoint();
+    ANNOTATIONS.push({ datasetId: id, x: p.x, y: p.y, z: p.z, title: 'タイトル', body: '本文', radius: 0.25, dist: 10 });
+    annRecord(id);
+    annRebuild(id);
+    sel = annList(id).length - 1;
+    renderList();
+    showToast(`アノテーションを追加しました(${sel + 1}件目)。タイトルと本文を入れてください`);
+  }
+  // 2回押しで実行するボタン
+  function armed(b, text, back, fn) {
+    if (b.dataset.armed !== '1') {
+      b.dataset.armed = '1'; b.textContent = text; clearTimeout(b._t);
+      b._t = setTimeout(() => { b.dataset.armed = ''; b.textContent = back; }, 3000);
+      return;
+    }
+    clearTimeout(b._t); b.dataset.armed = ''; b.textContent = back;
+    fn();
+  }
+  listEl.addEventListener('click', (e) => { const b = e.target.closest('.ap-item'); if (b) select(Number(b.dataset.i)); });
+  $('ap-add').addEventListener('click', addAtCube);
+  document.getElementById('dbg-panel').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ap]');
+    if (!b) return;
+    const a = selA(); if (!a) return;
+    const s = b.dataset.ap, k = s[0];
+    a[k] = r2(a[k] + stepNow() * Number(s.slice(1)));
+    movedSel(curId());
+  });
+  $('ap-to-cube').addEventListener('click', () => {
+    const a = selA(); if (!a) return;
+    Object.assign(a, cubeModelPoint());
+    movedSel(curId());
+  });
+  $('ap-go').addEventListener('click', () => {
+    const a = selA(); if (!a) return;
+    // 今の向きのまま、アノテーションの3m手前へ
+    const yaw = dolly.rotation.y, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+    dolly.position.set(a.x + currentXAdjust - fx * ANNOTATION_PLACE_DIST, a.y + currentHeightAdjust, a.z + currentZAdjust - fz * ANNOTATION_PLACE_DIST);
+    pitchTarget = 0;
+    applyWorldScale();
+  });
+  let textTimer = null;
+  const onText = () => {
+    const a = selA(); if (!a) return;
+    a.title = $('ap-title').value;
+    a.body = $('ap-body').value;
+    clearTimeout(textTimer);
+    const id = curId(), keep = sel;
+    textTimer = setTimeout(() => { annRecord(id); annRebuild(id); sel = keep; renderList(); }, 500);
+    const btn = listEl.querySelector(`.ap-item[data-i="${sel}"]`);
+    if (btn) btn.innerHTML = `<b>${sel + 1}.</b> ${escapeHtml(a.title || '(タイトルなし)')}<span class="ap-xyz">${a.x.toFixed(2)}, ${a.y.toFixed(2)}, ${a.z.toFixed(2)}</span>`;
+  };
+  $('ap-title').addEventListener('input', onText);
+  $('ap-body').addEventListener('input', onText);
+  const onNum = () => {
+    const a = selA(); if (!a) return;
+    const r = parseFloat($('ap-radius').value), d = parseFloat($('ap-dist').value);
+    if (Number.isFinite(r) && r > 0) a.radius = Math.min(5, Math.max(0.05, r));
+    if (Number.isFinite(d) && d > 0) a.dist = Math.min(500, Math.max(1, d));
+    const id = curId(), keep = sel;
+    annRecord(id); annRebuild(id); sel = keep; renderList();
+  };
+  $('ap-radius').addEventListener('change', onNum);
+  $('ap-dist').addEventListener('change', onNum);
+  $('ap-del').addEventListener('click', (e) => armed(e.currentTarget, 'もう一度押すと削除', 'このアノテーションを削除', () => {
+    const a = selA(); if (!a) return;
+    const id = curId();
+    flushRecord();
+    ANNOTATIONS.splice(ANNOTATIONS.indexOf(a), 1);
+    annRecord(id); annRebuild(id);
+    sel = -1; renderList();
+  }));
+  $('ap-del-all').addEventListener('click', (e) => armed(e.currentTarget, 'もう一度押すと全部削除', '全部削除', () => {
+    const id = curId(); if (id == null) return;
+    flushRecord();
+    ANNOTATIONS = ANNOTATIONS.filter(a => a.datasetId !== id);
+    annRecord(id); annRebuild(id);
+    sel = -1; renderList();
+  }));
+  $('ap-revert').addEventListener('click', (e) => armed(e.currentTarget, 'もう一度押すと戻します', 'annotations.csv の値に戻す', () => {
+    const id = curId(); if (id == null) return;
+    clearTimeout(recTimer); recId = null; clearTimeout(textTimer);
+    annRevert(id);
+    sel = -1; renderList();
+    showToast('annotations.csv の値に戻しました');
+  }));
+  onDevModeChange((name, on) => { if (name === 'annotate' && on) { lastId = curId(); sel = -1; renderList(); } if (name === 'annotate' && !on) { sel = -1; paintSelection(); } });
+  window.__annAddAtCube = addAtCube;
+  window.__annRefresh = refreshLive;
+  window.__annSelect = select;
+})();
 // 動作確認用
-window.__v12 = { buildDatasetsCsv, placeLoadStore, placeIsDirty, datasets: () => DATASETS,
-  setBudget: (n) => setPointBudget(n), density: () => pointDensity, pcStats: () => pcVis.stats };
+window.__v13 = { buildAnnotationsCsv, buildDatasetsCsv, annLoadStore, placeLoadStore, annList, removed: () => REMOVED_DATASETS, datasets: () => DATASETS };
+window.__v12 = { setBudget: (n) => setPointBudget(n), density: () => pointDensity, pcStats: () => pcVis.stats, placeLoadStore, placeIsDirty, buildDatasetsCsv, datasets: () => DATASETS };
 
 // ── 説明パネル表示トグル ──
 (function setupAnnotationToggle() {
@@ -12755,7 +13139,6 @@ renderer.setAnimationLoop(() => {
   tickPivotMarker();
   tickMeasure();
   updatePointUniforms();
-  updateTileFillSpacing();
 
   // 描画: 真俯瞰モード中は正射カメラ、それ以外は通常の一人称カメラ
   if (topdownState.active) {

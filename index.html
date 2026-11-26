@@ -1973,6 +1973,8 @@
     }
     .ch-add input#ch-new-id { flex: 0 1 110px; }
     .ch-removed .ch-rm-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 13px; }
+    .ch-removed .ch-rm-st { display: block; color: #9ab; font-size: 11px; }
+    .ch-removed .ch-rm-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
     .ch-export { margin: 4px 0 10px; }
     .ch-export #ch-export-info > div { margin-bottom: 6px; line-height: 1.5; }
     .ch-dim { color: #8fa3ae; }
@@ -2104,6 +2106,27 @@
     #auto-panel .cut-val { min-width: 4.5em; }
     #tool-rail #auto-btn.on { border-color: #7dffb0; color: #7dffb0; box-shadow: inset 0 0 0 1px rgba(125,255,176,0.5); }
     #tool-rail #auto-btn.on[aria-pressed="true"] { background: rgba(125,255,176,0.22); color: #fff; }
+    /* 自動: 項目ごとに折りたたむ(tiles_020) */
+    .auto-sec { border-top: 1px solid rgba(125,255,176,0.2); padding-top: 2px; }
+    .auto-sec-h {
+      display: flex; width: 100%; align-items: baseline; gap: 8px; background: transparent; border: none; color: #7dffb0;
+      font: bold 12px sans-serif; padding: 5px 0; cursor: pointer; touch-action: manipulation; text-align: left;
+    }
+    .auto-sec-h::after { content: '▾'; margin-left: auto; padding-left: 4px; }
+    .auto-sec-h[aria-expanded="false"]::after { content: '▸'; }
+    .auto-sec-v { color: #9ab; font-weight: normal; font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .auto-sec-b { display: flex; flex-direction: column; gap: 6px; padding: 2px 0 6px; }
+    .auto-sec-b[hidden], #auto-rec-box[hidden], #auto-focus-box[hidden] { display: none; }
+    #auto-rec-box, #auto-focus-box { display: flex; flex-direction: column; gap: 6px; }
+    #auto-panel .cut-k { min-width: 4.2em; }
+    #auto-panel .cut-b[hidden] { display: none; }
+    #auto-time { width: 6em; font: 13px monospace; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(125,255,176,0.5); border-radius: 3px; padding: 3px 4px; }
+    body.touch #auto-time { font-size: 16px; }
+    .auto-list { display: flex; flex-direction: column; gap: 3px; }
+    .auto-li { display: flex; gap: 3px; align-items: center; }
+    .auto-li .auto-li-sel { flex: 1 1 auto; text-align: left; display: flex; justify-content: space-between; gap: 6px; overflow: hidden; }
+    .auto-li-sub { color: #9ab; font-family: monospace; font-size: 11px; }
+    .auto-li .bm-input { flex: 1 1 auto; min-width: 0; }
     /* スマホを横にした時: 右端の列が下の方まで届くので、描画中の表示はその左に置く */
     @media (orientation: landscape) and (max-height: 500px) {
       body.touch #load-progress { right: 62px; }
@@ -2912,61 +2935,188 @@
   </div>
 </div>
 
-<!-- 自動の視点移動パネル -->
+<!-- 自動の視点移動パネル(項目ごとに折りたたむ。再生・状態・位置は常に上) -->
 <div id="auto-panel" hidden role="region" aria-label="自動の視点移動">
   <div class="m-top">
     <span class="m-title">自動</span>
     <button type="button" class="auto-play" id="auto-play" aria-pressed="false" title="再生 / 一時停止">▶ 再生</button>
-    <button type="button" class="auto-play" id="auto-stop" title="止めて終える(その場に止まる)">■ 止める</button>
+    <button type="button" class="auto-play" id="auto-stop" title="止めて終える(その場に止まる。「元の視点に戻る」なら戻る)">■ 止める</button>
     <button type="button" class="m-x" id="auto-close" aria-label="自動のパネルを閉じる(動きは続く)" title="パネルを閉じる(動きは続く)">×</button>
   </div>
   <div class="auto-status" id="auto-status">止まっています。▶ 再生で動き出します</div>
-  <div class="cut-row"><span class="cut-k">経路</span>
-    <div class="cut-seg" role="group" aria-label="経路">
-      <button type="button" class="cut-b" data-auto-path="ellipse" aria-pressed="true" title="モデルの周りを楕円で回る">楕円</button>
-      <button type="button" class="cut-b" data-auto-path="spiral" aria-pressed="false" title="回りながら上下する(下から上、上から下)">螺旋</button>
-      <button type="button" class="cut-b" data-auto-path="approach" aria-pressed="false" title="回りながら寄る・離れる">寄りながら回る</button>
-      <button type="button" class="cut-b" data-auto-path="arc" aria-pressed="false" title="今の向きの左右を円弧で行き来する">円弧の往復</button>
-      <button type="button" class="cut-b" data-auto-path="tour" aria-pressed="false" title="★(視点のブックマーク)を順に滑らかに巡る">★の巡回</button>
+  <div class="cut-row"><span class="cut-k">位置</span>
+    <input id="auto-pos" type="range" min="0" max="1000" step="1" value="0" aria-label="経路の上の位置(動かすとそこへ)"><span class="cut-val" id="auto-pos-val">-</span>
+  </div>
+
+  <section class="auto-sec" data-sec="path">
+    <button type="button" class="auto-sec-h" aria-expanded="true">経路<span class="auto-sec-v" id="auto-sum-path"></span></button>
+    <div class="auto-sec-b">
+      <div class="cut-seg" role="group" aria-label="経路">
+        <button type="button" class="cut-b" data-auto-path="ellipse" aria-pressed="true" title="モデルの周りを楕円で回る">楕円</button>
+        <button type="button" class="cut-b" data-auto-path="spiral" aria-pressed="false" title="回りながら上下する(下から上、上から下)">螺旋</button>
+        <button type="button" class="cut-b" data-auto-path="approach" aria-pressed="false" title="回りながら寄る・離れる">寄りながら回る</button>
+        <button type="button" class="cut-b" data-auto-path="arc" aria-pressed="false" title="今の向きの左右を円弧で行き来する">円弧の往復</button>
+        <button type="button" class="cut-b" data-auto-path="line" aria-pressed="false" title="モデルの前を端から端へまっすぐ往復する">直線</button>
+        <button type="button" class="cut-b" data-auto-path="vertical" aria-pressed="false" title="モデルの上と下を通って縦に回る">縦の楕円</button>
+        <button type="button" class="cut-b" data-auto-path="outline" aria-pressed="false" title="外形(四角)から同じ距離を保って回る">外形に沿う</button>
+        <button type="button" class="cut-b" data-auto-path="floors" aria-pressed="false" title="1周ごとに1段ずつ上がり、上まで行ったら下りる">階ごとに周回</button>
+        <button type="button" class="cut-b" data-auto-path="crane" aria-pressed="false" title="真上 ⇄ モデルの前の地上の目線">降下・上昇</button>
+        <button type="button" class="cut-b" data-auto-path="reveal" aria-pressed="false" title="近く ⇄ 後ろ・上へ下がって全体">引き</button>
+        <button type="button" class="cut-b" data-auto-path="eight" aria-pressed="false" title="モデルの左右を 8 の字に回る(真ん中はモデルの中を通る)">8の字</button>
+        <button type="button" class="cut-b" data-auto-path="tour" aria-pressed="false" title="★(視点のブックマーク)を順に滑らかに巡る">★の巡回</button>
+        <button type="button" class="cut-b" data-auto-path="record" aria-pressed="false" title="自分で動かした視点を記録して、そのまま再生する">記録</button>
+        <button type="button" class="cut-b" data-auto-path="slice" aria-pressed="false" title="断面を正面から見たまま、断面と一緒に端から端へ">断面と一緒</button>
+      </div>
+      <div class="cut-row" id="auto-size-row"><span class="cut-k">大きさ</span>
+        <input id="auto-size" type="range" min="0.6" max="4" step="0.05" value="1.5" aria-label="経路の大きさ"><span class="cut-val" id="auto-size-val">-</span>
+      </div>
+      <div class="cut-row" id="auto-href-row"><span class="cut-k">高さの基準</span>
+        <div class="cut-seg" role="group" aria-label="高さの基準">
+          <button type="button" class="cut-b" data-auto-href="base" aria-pressed="true" title="モデルの下端から測る(一定の高さ)">モデルの下端</button>
+          <button type="button" class="cut-b" data-auto-href="ground" aria-pressed="false" title="真下の点群(地面・屋根)から同じ高さを保つ(ドローンのように)">地面から一定</button>
+        </div>
+      </div>
+      <div class="cut-row" id="auto-height-row"><span class="cut-k">高さ</span>
+        <input id="auto-height" type="range" min="0" max="3" step="0.05" value="1.3" aria-label="経路の高さ"><span class="cut-val" id="auto-height-val">-</span>
+      </div>
+      <div class="cut-row" id="auto-agl-row" hidden><span class="cut-k">地面から</span>
+        <input id="auto-agl" type="range" min="1" max="60" step="1" value="10" aria-label="地面からの高さ"><span class="cut-val" id="auto-agl-val">-</span>
+      </div>
+      <div class="cut-row" id="auto-turns-row" hidden><span class="cut-k">巻き数</span>
+        <input id="auto-turns" type="range" min="1" max="6" step="1" value="3" aria-label="片道の巻き数"><span class="cut-val" id="auto-turns-val">-</span>
+      </div>
+      <div class="cut-row" id="auto-near-row" hidden><span class="cut-k">寄る</span>
+        <input id="auto-near" type="range" min="1" max="9" step="1" value="5" aria-label="寄る前の距離の何割まで寄るか"><span class="cut-val" id="auto-near-val">-</span>
+      </div>
+      <div class="cut-row" id="auto-arc-row" hidden><span class="cut-k">円弧</span>
+        <input id="auto-arc" type="range" min="15" max="90" step="5" value="60" aria-label="円弧の角度(片側)"><span class="cut-val" id="auto-arc-val">-</span>
+      </div>
+      <div class="cut-row" id="auto-floor-row" hidden><span class="cut-k">1段の高さ</span>
+        <input id="auto-floor" type="range" min="2" max="8" step="0.1" value="3.5" aria-label="1段の高さ(m)"><span class="cut-val" id="auto-floor-val">-</span>
+      </div>
+      <div class="cut-row" id="auto-dir-row"><span class="cut-k">回る向き</span>
+        <div class="cut-seg" role="group" aria-label="回る向き">
+          <button type="button" class="cut-b" data-auto-dir="1" aria-pressed="true" title="上から見て反時計回り">左回り</button>
+          <button type="button" class="cut-b" data-auto-dir="-1" aria-pressed="false" title="上から見て時計回り">右回り</button>
+        </div>
+      </div>
+      <div class="cut-row" id="auto-tour-row" hidden><span class="cut-hint" id="auto-tour-info"></span></div>
+      <div class="cut-row" id="auto-dwell-row" hidden><span class="cut-k">★で止まる</span>
+        <input id="auto-dwell" type="range" min="0" max="10" step="0.5" value="2" aria-label="★で止まる秒数"><span class="cut-val" id="auto-dwell-val">-</span>
+      </div>
+      <div id="auto-rec-box" hidden>
+        <div class="cut-row"><button type="button" class="cut-b" id="auto-rec-btn" aria-pressed="false" title="自分で動かす視点を記録する">● 記録を始める</button><span class="cut-val" id="auto-rec-time"></span></div>
+        <div class="auto-list" id="auto-rec-list"></div>
+      </div>
+      <div class="cut-row" id="auto-slice-row" hidden><span class="cut-hint">断面を切って、端から端へ動かしながら正面から見ます。向き・見せ方は「断面」のパネルで選べます</span></div>
     </div>
-  </div>
-  <div class="cut-row"><span class="cut-k">視線</span>
-    <div class="cut-seg" role="group" aria-label="視線">
-      <button type="button" class="cut-b" data-auto-look="center" aria-pressed="true" title="モデルの中央を見続ける">モデル中央</button>
-      <button type="button" class="cut-b" data-auto-look="ahead" aria-pressed="false" title="進む向きを見る">進行方向</button>
-      <button type="button" class="cut-b" data-auto-look="level" aria-pressed="false" title="モデル中央の方を、見上げ・見下ろしなしで見る">水平</button>
-      <button type="button" class="cut-b" data-auto-look="bm" aria-pressed="false" title="★に記録した向きを滑らかにつなぐ" hidden>★の向き</button>
+  </section>
+
+  <section class="auto-sec" data-sec="look">
+    <button type="button" class="auto-sec-h" aria-expanded="true">視線<span class="auto-sec-v" id="auto-sum-look"></span></button>
+    <div class="auto-sec-b">
+      <div class="cut-seg" role="group" aria-label="視線">
+        <button type="button" class="cut-b" data-auto-look="center" aria-pressed="true" title="モデルの中央を見続ける">モデル中央</button>
+        <button type="button" class="cut-b" data-auto-look="ahead" aria-pressed="false" title="進む向きを見る">進行方向</button>
+        <button type="button" class="cut-b" data-auto-look="lead" aria-pressed="false" title="何秒か先に通る所を見る(曲がる前から曲がる先を見る)">少し先</button>
+        <button type="button" class="cut-b" data-auto-look="level" aria-pressed="false" title="モデル中央の方を、見上げ・見下ろしなしで見る">水平</button>
+        <button type="button" class="cut-b" data-auto-look="side" aria-pressed="false" title="進む向きの左か右を見る(電車の窓のように)">進行方向の横</button>
+        <button type="button" class="cut-b" data-auto-look="fixed" aria-pressed="false" title="向きを変えずに進む(今の向き・北向き)">向きを固定</button>
+        <button type="button" class="cut-b" data-auto-look="focus" aria-pressed="false" title="クリックした点を見続ける(複数なら順に)">注目点</button>
+        <button type="button" class="cut-b" data-auto-look="nadir" aria-pressed="false" title="真下を見る(進む向きが画面の上)">真下</button>
+        <button type="button" class="cut-b" data-auto-look="bm" aria-pressed="false" title="★に記録した向きを滑らかにつなぐ" hidden>★の向き</button>
+        <button type="button" class="cut-b" data-auto-look="rec" aria-pressed="false" title="記録した時の向きのまま" hidden>記録の向き</button>
+      </div>
+      <div class="cut-row" id="auto-lead-row" hidden><span class="cut-k">先読み</span>
+        <input id="auto-lead" type="range" min="0.5" max="5" step="0.5" value="2" aria-label="何秒先を見るか"><span class="cut-val" id="auto-lead-val">-</span>
+      </div>
+      <div class="cut-row" id="auto-side-row" hidden><span class="cut-k">どちら</span>
+        <div class="cut-seg" role="group" aria-label="進行方向の横">
+          <button type="button" class="cut-b" data-auto-side="1" aria-pressed="true">左</button>
+          <button type="button" class="cut-b" data-auto-side="-1" aria-pressed="false">右</button>
+        </div>
+      </div>
+      <div class="cut-row" id="auto-fixed-row" hidden><span class="cut-k">向き</span>
+        <div class="cut-seg" role="group" aria-label="固定する向き">
+          <button type="button" class="cut-b" data-auto-fixed="now" aria-pressed="true" title="選んだ時(再生を始めた時)の向きのまま">今の向き</button>
+          <button type="button" class="cut-b" data-auto-fixed="north" aria-pressed="false" title="北を向いて水平">北向き</button>
+        </div>
+      </div>
+      <div id="auto-focus-box" hidden>
+        <div class="cut-row">
+          <button type="button" class="cut-b" id="auto-focus-add" aria-pressed="false" title="次にクリック(タップ)した点群の点を注目点にする">＋ 点群をクリックして追加</button>
+          <button type="button" class="cut-b" id="auto-focus-clear" title="このデータの注目点をすべて消す(2回押し)">すべて消す</button>
+        </div>
+        <div class="cut-row"><span class="cut-hint" id="auto-focus-info"></span></div>
+        <div class="cut-row"><span class="cut-k">切り替え</span>
+          <input id="auto-focus-sec" type="range" min="2" max="20" step="1" value="6" aria-label="注目点を切り替える秒数"><span class="cut-val" id="auto-focus-sec-val">-</span>
+        </div>
+      </div>
     </div>
-  </div>
-  <div class="cut-row"><span class="cut-k">速さ</span>
-    <div class="cut-seg" role="group" aria-label="速さの変化">
-      <button type="button" class="cut-b" data-auto-ease="0" aria-pressed="true" title="同じ速さで進む">一定</button>
-      <button type="button" class="cut-b" data-auto-ease="1" aria-pressed="false" title="面の正面・折り返し・★の所でゆっくり、間は速く">緩急</button>
+  </section>
+
+  <section class="auto-sec" data-sec="speed">
+    <button type="button" class="auto-sec-h" aria-expanded="true">速さ<span class="auto-sec-v" id="auto-sum-speed"></span></button>
+    <div class="auto-sec-b">
+      <div class="cut-row"><span class="cut-k">変化</span>
+        <div class="cut-seg" role="group" aria-label="速さの変化">
+          <button type="button" class="cut-b" data-auto-ease="0" aria-pressed="true" title="同じ速さで進む(往復する経路は折り返しの手前で滑らかに減速)">一定</button>
+          <button type="button" class="cut-b" data-auto-ease="1" aria-pressed="false" title="面の正面・折り返し・★の所でゆっくり、間は速く">緩急</button>
+        </div>
+      </div>
+      <div class="cut-row"><span class="cut-k">決め方</span>
+        <div class="cut-seg" role="group" aria-label="速さの決め方">
+          <button type="button" class="cut-b" data-auto-smode="speed" aria-pressed="true" title="遅く〜速くで決める(モデルの大きさに合わせる)">速さ</button>
+          <button type="button" class="cut-b" data-auto-smode="time" aria-pressed="false" title="1周(片道・1巡)にかける秒数で決める">時間</button>
+        </div>
+      </div>
+      <div class="cut-row" id="auto-speed-row"><span class="cut-k"></span><span class="cut-hint">遅く</span>
+        <input id="auto-speed" type="range" min="1" max="9" step="0.5" value="5" aria-label="自動の速さ"><span class="cut-hint">速く</span>
+      </div>
+      <div class="cut-row" id="auto-time-row" hidden><span class="cut-k"></span>
+        <input id="auto-time" type="number" min="2" max="3600" step="1" value="40" inputmode="numeric" aria-label="秒数"><span class="cut-hint" id="auto-time-unit">秒で1周</span>
+      </div>
+      <div class="cut-row"><span class="cut-k"></span><span class="cut-val" id="auto-speed-val">-</span></div>
+      <div class="cut-row"><span class="cut-k">減速</span>
+        <button type="button" class="cut-b" id="auto-curve" aria-pressed="false" title="曲がる所の手前でゆっくりにする">曲がる所で</button>
+        <button type="button" class="cut-b" id="auto-dist" aria-pressed="false" title="モデルに近い時はゆっくり、離れている時は速く">近い時は</button>
+      </div>
     </div>
-  </div>
-  <div class="cut-row"><span class="cut-k"></span><span class="cut-hint">遅く</span>
-    <input id="auto-speed" type="range" min="1" max="9" step="0.5" value="5" aria-label="自動の速さ"><span class="cut-hint">速く</span>
-  </div>
-  <div class="cut-row"><span class="cut-k"></span><span class="cut-val" id="auto-speed-val">-</span></div>
-  <div class="cut-row" id="auto-size-row"><span class="cut-k">大きさ</span>
-    <input id="auto-size" type="range" min="0.6" max="4" step="0.05" value="1.5" aria-label="経路の大きさ"><span class="cut-val" id="auto-size-val">-</span>
-  </div>
-  <div class="cut-row" id="auto-height-row"><span class="cut-k">高さ</span>
-    <input id="auto-height" type="range" min="0" max="3" step="0.05" value="1.3" aria-label="経路の高さ"><span class="cut-val" id="auto-height-val">-</span>
-  </div>
-  <div class="cut-row" id="auto-turns-row" hidden><span class="cut-k">巻き数</span>
-    <input id="auto-turns" type="range" min="1" max="6" step="1" value="3" aria-label="片道の巻き数"><span class="cut-val" id="auto-turns-val">-</span>
-  </div>
-  <div class="cut-row" id="auto-arc-row" hidden><span class="cut-k">円弧</span>
-    <input id="auto-arc" type="range" min="15" max="90" step="5" value="60" aria-label="円弧の角度(片側)"><span class="cut-val" id="auto-arc-val">-</span>
-  </div>
-  <div class="cut-row" id="auto-dir-row"><span class="cut-k">回る向き</span>
-    <div class="cut-seg" role="group" aria-label="回る向き">
-      <button type="button" class="cut-b" data-auto-dir="1" aria-pressed="true" title="上から見て反時計回り">左回り</button>
-      <button type="button" class="cut-b" data-auto-dir="-1" aria-pressed="false" title="上から見て時計回り">右回り</button>
+  </section>
+
+  <section class="auto-sec" data-sec="play">
+    <button type="button" class="auto-sec-h" aria-expanded="false">再生の仕方<span class="auto-sec-v" id="auto-sum-play"></span></button>
+    <div class="auto-sec-b" hidden>
+      <div class="cut-row">
+        <div class="cut-seg" role="group" aria-label="再生の仕方">
+          <button type="button" class="cut-b" data-auto-play="loop" aria-pressed="true" title="一周する経路は周回、往復する経路は往復">繰り返し</button>
+          <button type="button" class="cut-b" data-auto-play="pingpong" aria-pressed="false" title="行って、同じ道を戻る(一周する経路も)">往復</button>
+          <button type="button" class="cut-b" data-auto-play="once" aria-pressed="false" title="1周(片道・1巡・最後まで)で止まる">1回</button>
+        </div>
+      </div>
+      <div class="cut-row">
+        <button type="button" class="cut-b" id="auto-reverse" aria-pressed="false" title="経路を逆向きに進む(逆再生)">逆向き</button>
+        <button type="button" class="cut-b" id="auto-home" aria-pressed="false" title="1回が終わった時・■ 止めるを押した時に、再生を始めた時の視点へ戻る">終わったら元の視点に戻る</button>
+      </div>
     </div>
-  </div>
-  <div class="cut-row" id="auto-tour-row" hidden><span class="cut-hint" id="auto-tour-info"></span></div>
+  </section>
+
+  <section class="auto-sec" data-sec="view">
+    <button type="button" class="auto-sec-h" aria-expanded="false">表示とVR<span class="auto-sec-v" id="auto-sum-view"></span></button>
+    <div class="auto-sec-b" hidden>
+      <div class="cut-row"><span class="cut-k">経路の線</span>
+        <div class="cut-seg" role="group" aria-label="経路の線">
+          <button type="button" class="cut-b" data-auto-line="stopped" aria-pressed="true" title="パネルを開いていて、止まっている時だけ">止まっている時</button>
+          <button type="button" class="cut-b" data-auto-line="always" aria-pressed="false" title="再生中も表示">常に</button>
+          <button type="button" class="cut-b" data-auto-line="off" aria-pressed="false">表示しない</button>
+        </div>
+      </div>
+      <div class="cut-row"><span class="cut-k">VRの上限</span>
+        <input id="auto-vrcap" type="range" min="1" max="10" step="0.5" value="3" aria-label="VR 中の速さの上限"><span class="cut-val" id="auto-vrcap-val">-</span>
+      </div>
+      <div class="cut-row"><span class="cut-hint">VR 中は位置だけ動き、向きは自由です。右スティックの押し込みで再生 / 一時停止。酔いにくいよう、速さに上限を設けています</span></div>
+    </div>
+  </section>
 </div>
 
 <!-- 計測パネル -->
@@ -10173,7 +10323,7 @@ const PICK_CSS = 21;
 let _pickRT = null, _pickOut = null, _pickQuadScene = null, _pickQuadMat = null, _pickBuf = null;
 function pickHideObjects() {
   // 補助表示(グリッド・説明パネル・計測の線・注視点の印)は拾わない
-  return [grid, annotationGroup, window.__measureGroup, navPivotMarker, sliceFrame, structGroup].filter(Boolean);
+  return [grid, annotationGroup, window.__measureGroup, navPivotMarker, sliceFrame, structGroup, window.__autoGroup].filter(Boolean);
 }
 function ensurePickTargets(n) {
   if (_pickRT && _pickRT.width === n) return;
@@ -10601,6 +10751,7 @@ const navDrag = { id: null, mode: null, x0: 0, y0: 0, x: 0, y: 0, moved: false, 
 
 // クリック・タップ(動かさずに離した): 計測中なら点を追加
 function navTap(cx, cy, kind) {
+  if (window.__autoFocusTap && window.__autoFocusTap(cx, cy)) return; // 自動: 注目点の追加
   if (measureState.tool) measureAddAt(cx, cy);
 }
 
@@ -10904,11 +11055,13 @@ function showToast(text, ms = 2200) {
     <dt>正対して見る</dt><dd>縦の断面を真正面から遠近なしで表示(${tap}で計測・画像保存も)。水平なら「真上から見る」</dd></dl>`;
   const autoHtml = (touch) => `
     <h3>自動(視点を自動で動かす)</h3>
-    <dl><dt>自動ボタン</dt><dd>パネルを開く。▶ 再生で動き出す(パネルを閉じても動き続ける)。■ 止めるで終わる</dd>
-    <dt>経路</dt><dd>楕円(モデルの周り) / 螺旋(回りながら上下) / 寄りながら回る(寄る⇄離れる) / 円弧の往復(今の向きの左右) / ★の巡回(★を順に)</dd>
-    <dt>視線</dt><dd>モデル中央 / 進行方向 / 水平(モデル中央の方を見上げ・見下ろしなしで) / ★の向き(★の巡回だけ)</dd>
-    <dt>速さ</dt><dd>一定 / 緩急(面の正面・折り返し・★の所でゆっくり)。スライダーで遅く〜速く</dd>
-    <dt>大きさ・高さ</dt><dd>モデルの外形に合わせた経路を広げる・狭める、上げる・下げる(螺旋は巻き数、円弧の往復は角度も)</dd>
+    <dl><dt>自動ボタン</dt><dd>パネルを開く。▶ 再生で動き出す(パネルを閉じても動き続ける)。■ 止めるで終わる。「位置」で経路の上のどこへでも</dd>
+    <dt>経路</dt><dd>楕円 / 螺旋 / 寄りながら回る(寄る前の距離の何割まで寄るか) / 円弧の往復 / 直線(モデルの前を往復) / 縦の楕円(上と下を通る) / 外形に沿う / 階ごとに周回(1段の高さ) / 降下・上昇 / 引き / 8の字 / ★の巡回(★で止まる秒数) / 記録(自分で動かした視点を記録して再生) / 断面と一緒</dd>
+    <dt>高さの基準</dt><dd>モデルの下端から / 地面から一定(真下の点群から同じ高さを保つ。楕円・直線・外形・8の字・円弧)</dd>
+    <dt>視線</dt><dd>モデル中央 / 進行方向 / 少し先 / 水平 / 進行方向の横 / 向きを固定 / 注目点(${touch ? 'タップ' : 'クリック'}で追加、複数は順に) / 真下 / ★の向き / 記録の向き</dd>
+    <dt>速さ</dt><dd>一定(往復は折り返しの手前で滑らかに減速) / 緩急。「速さ」(遅く〜速く)か「時間」(秒)で決める。曲がる所・近い時に減速も</dd>
+    <dt>再生の仕方</dt><dd>繰り返し / 往復 / 1回、逆向き、終わったら元の視点に戻る</dd>
+    <dt>表示とVR</dt><dd>経路の線(止まっている時 / 常に / 表示しない)、VR 中の速さの上限</dd>
     <dt>操作すると</dt><dd>${touch ? 'なぞる・ピンチ' : 'ドラッグ・ホイール・キー'}で一時停止。▶ 再生で今の視点から滑らかに経路へ戻って続きを動く</dd></dl>`;
   const pcHtml = `
     <h3>回す(最初はこちら)</h3>
@@ -11504,7 +11657,7 @@ function renderChooser() {
           <button type="button" class="ch-btn" data-act="save-full" disabled title="すべてのタイルをこの端末に保存します(保存後はオフラインでも全部見られます)">完全保存</button>
           <button type="button" class="ch-btn" data-act="redo" title="保存データを消して、サーバーから取り直して開きます">再読み込み</button>
           <button type="button" class="ch-btn warn" data-act="delete" title="この端末に保存したタイルを削除します">保存を削除</button>
-          <button type="button" class="ch-btn warn" data-act="remove" title="この端末の一覧から外します(書き出す CSV からも外れ、保存したタイルも削除します。「外したデータ」から戻せます)">一覧から外す</button>
+          <button type="button" class="ch-btn warn" data-act="remove" title="この端末の一覧から外します(書き出す CSV からも外れます。保存したタイルは残り、「外したデータ」から戻すと保存済みのままです)">一覧から外す</button>
         </div>`;
       box.appendChild(card);
     }
@@ -11656,9 +11809,8 @@ onLevelUiChange(() => { if (chooser.open) renderChooser(); });
       armDelete(e.target.closest('button'), async () => {
         fullDlCancel(id);
         if (overlayHas(id)) overlayRemove(id);
-        await deletePreloadData(id).catch(() => {});
-        placeRemoveDataset(id);
-        showToast('一覧から外しました(「外したデータ」から戻せます)');
+        placeRemoveDataset(id); // 保存したタイルは残す(戻すと保存済みのまま。消す時は「外したデータ」の「保存を削除」)
+        showToast('一覧から外しました(保存したタイルは残ります。「外したデータ」から戻せます)');
       }, { confirm: 'もう一度押すと外す', busy: '外しています…' });
       return;
     }
@@ -11968,18 +12120,18 @@ function openSaveDialog(ids, mode) {
 function openDeleteAllDialog() {
   const rows = [];
   let bytes = 0, unknown = false;
-  for (const ds of DATASETS) {
+  for (const ds of [...DATASETS, ...REMOVED_DATASETS]) {
     const info = dsInfo.get(ds.id);
     if (!info || !info.storedCount) continue;
     const b = info.avgBytes ? info.storedCount * info.avgBytes : null;
-    rows.push({ id: ds.id, count: info.storedCount, b });
+    rows.push({ id: ds.id, count: info.storedCount, b, removed: REMOVED_DATASETS.includes(ds) });
     if (b == null) unknown = true; else bytes += b;
   }
   openDlDialog({
     title: '保存したタイルをすべて削除しますか？',
     lead: 'この端末に保存した、すべてのデータセットのタイルを削除します。端末の3Dデータ(取り込んだファイル)は残ります。次に開く時は、もう一度ダウンロードします。',
     bodyHtml: rows.length
-      ? `<div class="fd-rows">${rows.map(r => `<div class="fd-row"><span class="fd-name">${escapeHtml(overlayLabel(r.id))}</span>
+      ? `<div class="fd-rows">${rows.map(r => `<div class="fd-row"><span class="fd-name">${escapeHtml(overlayLabel(r.id))}${r.removed ? '(外したデータ)' : ''}</span>
           <span class="fd-meta">${fmtInt(r.count)}件 · ${r.b != null ? `約${formatBytes(r.b)}` : '容量不明'}</span></div>`).join('')}</div>
          <div class="fd-total">合計 <b>${unknown && !bytes ? '容量不明' : `約${formatBytes(bytes)}${unknown ? ' 以上' : ''}`}</b> を削除</div>
          <div class="fd-space" id="fd-space">端末の空き容量を確認中…</div>`
@@ -11990,7 +12142,7 @@ function openDeleteAllDialog() {
       await clearAllPreloadData();
       if (typeof hidePreloadChip === 'function') hidePreloadChip();
       if (typeof updatePreloadInfo === 'function') updatePreloadInfo(true);
-      for (const ds of DATASETS) refreshDsInfo(ds.id, { allowNetwork: false });
+      for (const ds of [...DATASETS, ...REMOVED_DATASETS]) refreshDsInfo(ds.id, { allowNetwork: false });
       showToast('保存したタイルをすべて削除しました');
     },
   });
@@ -12359,9 +12511,21 @@ function renderChooserEdit() {
   if (!box) return;
   box.hidden = !REMOVED_DATASETS.length;
   $('ch-removed-n').textContent = String(REMOVED_DATASETS.length);
-  $('ch-removed').innerHTML = REMOVED_DATASETS.map(ds =>
-    `<div class="ch-rm-item"><span>${escapeHtml(ds.label ? `${ds.id}: ${ds.label}` : ds.id)}</span>` +
-    `<button type="button" class="ch-btn" data-restore="${escapeHtml(ds.id)}">一覧に戻す</button></div>`).join('');
+  // 保存したタイルの量(外しても残している。「保存を削除」で消せる)
+  const rmSaved = (ds) => {
+    const info = dsInfo.get(ds.id);
+    if (!info) { refreshDsInfo(ds.id, { allowNetwork: false }).catch(() => {}); return { text: '保存を確認中…', n: 0 }; }
+    if (info.state === 'loading') return { text: '保存を確認中…', n: 0 };
+    const n = info.storedCount || 0;
+    return { n, text: n ? `保存 ${fmtInt(n)}件${info.avgBytes ? ` · 約${formatBytes(n * info.avgBytes)}` : ''}` : '保存なし' };
+  };
+  $('ch-removed').innerHTML = REMOVED_DATASETS.map(ds => {
+    const sv = rmSaved(ds);
+    return `<div class="ch-rm-item"><span>${escapeHtml(ds.label ? `${ds.id}: ${ds.label}` : ds.id)}<span class="ch-rm-st">${sv.text}</span></span>` +
+      '<span class="ch-rm-btns">' +
+      (sv.n ? `<button type="button" class="ch-btn warn" data-rm-del="${escapeHtml(ds.id)}" title="この端末に保存したタイルを削除します(2回押し)">保存を削除</button>` : '') +
+      `<button type="button" class="ch-btn" data-restore="${escapeHtml(ds.id)}">一覧に戻す</button></span></div>`;
+  }).join('');
   // 作業中の変更(元データとの違い)
   const name = (ds) => (ds.label ? `${ds.id} ${ds.label}` : ds.id);
   const dsLines = [], annLines = [];
@@ -12646,11 +12810,25 @@ const vrLoadHud = (() => {
     renderChooser();
   });
   $('ch-removed').addEventListener('click', (e) => {
+    const del = e.target.closest('[data-rm-del]');
+    if (del) {
+      // 外したデータの保存を削除(2回押し)
+      if (del.dataset.armed !== '1') {
+        del.dataset.armed = '1'; del.textContent = 'もう一度押すと削除';
+        clearTimeout(del._t); del._t = setTimeout(() => { del.dataset.armed = ''; del.textContent = '保存を削除'; }, 3000);
+        return;
+      }
+      del.disabled = true; del.textContent = '削除中…';
+      deletePreloadData(del.dataset.rmDel).catch(() => {}).finally(() => { renderChooserEdit(); showToast('保存したタイルを削除しました'); });
+      return;
+    }
     const b = e.target.closest('[data-restore]');
     if (!b) return;
     placeRestoreDataset(b.dataset.restore);
     showToast('一覧に戻しました');
   });
+  // 外したデータの保存の量が分かったら表示し直す
+  onDsInfoChange((id) => { if (REMOVED_DATASETS.some(d => d.id === id) && typeof chooser !== 'undefined' && chooser.open) renderChooserEdit(); });
   $('ch-export-ds').addEventListener('click', () => {
     downloadTextFile('datasets.csv', window.__lastDatasetsCsv = buildDatasetsCsv(), 'text/csv;charset=utf-8');
     exportMetaExported('dsAt');
@@ -12748,8 +12926,6 @@ function placeRemoveDataset(id) {
   }
   placeSaveStore(st);
   exportMetaTouch();
-  dsInfo.delete(id);
-  saveDsSummary(id, { snap: null });
   buildDatasetButtons(); updateDatasetButtons();
   placeEmit();
   return true;
@@ -13673,54 +13849,123 @@ function addBookmarkButton() {
   sync();
 })();
 
-// ═══════════════ 自動の視点移動(tiles_019) ═══════════════
-// 経路 × 視線 × 速さ で視点を自動で動かす。経路の大きさ・高さはモデルの外形に合わせ、パネルのスライダーで調整する。
-//   経路: 楕円(周回) / 螺旋(回りながら上下に往復) / 寄りながら回る(寄る⇄離れる) / 円弧の往復(今の向きの左右) / ★の巡回(★を順に周回)
-//   視線: モデル中央 / 進行方向(滑らかに追う) / 水平(モデル中央の方を水平に) / ★の向き(★の巡回だけ)
-//   速さ: 一定(経路の上を同じ速さ) / 緩急(楕円は面の正面で、往復は折り返しで、★の巡回は★の所でゆっくり)
+// ═══════════════ 自動の視点移動(tiles_019。tiles_020 で提案のすべて) ═══════════════
+// 経路 × 視線 × 速さ × 再生の仕方 で視点を自動で動かす。経路の大きさ・高さはモデルの外形に合わせ、パネルで調整する。
+// しくみ: 経路はそれぞれ「形」P(s)(s=0〜1)だけを持ち、進め方は共通にする。
+//   ・一周する経路(楕円など)は s がそのまま進む。往復する経路(円弧・直線など)は 0→1→0 と進み、折り返しの手前で滑らかに減速・加速する
+//   ・速さは「経路の上の速さ」を一定にする(形の伸び縮みに関係なく)。緩急・曲がる所・近い所の減速は、その速さに掛ける倍率
+//   ・★の巡回・記録は「時間」で進む(★で止まる・記録の速さ)
 // 操作(ドラッグ・ホイール・キー・なぞる・ピンチ)すると一時停止。▶ 再生で、今の視点から滑らかに経路へ戻って続きを動く。
-// VR 中は位置だけ動かす(向きは頭・右スティックで自由)。右スティックの押し込みで再生 / 一時停止。
-const AUTO_PATHS = { ellipse: '楕円', spiral: '螺旋', approach: '寄りながら回る', arc: '円弧の往復', tour: '★の巡回' };
-const AUTO_LOOKS = { center: 'モデル中央', ahead: '進行方向', level: '水平', bm: '★の向き' };
+// VR 中は位置だけ動かす(向きは頭・右スティックで自由)。右スティックの押し込みで再生 / 一時停止。速さには上限を設ける。
+const AUTO_PATHS = {
+  ellipse: '楕円', spiral: '螺旋', approach: '寄りながら回る', arc: '円弧の往復', line: '直線', vertical: '縦の楕円',
+  outline: '外形に沿う', floors: '階ごとに周回', crane: '降下・上昇', reveal: '引き', eight: '8の字',
+  tour: '★の巡回', record: '記録', slice: '断面と一緒',
+};
+const AUTO_LOOKS = {
+  center: 'モデル中央', ahead: '進行方向', lead: '少し先', level: '水平', side: '進行方向の横',
+  fixed: '向きを固定', focus: '注目点', nadir: '真下', bm: '★の向き', rec: '記録の向き',
+};
+const AUTO_NATURAL_PP = new Set(['arc', 'line', 'crane', 'reveal', 'slice']);   // もともと往復する経路
+const AUTO_GROUNDABLE = new Set(['ellipse', 'line', 'outline', 'eight', 'arc']); // 「地面から」の高さが選べる経路
+const AUTO_HEIGHT = new Set(['ellipse', 'spiral', 'approach', 'arc', 'line', 'outline', 'eight']);
+const AUTO_ROT = new Set(['ellipse', 'spiral', 'approach', 'arc', 'vertical', 'outline', 'floors', 'eight']);
+const AUTO_UNIT = {
+  ellipse: '1周', spiral: '上下の往復', approach: '寄って戻る', arc: '片道', line: '片道', vertical: '1周', outline: '1周',
+  floors: '全階の往復', crane: '片道', reveal: '片道', eight: '1周', tour: '1巡', record: '最後まで', slice: '片道',
+};
+const AUTO_W = 0.15; // 往復の折り返し: 片道の時間のこの割合ずつ使って、滑らかに減速・加速する(一定の時)
 const _autoSaved = savedSettings.autoCam || {};
 function autoNum(v, lo, hi, def) { v = Number(v); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : def; }
+const _aOne = (v, list, def) => (list.includes(v) ? v : def);
 const autoState = {
+  // 設定(次回も)
   path: AUTO_PATHS[_autoSaved.path] ? _autoSaved.path : 'ellipse',
   look: AUTO_LOOKS[_autoSaved.look] ? _autoSaved.look : 'center',
-  ease: _autoSaved.ease === true,               // 緩急
-  speed: autoNum(_autoSaved.speed, 1, 9, 5),     // 1(遅く)〜9(速く)
-  size: autoNum(_autoSaved.size, 0.6, 4, 1.5),   // 経路の大きさ(1 = 外形の四隅を通る楕円)
-  height: autoNum(_autoSaved.height, 0, 3, 1.3), // 経路の高さ(モデルの下端から。モデルの高さ(低い時は幅)の何倍か)
-  turns: autoNum(_autoSaved.turns, 1, 6, 3),     // 螺旋・寄りながら回る: 片道の巻き数
-  arc: autoNum(_autoSaved.arc, 15, 90, 60),      // 円弧の往復: 片側の角度(度)
-  dir: _autoSaved.dir === -1 ? -1 : 1,           // 1 = 左回り(上から見て反時計回り)
+  ease: _autoSaved.ease === true,                         // 緩急
+  speedMode: _aOne(_autoSaved.speedMode, ['speed', 'time'], 'speed'),
+  speed: autoNum(_autoSaved.speed, 1, 9, 5),               // 1(遅く)〜9(速く)
+  timeSec: autoNum(_autoSaved.timeSec, 2, 3600, 40),       // 時間で指定: 1周(片道・1巡)の秒数
+  size: autoNum(_autoSaved.size, 0.6, 4, 1.5),             // 経路の大きさ(1 = 外形の四隅を通る楕円)
+  height: autoNum(_autoSaved.height, 0, 3, 1.3),           // 経路の高さ(モデルの下端から。モデルの高さ(低い時は幅)の何倍か)
+  heightRef: _aOne(_autoSaved.heightRef, ['base', 'ground'], 'base'), // 高さの基準: モデルの下端 / 地面(真下の点群)
+  agl: autoNum(_autoSaved.agl, 1, 60, 10),                 // 地面からの高さ(m)
+  turns: autoNum(_autoSaved.turns, 1, 6, 3),               // 螺旋・寄りながら回る: 片道の巻き数
+  near: autoNum(_autoSaved.near, 0.1, 0.9, 0.5),           // 寄りながら回る: 寄る前の距離の何割まで寄るか
+  arc: autoNum(_autoSaved.arc, 15, 90, 60),                // 円弧の往復: 片側の角度(度)
+  floorH: autoNum(_autoSaved.floorH, 2, 8, 3.5),           // 階ごとに周回: 1段の高さ(m)
+  dir: _autoSaved.dir === -1 ? -1 : 1,                     // 1 = 左回り(上から見て反時計回り)
+  play: _aOne(_autoSaved.play, ['loop', 'pingpong', 'once'], 'loop'), // 繰り返し / 往復 / 1回
+  reverse: _autoSaved.reverse === true,                    // 逆向き
+  returnHome: _autoSaved.returnHome === true,              // 終わったら(■ 止めるも)元の視点に戻る
+  curveSlow: _autoSaved.curveSlow === true,                // 曲がる所で減速
+  distSlow: _autoSaved.distSlow === true,                  // 近い時はゆっくり
+  dwell: autoNum(_autoSaved.dwell, 0, 10, 2),              // ★の巡回: ★で止まる秒数
+  leadSec: autoNum(_autoSaved.leadSec, 0.5, 5, 2),         // 少し先: 何秒先を見るか
+  sideDir: _autoSaved.sideDir === -1 ? -1 : 1,             // 進行方向の横: 1=左 / -1=右
+  fixedMode: _aOne(_autoSaved.fixedMode, ['now', 'north'], 'now'),
+  focusSec: autoNum(_autoSaved.focusSec, 2, 20, 6),        // 注目点の切り替え(秒)
+  lineMode: _aOne(_autoSaved.lineMode, ['stopped', 'always', 'off'], 'stopped'), // 経路の線
+  vrCap: autoNum(_autoSaved.vrCap, 1, 10, 3),              // VR 中の速さの上限(m/秒)
+  recSel: typeof _autoSaved.recSel === 'string' ? _autoSaved.recSel : '',
+  secOpen: Object.assign({ path: true, look: true, speed: true, play: false, view: false }, _autoSaved.secOpen || {}),
+  // 動き
   status: 'idle',   // idle / play / pause
-  pausedBy: '',     // 一時停止の理由(user / button / vr / blocked / nogeo)
-  geo: null,        // 経路の形(autoBuild)
-  th: 0, q: 0, thC: 0, seg: 0, segF: 0, // 経路の上の位置(楕円の角度・往復の位相・円弧の中心・★の区間と区間内の進み)
+  pausedBy: '',     // 一時停止の理由(user / button / vr / blocked / nogeo / scrub)
+  ended: false,     // 1回が終わった
+  geo: null,        // 経路(autoBuild)
+  geoKey: '',       // 経路の種類が変わったか
+  u: 0,             // 一巡り(往復はその往復)の中の位置 0〜1
+  trav: 0,          // 再生を始めてから進んだ量(1回の終わりを知る)
+  rate: 0,          // u の進む速さ(/秒)
+  anchor: null,     // 経路の向きの基準(再生を始めた時の視点の方角)
+  origin: null,     // 再生を始めた時の視点(元の視点に戻る)
   blend: null,      // 今の視点 → 経路 の乗り移り
   last: null,       // 最後に置いた視点(ほかの操作で動いたかを調べる)
-  aheadYaw: null, aheadPitch: 0, tyPrev: 0, tpPrev: 0, // 進行方向を見る時の滑らかな向き(と前のフレームの進む向き)
+  lookYaw: null, lookPitch: 0, tyPrev: 0, tpPrev: 0, // 視線を滑らかにする
+  fixedYaw: 0, fixedPitch: 0, focusT: 0,
 };
 if (autoState.look === 'bm' && autoState.path !== 'tour') autoState.look = 'center';
+if (autoState.look === 'rec' && autoState.path !== 'record') autoState.look = 'center';
 function autoSave() {
   const s = autoState;
-  saveSetting('autoCam', { path: s.path, look: s.look, ease: s.ease, speed: s.speed, size: s.size, height: s.height, turns: s.turns, arc: s.arc, dir: s.dir });
+  const keys = ['path', 'look', 'ease', 'speedMode', 'speed', 'timeSec', 'size', 'height', 'heightRef', 'agl', 'turns', 'near', 'arc', 'floorH', 'dir',
+    'play', 'reverse', 'returnHome', 'curveSlow', 'distSlow', 'dwell', 'leadSec', 'sideDir', 'fixedMode', 'focusSec', 'lineMode', 'vrCap', 'recSel', 'secOpen'];
+  const o = {};
+  for (const k of keys) o[k] = s[k];
+  saveSetting('autoCam', o);
 }
 function autoWrap(a) { a = (a + Math.PI) % (Math.PI * 2); if (a < 0) a += Math.PI * 2; return a - Math.PI; }
 function autoClampPitch(p) { return Math.max(-PITCH_MAX + 0.03, Math.min(PITCH_MAX - 0.03, p)); }
-const autoTri = (q) => (q <= 1 ? q : 2 - q);                                       // 0→1→0 の往復
-const autoE = (u) => (autoState.ease ? (1 - Math.cos(Math.PI * u)) / 2 : u);        // 緩急: 端でゆっくり
-const autoEd = (u) => (autoState.ease ? Math.PI / 2 * Math.sin(Math.PI * u) : 1);   // その傾き
-const autoEinv = (u) => (autoState.ease ? Math.acos(1 - 2 * Math.max(0, Math.min(1, u))) / Math.PI : Math.max(0, Math.min(1, u)));
+const autoFrac = (x) => ((x % 1) + 1) % 1;
+const autoTri = (x) => { x = autoFrac(x); return x < 0.5 ? 2 * x : 2 - 2 * x; }; // 0→1→0
+// 往復の片道 0→1 の進み方: 一定=端の手前で滑らかに減速・加速(間は同じ速さ) / 緩急=全体で滑らかに
+function autoS(t) {
+  t = Math.max(0, Math.min(1, t));
+  if (autoState.ease) return (1 - Math.cos(Math.PI * t)) / 2;
+  const w = AUTO_W, k = 1 / (1 - w);
+  if (t < w) return k * (t / 2 - (w / (2 * Math.PI)) * Math.sin(Math.PI * t / w));
+  if (t > 1 - w) return 1 - autoS(1 - t);
+  return k * (w / 2 + (t - w));
+}
+const autoSnom = () => (autoState.ease ? 1 : 1 / (1 - AUTO_W)); // 往復の間の進み方の傾き
+const autoSmooth = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
 
-// モデルの外形(シーン座標)
+// ── モデルの外形(シーン座標) ──
 function autoModelGeo() {
   const box = modelWorldBox(new THREE.Box3());
   if (box.isEmpty()) return null;
   const c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
   const U = Math.max(sz.x / 2, sz.z / 2, 1e-3);
-  return { box, c, U, hx: Math.max(sz.x / 2, 0.4 * U), hz: Math.max(sz.z / 2, 0.4 * U), sy: sz.y, hUnit: Math.max(sz.y, 0.6 * U) };
+  return { box, c, U, hxR: sz.x / 2, hzR: sz.z / 2, hx: Math.max(sz.x / 2, 0.4 * U), hz: Math.max(sz.z / 2, 0.4 * U), sy: sz.y, hUnit: Math.max(sz.y, 0.6 * U) };
+}
+// 経路の向きの基準: 今の視点がモデルのどちら側にあるか(楕円の角度)
+function autoAnchorNow(m) {
+  m = m || autoModelGeo();
+  if (!m) return { th0: 0 };
+  const p = dolly.position;
+  const A = m.hx * Math.SQRT2 * autoState.size, B = m.hz * Math.SQRT2 * autoState.size;
+  return { th0: Math.atan2(-(p.z - m.c.z) / B, (p.x - m.c.x) / A) };
 }
 // ★ → 経路の点(真上の★は、その範囲が入る高さから真下を見る)
 function autoTourPoints() {
@@ -13736,163 +13981,640 @@ function autoTourPoints() {
     return { pos, yaw, pitch: autoClampPitch(pitch), name: b.name };
   }).filter(p => [p.pos.x, p.pos.y, p.pos.z, p.yaw, p.pitch].every(Number.isFinite));
 }
-// 経路の形を作る(再生・設定の変更のたびに。モデルの外形・★はその時のもの)
-function autoBuild() {
+
+// ── 注目点(データごと・端末に保存) ──
+const AUTO_FOCUS_KEY = 'tilesViewer.autoFocus.v1';
+let _autoFocusCache = { id: null, pts: [] };
+function autoFocusPts() {
+  const id = bmCurId();
+  if (_autoFocusCache.id !== id) {
+    const all = lsGet(AUTO_FOCUS_KEY) || {};
+    const list = id && Array.isArray(all[id]) ? all[id] : [];
+    _autoFocusCache = { id, pts: list.filter(a => Array.isArray(a) && a.length === 3 && a.every(Number.isFinite)).map(a => new THREE.Vector3().fromArray(a)) };
+  }
+  return _autoFocusCache.pts;
+}
+function autoFocusSave(pts) {
+  const id = bmCurId();
+  if (!id) return;
+  const all = lsGet(AUTO_FOCUS_KEY) || {};
+  if (pts.length) all[id] = pts.map(p => p.toArray().map(v => Math.round(v * 1000) / 1000)); else delete all[id];
+  lsSet(AUTO_FOCUS_KEY, all);
+  _autoFocusCache = { id, pts: pts.slice() };
+  autoMarkersUpdate();
+}
+let autoFocusArmed = false; // 「＋ 点群をクリックして追加」中
+// クリック・タップ(navTap から): 注目点の追加中なら、その点を足す
+window.__autoFocusTap = (cx, cy) => {
+  if (!autoFocusArmed) return false;
+  const hit = pickAt(cx, cy);
+  if (!hit) { showToast('点群の上をクリック(タップ)してください'); return true; }
+  const pts = autoFocusPts().slice();
+  pts.push(hit.point.clone());
+  autoFocusSave(pts);
+  showToast(`注目点を追加しました(${pts.length}件)。続けて追加するか、「追加を終える」を押してください`);
+  autoSyncUi();
+  return true;
+};
+
+// ── 操作の記録(データごとに複数・端末に保存) ──
+const AUTO_REC_KEY = 'tilesViewer.autoRec.v1';
+const AUTO_REC_MAX = 6000; // 10 分(10 回/秒)
+const autoRec = { on: false, t0: 0, lastAt: 0, samples: [] };
+function autoRecAll() { return lsGet(AUTO_REC_KEY) || {}; }
+function autoRecList(id = bmCurId()) { const a = autoRecAll(); return id && Array.isArray(a[id]) ? a[id] : []; }
+function autoRecSetList(list, id = bmCurId()) {
+  if (!id) return false;
+  const a = autoRecAll();
+  if (list.length) a[id] = list; else delete a[id];
+  try { localStorage.setItem(AUTO_REC_KEY, JSON.stringify(a)); return true; } catch { showToast('記録を保存できませんでした(端末の保存領域が足りません)'); return false; }
+}
+function autoRecCurrent() {
+  const list = autoRecList();
+  return list.find(r => r.id === autoState.recSel) || list[list.length - 1] || null;
+}
+function autoRecStart() {
+  if (!bmCurId()) { showToast('データを開くと記録できます'); return; }
+  if (autoState.status === 'play') autoPause('button');
+  autoRec.on = true; autoRec.t0 = performance.now(); autoRec.lastAt = 0; autoRec.samples = [];
+  showToast('記録中: いつものように視点を動かしてください。「■ 記録を終える」で保存します');
+  autoSyncUi();
+}
+function autoRecStop() {
+  if (!autoRec.on) return;
+  autoRec.on = false;
+  const S = autoRec.samples;
+  autoRec.samples = [];
+  if (S.length < 5 || S[S.length - 1][0] - S[0][0] < 0.8) { showToast('短すぎるので記録しませんでした'); autoSyncUi(); return; }
+  const list = autoRecList();
+  const t0 = S[0][0];
+  const rec = { id: `r${Date.now()}`, name: `記録 ${list.length + 1}`, at: Date.now(), scale: worldScale, dur: Math.round((S[S.length - 1][0] - t0) * 100) / 100,
+    samples: S.map(a => [Math.round((a[0] - t0) * 100) / 100, ...a.slice(1)]) };
+  list.push(rec);
+  while (list.length > 10) list.shift();
+  if (autoRecSetList(list)) {
+    autoState.recSel = rec.id; autoSave();
+    showToast(`「${rec.name}」を記録しました(${autoFmtClock(rec.dur)})`);
+  }
+  autoSyncUi();
+}
+function autoRecTick() {
+  if (!autoRec.on || topdownState.active || gate.active) return;
+  const now = performance.now();
+  if (now - autoRec.lastAt < 100) return;
+  autoRec.lastAt = now;
+  const r = (v) => Math.round(v * 1000) / 1000;
+  autoRec.samples.push([(now - autoRec.t0) / 1000, r(dolly.position.x), r(dolly.position.y), r(dolly.position.z), r(dolly.rotation.y), r(camera.rotation.x)]);
+  if (autoRec.samples.length >= AUTO_REC_MAX) autoRecStop();
+}
+
+// ── 真下の点群の高さ(地面から一定の高さ): 真上から細い正射投影で描いて、いちばん高い点を拾う ──
+const _pickDownCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.001, 10);
+function pickDownAt(x, z, r) {
+  if (renderer.xr.isPresenting) return null;
+  const box = modelWorldBox(new THREE.Box3());
+  if (box.isEmpty()) return null;
+  const pad = Math.max(1, (box.max.y - box.min.y) * 0.05);
+  const top = box.max.y + pad, far = box.max.y - box.min.y + 2 * pad;
+  const cam = _pickDownCam;
+  cam.left = -r; cam.right = r; cam.top = r; cam.bottom = -r; cam.near = 0.001; cam.far = far;
+  cam.position.set(x, top, z); cam.up.set(0, 0, -1); cam.lookAt(x, top - 1, z);
+  cam.updateProjectionMatrix(); cam.updateMatrixWorld(true);
+  const dpr = renderer.getPixelRatio();
+  const n = Math.max(8, Math.round(PICK_CSS * dpr));
+  ensurePickTargets(n);
+  const hidden = pickHideObjects();
+  const vis = hidden.map(o => o.visible);
+  hidden.forEach(o => { o.visible = false; });
+  const savedVh = cubeUniforms.uViewportH.value, savedPx = cubeUniforms.uPxScale.value;
+  cubeUniforms.uViewportH.value = n; cubeUniforms.uPxScale.value = dpr;
+  const prevRT = renderer.getRenderTarget(), prevAutoClear = renderer.autoClear;
+  try {
+    renderer.autoClear = true;
+    renderer.setRenderTarget(_pickRT);
+    renderer.clear(true, true, true);
+    const po = pickOpaqueBegin();
+    renderer.render(scene, cam);
+    pickOpaqueEnd(po);
+    _pickQuadMat.uniforms.tDepth.value = _pickRT.depthTexture;
+    renderer.setRenderTarget(_pickOut);
+    renderer.render(_pickQuadScene, _pickCam);
+    renderer.readRenderTargetPixels(_pickOut, 0, 0, n, n, _pickBuf);
+  } finally {
+    renderer.setRenderTarget(prevRT);
+    renderer.autoClear = prevAutoClear;
+    cubeUniforms.uViewportH.value = savedVh; cubeUniforms.uPxScale.value = savedPx;
+    hidden.forEach((o, i) => { o.visible = vis[i]; });
+  }
+  let best = Infinity;
+  for (let i = 0; i < n * n; i++) {
+    const k = i * 4;
+    if (_pickBuf[k + 3] < 128) continue;
+    const d = (_pickBuf[k] * 65536 + _pickBuf[k + 1] * 256 + _pickBuf[k + 2]) / 16777215;
+    if (d < best) best = d;
+  }
+  if (!Number.isFinite(best)) return null;
+  return top - (cam.near + best * (cam.far - cam.near));
+}
+const AUTO_GN = 72; // 地面の高さを調べる点の数(経路に沿って)
+
+// ── 経路を作る ──
+// g.P(s, out): s(0〜1)の所の位置。g.closed: 0 と 1 が同じ所(一周する形)。g.timeBased: 時間で進む(★の巡回・記録)
+function autoIsPP(g) { return AUTO_NATURAL_PP.has(g.kind) || autoState.play === 'pingpong'; }
+function autoBuild({ preview = false, anchor = null } = {}) {
   const s = autoState, m = autoModelGeo();
-  if (s.path === 'tour') {
-    const pts = autoTourPoints();
-    if (pts.length < 2) return null;
-    const curve = new THREE.CatmullRomCurve3(pts.map(p => p.pos), true, 'centripetal');
-    const n = pts.length, PER = 48, D = n * PER;
-    const lengths = curve.getLengths(D);
-    const segLen = [];
-    for (let i = 0; i < n; i++) segLen.push(Math.max(0, lengths[(i + 1) * PER] - lengths[i * PER]));
-    const bb = new THREE.Box3().setFromPoints(pts.map(p => p.pos));
-    const U = m ? m.U : Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z, 2e-3) / 2;
-    return { kind: 'tour', m, U, center: m ? m.c.clone() : bb.getCenter(new THREE.Vector3()), pts, curve, n, PER, D, lengths, segLen };
-  }
-  if (!m) return null;
-  const g = { kind: s.path, m, U: m.U, center: m.c.clone(), cx: m.c.x, cz: m.c.z,
-    a: m.hx * Math.SQRT2 * s.size, b: m.hz * Math.SQRT2 * s.size, y: m.box.min.y + s.height * m.hUnit };
-  if (s.path === 'spiral') {
-    const base = m.box.min.y + 0.1 * m.sy;
-    g.y0 = Math.min(g.y, base); g.y1 = Math.max(g.y, base + 0.2 * m.hUnit);
-  }
-  // 寄りながら回る: いちばん近い時も外形の四隅を通る楕円(大きさ 1)より内には入らない(大きさが 1 未満ならそのまま)
-  if (s.path === 'approach') g.sNear = Math.max(0.55 * s.size, Math.min(s.size, 1.0)) / s.size;
-  if (s.path === 'arc') g.alpha = s.arc * Math.PI / 180;
+  let g = null;
+  if (s.path === 'tour') g = autoBuildTour(m);
+  else if (s.path === 'record') g = autoBuildRecord(m);
+  else if (m) g = autoBuildGeom(s.path, m, anchor || s.anchor || autoAnchorNow(m), preview);
+  if (!g) return null;
+  g.kind = s.path;
+  if (!g.timeBased) autoPrepTables(g);
   return g;
 }
-// 経路の上を進む速さ(シーンの単位/秒)。モデルの大きさに合わせる(ふつう=大きさ 1.5 の楕円を約40秒で1周)
-function autoSpeedOf(g) { return g.U * 0.33 * Math.pow(1.6, autoState.speed - 5); }
-const autoEllR = (g, th) => Math.hypot(g.a * Math.sin(th), g.b * Math.cos(th)); // 楕円の 角度あたりの長さ
-function autoArcTheta(g) { const s = autoState; return s.thC + s.dir * g.alpha * (2 * autoE(autoTri(s.q)) - 1); }
-function autoApproachScale(g) { return 1 + (g.sNear - 1) * autoE(autoTri(autoState.q)); }
-function autoTourSegT(g, i, v) { return Math.max(0.6, g.segLen[i] / Math.max(v, 1e-9)); }
-// 区間 i の中で、長さの割合 f の所の曲線の t
-function autoTourT(g, i, f) {
-  const target = g.lengths[i * g.PER] + f * g.segLen[i];
-  let lo = i * g.PER, hi = (i + 1) * g.PER;
-  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (g.lengths[mid] <= target) lo = mid; else hi = mid; }
-  const span = g.lengths[hi] - g.lengths[lo];
-  return (lo + (span > 1e-12 ? Math.max(0, Math.min(1, (target - g.lengths[lo]) / span)) : 0)) / g.D;
+function autoBuildGeom(kind, m, anchor, preview) {
+  const s = autoState, ws = worldScale || 1, dir = s.dir;
+  const A = m.hx * Math.SQRT2 * s.size, B = m.hz * Math.SQRT2 * s.size;
+  const cx = m.c.x, cy = m.c.y, cz = m.c.z, base = m.box.min.y;
+  const Y = base + s.height * m.hUnit;
+  const th0 = anchor.th0 || 0, TAU = Math.PI * 2;
+  const ell = (th, r, o) => o.set(cx + A * r * Math.cos(th), 0, cz - B * r * Math.sin(th));
+  const E0 = ell(th0, 1, new THREE.Vector3());
+  const dH = new THREE.Vector3(E0.x - cx, 0, E0.z - cz);
+  const D = Math.max(dH.length(), 1e-6);
+  dH.multiplyScalar(1 / D);
+  const g = { m, U: m.U, center: m.c.clone(), closed: true, groundable: AUTO_GROUNDABLE.has(kind), A, B };
+  const faces = (p) => 1 - 0.6 * Math.cos(4 * Math.atan2(-(p.z - cz) / B, (p.x - cx) / A)); // 面の正面(楕円の軸の所)でゆっくり
+  switch (kind) {
+    case 'ellipse':
+      g.P = (t, o) => { ell(th0 + dir * TAU * t, 1, o); o.y = Y; return o; };
+      g.ease = faces; break;
+    case 'spiral': {
+      const N = s.turns, y0 = Math.min(Y, base + 0.1 * m.sy), y1 = Math.max(Y, base + 0.1 * m.sy + 0.2 * m.hUnit);
+      g.P = (t, o) => { ell(th0 + dir * TAU * 2 * N * t, 1, o); o.y = y0 + (y1 - y0) * autoS(autoTri(t)); return o; };
+      g.ease = faces; break;
+    }
+    case 'approach': {
+      const N = s.turns, k = s.near;
+      g.P = (t, o) => { const r = 1 - (1 - k) * autoS(autoTri(t)); ell(th0 + dir * TAU * 2 * N * t, r, o); o.y = cy + (Y - cy) * r; return o; };
+      g.ease = faces; break;
+    }
+    case 'arc': {
+      const al = s.arc * Math.PI / 180;
+      g.closed = false;
+      g.P = (t, o) => { ell(th0 + dir * al * (2 * t - 1), 1, o); o.y = Y; return o; };
+      break;
+    }
+    case 'line': {
+      const tv = new THREE.Vector3(-dH.z, 0, dH.x).multiplyScalar(dir); // モデルの前を左右に
+      const pe = Math.abs(m.hxR * tv.x) + Math.abs(m.hzR * tv.z);
+      const L = (pe * 1.2 + 0.1 * m.U) * (0.5 + s.size / 3);
+      g.closed = false;
+      g.P = (t, o) => o.set(cx + dH.x * D + tv.x * L * (2 * t - 1), Y, cz + dH.z * D + tv.z * L * (2 * t - 1));
+      break;
+    }
+    case 'vertical': {
+      const Bv = Math.max(m.sy / 2, 0.4 * m.U) * Math.SQRT2 * s.size;
+      g.P = (t, o) => { const ph = dir * TAU * t, h = D * Math.cos(ph); return o.set(cx + dH.x * h, cy + Bv * Math.sin(ph), cz + dH.z * h); };
+      g.ease = (p, t) => 1 - 0.6 * Math.cos(4 * TAU * t); break;
+    }
+    case 'outline': {
+      // 外形(箱)から一定の距離を保つ、角の丸い四角
+      const off = Math.max(0.05 * m.U, (s.size - 0.6) * 0.5 * m.U), hx = m.hxR, hz = m.hzR, q = Math.PI * off / 2;
+      const segs = [hz, q, 2 * hx, q, 2 * hz, q, 2 * hx, q, hz];
+      const Ltot = segs.reduce((a, b) => a + b, 0);
+      const rr = (sg, o) => {
+        let i = 0;
+        while (i < segs.length - 1 && sg > segs[i]) { sg -= segs[i]; i++; }
+        const corner = (ccx, ccz, a0) => { const a = a0 + sg / off; return o.set(ccx + off * Math.cos(a), 0, ccz - off * Math.sin(a)); };
+        switch (i) {
+          case 0: return o.set(cx + hx + off, 0, cz - sg);
+          case 1: return corner(cx + hx, cz - hz, 0);
+          case 2: return o.set(cx + hx - sg, 0, cz - hz - off);
+          case 3: return corner(cx - hx, cz - hz, Math.PI / 2);
+          case 4: return o.set(cx - hx - off, 0, cz - hz + sg);
+          case 5: return corner(cx - hx, cz + hz, Math.PI);
+          case 6: return o.set(cx - hx + sg, 0, cz + hz + off);
+          case 7: return corner(cx + hx, cz + hz, Math.PI * 1.5);
+          default: return o.set(cx + hx + off, 0, cz + hz - sg);
+        }
+      };
+      let sg0 = 0, bd = Infinity;
+      const tmp = new THREE.Vector3();
+      for (let i = 0; i < 400; i++) { const sg = i / 400 * Ltot; rr(sg, tmp); const d = (tmp.x - E0.x) ** 2 + (tmp.z - E0.z) ** 2; if (d < bd) { bd = d; sg0 = sg; } }
+      g.P = (t, o) => { rr((((sg0 + dir * t * Ltot) % Ltot) + Ltot) % Ltot, o); o.y = Y; return o; };
+      g.ease = (p) => 1 - 0.6 * Math.cos(4 * Math.atan2(-(p.z - cz) / (hz + off), (p.x - cx) / (hx + off)));
+      break;
+    }
+    case 'floors': {
+      const fh = Math.max(0.5, s.floorH) * ws;
+      const F = Math.max(1, Math.min(40, Math.ceil(m.sy / fh)));
+      const yk = (k) => (F === 1 ? cy : base + (k + 0.5) * fh);
+      const seq = [];
+      for (let k = 0; k < F; k++) seq.push(k);
+      for (let k = F - 2; k >= 0; k--) seq.push(k);
+      if (F === 1) seq.push(0);
+      const nL = seq.length - 1;
+      g.F = F;
+      g.P = (t, o) => {
+        const lp = t * nL, i = Math.min(nL - 1, Math.floor(lp)), f = lp - i;
+        ell(th0 + dir * TAU * lp, 1, o);
+        o.y = yk(seq[i]) + (yk(seq[i + 1]) - yk(seq[i])) * autoSmooth((f - 0.75) / 0.25); // 1周の最後の 1/4 で次の段へ
+        return o;
+      };
+      g.ease = faces; break;
+    }
+    case 'crane': {
+      // 真上(モデル全体を見下ろす高さ) ⇄ 地上の目線(モデルの前)
+      const Ytop = m.box.max.y + Math.max(m.hUnit, m.U) * 0.8 * s.size, Ylow = base + 1.6 * ws, Dmin = 0.03 * D;
+      g.closed = false;
+      g.P = (t, o) => { const hd = Dmin + (D - Dmin) * Math.sin(Math.PI / 2 * t); return o.set(cx + dH.x * hd, Ylow + (Ytop - Ylow) * Math.cos(Math.PI / 2 * t), cz + dH.z * hd); };
+      break;
+    }
+    case 'reveal': {
+      // 近く(モデルの正面のすぐ前) ⇄ 後ろ・上へ下がって全体
+      const pe = Math.abs(m.hxR * dH.x) + Math.abs(m.hzR * dH.z);
+      const Dn = pe + 0.15 * m.U, Df = Math.max(D * 1.3, Dn * 1.5);
+      const yn = base + 0.5 * m.sy, yf = m.box.max.y + 0.5 * m.hUnit * s.size / 1.5;
+      g.closed = false;
+      g.P = (t, o) => { const h = Dn + (Df - Dn) * t; return o.set(cx + dH.x * h, yn + (yf - yn) * t, cz + dH.z * h); };
+      break;
+    }
+    case 'eight': {
+      // 長い向きに 8 の字。交差はモデルの中(真ん中)
+      const longX = m.hxR >= m.hzR, a8 = longX ? A : B, b8 = (longX ? B : A) * 0.9;
+      g.P = (t, o) => { const tt = dir * TAU * t, u1 = a8 * Math.cos(tt), v1 = b8 * Math.sin(2 * tt); return longX ? o.set(cx + u1, Y, cz - v1) : o.set(cx + v1, Y, cz - u1); };
+      g.ease = (p, t) => 1 - 0.6 * Math.cos(2 * TAU * t); break;
+    }
+    case 'slice': {
+      // 断面を正面から見たまま、断面と一緒に端から端へ(断面の向き・見せ方は断面パネルのとおり)
+      const Dsl = Math.max(m.U, m.sy / 2) * s.size * 1.1;
+      const n = new THREE.Vector3(), p0 = new THREE.Vector3();
+      const plane = (t) => {
+        const r = sliceRange();
+        const W = r.min + (r.max - r.min) * Math.max(0, Math.min(1, t));
+        const sg = sliceState.mode === 'cut' && sliceState.flip ? -1 : 1;
+        n.copy(sliceNormal()).multiplyScalar(sg);
+        const d = sg * W * ws + n.dot(datasetFrame.position);
+        p0.copy(m.c).addScaledVector(n, d - n.dot(m.c));
+        return W;
+      };
+      g.closed = false;
+      g.P = (t, o) => { plane(t); o.copy(p0).addScaledVector(n, Dsl); if (Math.abs(n.y) > 0.9) o.addScaledVector(dH, 0.15 * Dsl); return o; };
+      g.lookAt = (t, o) => { plane(t); return o.copy(p0); };
+      g.onFrame = (t) => { sliceState.pos = plane(t); sliceState.movedAt = performance.now(); sliceApply(); sliceSyncUiSoon(); };
+      break;
+    }
+    default: return null;
+  }
+  // 高さを地面(真下の点群)から測る
+  if (g.groundable && s.heightRef === 'ground') {
+    const P0 = g.P, agl = s.agl * ws;
+    g.P0 = P0;
+    g.groundSm = new Float32Array(AUTO_GN + 1).fill(base); // 表示に使う(滑らかに追う)
+    g.groundTarget = null;
+    g.groundRaw = new Float32Array(AUTO_GN + 1).fill(NaN);
+    g.groundNext = 0;
+    g.P = (t, o) => { P0(t, o); o.y = autoGroundAt(g, t) + agl; return o; };
+    const prev = autoState.geo;
+    if (prev && prev.groundSm && prev.kind === kind && prev.groundSm.length === g.groundSm.length) g.groundSm.set(prev.groundSm);
+    else if (!preview) autoGroundFullPass(g);
+  }
+  return g;
 }
-// 進める(k: 乗り移りの間はゆっくり)
-function autoAdvance(g, dt, k) {
-  const s = autoState, v = autoSpeedOf(g) * k;
-  if (g.kind === 'tour') {
-    s.segF += dt / autoTourSegT(g, s.seg, v);
-    let guard = 0;
-    while (s.segF >= 1 && guard++ < g.n) { s.segF -= 1; s.seg = (s.seg + 1) % g.n; }
-    if (s.segF >= 1) s.segF = 0;
-    return;
-  }
-  if (g.kind === 'arc') {
-    // 円弧の長さ(中央の半径で)を往復の片道とする
-    const R = Math.max(autoEllR(g, s.thC), 1e-9);
-    s.q = (s.q + v * dt / (2 * g.alpha * R)) % 2;
-    return;
-  }
-  const sc = g.kind === 'approach' ? autoApproachScale(g) : 1;
-  const m = s.ease ? 1 - 0.6 * Math.cos(4 * s.th) : 1; // 緩急: 楕円の軸の所(面の正面)でゆっくり、斜めで速く
-  const dth = v * m * dt / (Math.max(autoEllR(g, s.th), 1e-9) * sc);
-  s.th = (s.th + s.dir * dth) % (Math.PI * 2);
-  if (g.kind === 'spiral' || g.kind === 'approach') s.q = (s.q + dth / (Math.PI * 2 * s.turns)) % 2;
+function autoGroundAt(g, t) {
+  const n = AUTO_GN, a = g.groundSm;
+  const x = Math.max(0, Math.min(1, t)) * n, i = Math.min(n - 1, Math.floor(x)), f = x - i;
+  return a[i] + (a[i + 1] - a[i]) * f;
 }
-// 今の経路の上の位置・進む向き(と★の向き)
-const _autoPose = { pos: new THREE.Vector3(), tan: new THREE.Vector3(), bmYaw: 0, bmPitch: 0 };
-function autoPose(g, out = _autoPose) {
-  const s = autoState;
-  if (g.kind === 'tour') {
-    const f = autoE(s.segF), t = autoTourT(g, s.seg, f);
-    g.curve.getPoint(t, out.pos);
-    g.curve.getTangent(t, out.tan);
-    const A = g.pts[s.seg], B = g.pts[(s.seg + 1) % g.n];
-    const sm = s.segF * s.segF * (3 - 2 * s.segF); // ★の向きは ★ の所で止まるように滑らかに
-    out.bmYaw = A.yaw + autoWrap(B.yaw - A.yaw) * sm;
-    out.bmPitch = A.pitch + (B.pitch - A.pitch) * sm;
-    return out;
-  }
-  if (g.kind === 'arc') {
-    const th = autoArcTheta(g);
-    out.pos.set(g.cx + g.a * Math.cos(th), g.y, g.cz - g.b * Math.sin(th));
-    const sgn = s.dir * (s.q < 1 ? 1 : -1);
-    out.tan.set(-g.a * Math.sin(th), 0, -g.b * Math.cos(th)).multiplyScalar(sgn).normalize();
-    return out;
-  }
-  const th = s.th, u = autoTri(s.q), du = (s.q < 1 ? 1 : -1) / (Math.PI * 2 * s.turns); // du/dθ
-  let sc = 1, dsc = 0, y = g.y, dy = 0;
-  if (g.kind === 'spiral') { y = g.y0 + (g.y1 - g.y0) * autoE(u); dy = (g.y1 - g.y0) * autoEd(u) * du; }
-  if (g.kind === 'approach') {
-    sc = autoApproachScale(g); dsc = (g.sNear - 1) * autoEd(u) * du;
-    y = g.m.c.y + (g.y - g.m.c.y) * sc; dy = (g.y - g.m.c.y) * dsc;
-  }
-  out.pos.set(g.cx + g.a * sc * Math.cos(th), y, g.cz - g.b * sc * Math.sin(th));
-  // 進む向き: θ が dir の向きに進む時の変化
-  out.tan.set(dsc * g.a * Math.cos(th) - sc * g.a * Math.sin(th) * s.dir, dy, -(dsc * g.b * Math.sin(th) + sc * g.b * Math.cos(th) * s.dir));
-  if (out.tan.lengthSq() < 1e-18) out.tan.set(0, 0, -1); else out.tan.normalize();
+// 調べた高さを滑らかにする(谷は埋め、急な変化は均す)
+function autoGroundSmooth(g) {
+  const n = AUTO_GN, raw = g.groundRaw, base = g.m.box.min.y, R1 = 2, R2 = 3;
+  const at = (i) => { if (g.closed) i = ((i % n) + n) % n; else i = Math.max(0, Math.min(n, i)); const v = raw[i]; return Number.isFinite(v) ? v : base; };
+  const mx = new Float32Array(n + 1), out = new Float32Array(n + 1);
+  for (let i = 0; i <= n; i++) { let v = -Infinity; for (let j = -R1; j <= R1; j++) v = Math.max(v, at(i + j)); mx[i] = v; }
+  const at2 = (i) => { if (g.closed) i = ((i % n) + n) % n; else i = Math.max(0, Math.min(n, i)); return mx[i]; };
+  for (let i = 0; i <= n; i++) { let v = 0; for (let j = -R2; j <= R2; j++) v += at2(i + j); out[i] = v / (2 * R2 + 1); }
+  if (g.closed) out[n] = out[0];
   return out;
 }
-// 視線(向き・見上げ)
-function autoLookOf(g, P, dt) {
-  const s = autoState;
-  if (s.look === 'bm' && g.kind === 'tour') return { yaw: P.bmYaw, pitch: autoClampPitch(P.bmPitch) };
-  if (s.look === 'ahead') {
-    const t = P.tan, ty = Math.atan2(-t.x, -t.z), tp = Math.atan2(t.y, Math.max(1e-9, Math.hypot(t.x, t.z)));
-    if (s.aheadYaw == null) { s.aheadYaw = ty; s.aheadPitch = tp; } else {
-      // 曲がり続ける間は遅れずに追い(向きの変わる速さを先に足す)、折り返しなどの急な変わり目だけ滑らかにする
-      const k = 1 - Math.exp(-3 * dt);
-      const dy = autoWrap(ty - s.tyPrev), dp = tp - s.tpPrev;
-      s.aheadYaw += Math.abs(dy) < 0.3 ? dy : 0; s.aheadYaw += autoWrap(ty - s.aheadYaw) * k;
-      s.aheadPitch += Math.abs(dp) < 0.3 ? dp : 0; s.aheadPitch += (tp - s.aheadPitch) * k;
-    }
-    s.tyPrev = ty; s.tpPrev = tp;
-    return { yaw: s.aheadYaw, pitch: autoClampPitch(s.aheadPitch) };
-  }
-  const r = lookYawPitch(P.pos, g.center);
-  return { yaw: r.yaw, pitch: s.look === 'level' ? 0 : autoClampPitch(r.pitch) };
+function autoGroundSample(g, i) {
+  const p = g.P0(i / AUTO_GN, new THREE.Vector3());
+  const y = pickDownAt(p.x, p.z, Math.max(0.5 * (worldScale || 1), 0.02 * g.U));
+  g.groundRaw[i] = y == null ? g.m.box.min.y : y;
 }
-// 経路の上のどこから始めるか(今の視点に近い所)
-function autoInitParams(g) {
-  const s = autoState, p = dolly.position;
-  s.aheadYaw = null;
-  if (g.kind === 'tour') {
-    let best = 0, bd = Infinity;
-    g.pts.forEach((q, i) => { const d = q.pos.distanceToSquared(p); if (d < bd) { bd = d; best = i; } });
-    s.seg = best; s.segF = 0;
-    return;
+function autoGroundFullPass(g) {
+  if (renderer.xr.isPresenting) return;
+  for (let i = 0; i <= AUTO_GN; i++) autoGroundSample(g, i);
+  g.groundTarget = autoGroundSmooth(g);
+  g.groundSm.set(g.groundTarget);
+}
+// 毎フレーム: 少しずつ調べ直し(タイルの読み込みで変わる)、表示の高さは滑らかに追う
+function autoGroundTick(g, dt) {
+  if (!g || !g.groundRaw) return;
+  if (!renderer.xr.isPresenting) {
+    autoGroundSample(g, g.groundNext);
+    g.groundNext = (g.groundNext + 1) % (AUTO_GN + 1);
+    if (g.groundNext === 0) g.groundTarget = autoGroundSmooth(g);
   }
-  const th = Math.atan2(-(p.z - g.cz) / g.b, (p.x - g.cx) / g.a);
-  s.th = th; s.thC = th;
-  if (g.kind === 'arc') s.q = 0.5;
-  else if (g.kind === 'spiral') s.q = autoEinv((p.y - g.y0) / Math.max(1e-9, g.y1 - g.y0));
-  else s.q = 0;
+  if (g.groundTarget) {
+    const k = 1 - Math.exp(-1.5 * dt);
+    let moved = false;
+    for (let i = 0; i <= AUTO_GN; i++) { const d = g.groundTarget[i] - g.groundSm[i]; if (Math.abs(d) > 1e-6) { g.groundSm[i] += d * k; moved = true; } }
+    if (moved && (g._tabAt || 0) + 1000 < performance.now()) autoPrepTables(g);
+  }
+}
+// 経路の「伸び(|dP/ds|)」と速さの倍率(緩急・曲がる所・近い所)の表。一定の速さで進めるのに使う
+const AUTO_NT = 384;
+function autoPrepTables(g) {
+  const s = autoState, N = AUTO_NT, pts = [];
+  g._tabAt = performance.now();
+  for (let i = 0; i <= N; i++) pts.push(g.P(i / N, new THREE.Vector3()));
+  const closed = g.closed;
+  const at = (i) => pts[closed ? ((i % N) + N) % N : Math.max(0, Math.min(N, i))];
+  const len = new Float32Array(N + 1), mult = new Float32Array(N + 1).fill(1);
+  for (let i = 0; i <= N; i++) {
+    const a = at(i - 1), b = at(i + 1);
+    const span = closed || (i > 0 && i < N) ? 2 / N : 1 / N;
+    len[i] = a.distanceTo(b) / span;
+  }
+  const pp = autoIsPP(g);
+  if (s.ease && g.ease && !pp) for (let i = 0; i <= N; i++) mult[i] *= g.ease(pts[i], i / N);
+  if (s.curveSlow) {
+    const mc = new Float32Array(N + 1), T1 = new THREE.Vector3(), T2 = new THREE.Vector3();
+    for (let i = 0; i <= N; i++) {
+      T1.subVectors(at(i), at(i - 2)); T2.subVectors(at(i + 2), at(i));
+      const l = T1.length() + T2.length();
+      const ang = T1.lengthSq() > 1e-18 && T2.lengthSq() > 1e-18 ? T1.angleTo(T2) : 0;
+      const kU = l > 1e-12 ? ang / (l / 2) * g.U : 0; // 曲がり具合 × モデルの大きさ
+      mc[i] = Math.max(0.3, Math.min(1, 1 / (1 + Math.max(0, kU - 0.6) * 1.5)));
+    }
+    // 曲がる少し手前から減速するように、前後の小さい方をとってから均す
+    const R = 8, mn = new Float32Array(N + 1);
+    const idx = (i) => (closed ? ((i % N) + N) % N : Math.max(0, Math.min(N, i)));
+    for (let i = 0; i <= N; i++) { let v = 1; for (let j = -R; j <= R; j++) v = Math.min(v, mc[idx(i + j)]); mn[i] = v; }
+    for (let i = 0; i <= N; i++) { let v = 0; for (let j = -4; j <= 4; j++) v += mn[idx(i + j)]; mult[i] *= v / 9; }
+  }
+  if (s.distSlow && g.m) {
+    for (let i = 0; i <= N; i++) mult[i] *= Math.max(0.35, Math.min(1.5, 0.35 + 0.9 * g.m.box.distanceToPoint(pts[i]) / g.U));
+  }
+  if (closed) { len[N] = len[0]; mult[N] = mult[0]; }
+  g.lenTab = len; g.multTab = mult; g.tabPts = pts;
+  // 片道(1周)を v=1 で進む時間 K(往復は折り返しの減速も含む)
+  let K = 0;
+  const M = 256;
+  for (let j = 0; j < M; j++) {
+    const tau = (j + 0.5) / M;
+    const sv = pp ? autoS(tau) : tau;
+    K += autoTab(g, len, sv) / Math.max(1e-6, autoTab(g, mult, sv));
+  }
+  g.K = K / M * (pp ? autoSnom() : 1);
+}
+function autoTab(g, tab, sv) {
+  const N = tab.length - 1;
+  const x = (g.closed ? autoFrac(sv) : Math.max(0, Math.min(1, sv))) * N;
+  const i = Math.min(N - 1, Math.floor(x)), f = x - i;
+  return tab[i] + (tab[i + 1] - tab[i]) * f;
+}
+// ★の巡回: ★を通る滑らかな閉じた曲線。区間ごとに「★で止まる → 次の★へ」を時間で進める
+function autoBuildTour(m) {
+  const s = autoState, pts = autoTourPoints();
+  if (pts.length < 2) return null;
+  const curve = new THREE.CatmullRomCurve3(pts.map(p => p.pos), true, 'centripetal');
+  const n = pts.length, PER = 48, D = n * PER;
+  const lengths = curve.getLengths(D);
+  const bb = new THREE.Box3().setFromPoints(pts.map(p => p.pos));
+  const U = m ? m.U : Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z, 2e-3) / 2;
+  const samp = [];
+  for (let k = 0; k <= D; k++) samp.push(curve.getPoint(k / D));
+  const mk = new Float32Array(D + 1).fill(1);
+  if (s.curveSlow) {
+    const T1 = new THREE.Vector3(), T2 = new THREE.Vector3(), at = (k) => samp[((k % D) + D) % D];
+    const mc = new Float32Array(D + 1);
+    for (let k = 0; k <= D; k++) {
+      T1.subVectors(at(k), at(k - 2)); T2.subVectors(at(k + 2), at(k));
+      const l = T1.length() + T2.length(), ang = T1.lengthSq() > 1e-18 && T2.lengthSq() > 1e-18 ? T1.angleTo(T2) : 0;
+      const kU = l > 1e-12 ? ang / (l / 2) * U : 0;
+      mc[k] = Math.max(0.3, Math.min(1, 1 / (1 + Math.max(0, kU - 0.6) * 1.5)));
+    }
+    for (let k = 0; k <= D; k++) { let v = 1; for (let j = -6; j <= 6; j++) v = Math.min(v, mc[((k + j) % D + D) % D]); mk[k] *= v; }
+  }
+  if (s.distSlow && m) for (let k = 0; k <= D; k++) mk[k] *= Math.max(0.35, Math.min(1.5, 0.35 + 0.9 * m.box.distanceToPoint(samp[k]) / U));
+  // 区間ごとの「速さ 1 の時の時間」の累積(長さ ÷ 倍率)
+  const tcum = [];
+  for (let i = 0; i < n; i++) {
+    const t = new Float32Array(PER + 1);
+    for (let j = 1; j <= PER; j++) { const k = i * PER + j; t[j] = t[j - 1] + (lengths[k] - lengths[k - 1]) / Math.max(1e-6, (mk[k - 1] + mk[k]) / 2); }
+    tcum.push(t);
+  }
+  const g = { kind: 'tour', timeBased: true, closed: true, m, U, center: m ? m.c.clone() : bb.getCenter(new THREE.Vector3()), pts, curve, n, PER, D, lengths, tcum, v: 1, oy: 0, op: 0 };
+  const easeOn = () => s.ease || s.dwell > 0; // ★で止まる時は、★の手前で滑らかに減速する
+  g.segT = (i, v) => Math.max(0.6, tcum[i][PER] / Math.max(v, 1e-9));
+  g.fwdTime = (v) => { let T = 0; for (let i = 0; i < n; i++) T += g.segT(i, v) + s.dwell; return T; };
+  g.vForTime = (T) => { let L = 0; for (let i = 0; i < n; i++) L += tcum[i][PER]; return L / Math.max(0.5, T - n * s.dwell); };
+  g.setV = (v) => { g.v = v; };
+  const cp = new THREE.Vector3();
+  g.P = (t, o) => {
+    let time = autoFrac(t) * g.fwdTime(g.v);
+    if (t >= 1) time = g.fwdTime(g.v);
+    let i = 0;
+    for (; i < n; i++) { const Ti = s.dwell + g.segT(i, g.v); if (time < Ti || i === n - 1) break; time -= Ti; }
+    let tau = time < s.dwell ? 0 : Math.min(1, (time - s.dwell) / g.segT(i, g.v));
+    const te = easeOn() ? (1 - Math.cos(Math.PI * tau)) / 2 : tau;
+    const tc = te * tcum[i][PER], tab = tcum[i];
+    let lo = 0, hi = PER;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (tab[mid] <= tc) lo = mid; else hi = mid; }
+    const fr = tab[hi] - tab[lo] > 1e-12 ? (tc - tab[lo]) / (tab[hi] - tab[lo]) : 0;
+    curve.getPoint(Math.min(1, (i * PER + lo + fr) / D), cp);
+    o.copy(cp);
+    const a = pts[i], b = pts[(i + 1) % n], sm = autoSmooth(tau); // ★の向きは ★ の所で止まるように滑らかに
+    g.oy = a.yaw + autoWrap(b.yaw - a.yaw) * sm; g.op = a.pitch + (b.pitch - a.pitch) * sm;
+    return o;
+  };
+  g.startU = () => { // 今いる所に近い★から
+    let best = 0, bd = Infinity;
+    pts.forEach((q, i) => { const d = q.pos.distanceToSquared(dolly.position); if (d < bd) { bd = d; best = i; } });
+    let T = 0;
+    for (let i = 0; i < best; i++) T += s.dwell + g.segT(i, g.v);
+    return T / g.fwdTime(g.v);
+  };
+  return g;
+}
+// 記録: 記録した視点を、記録した速さ(×倍率)でたどる
+function autoBuildRecord(m) {
+  const s = autoState, rec = autoRecCurrent();
+  if (!rec || !Array.isArray(rec.samples) || rec.samples.length < 2) return null;
+  const S = rec.samples.filter(a => Array.isArray(a) && a.length >= 6 && a.every(Number.isFinite));
+  if (S.length < 2) return null;
+  const dur = Math.max(0.1, S[S.length - 1][0] - S[0][0]);
+  const curve = new THREE.CatmullRomCurve3(S.map(a => new THREE.Vector3(a[1], a[2], a[3])), false, 'centripetal');
+  const bb = new THREE.Box3().setFromPoints(curve.points);
+  const U = m ? m.U : Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z, 2e-3) / 2;
+  const g = { kind: 'record', timeBased: true, closed: false, m, U, center: m ? m.c.clone() : bb.getCenter(new THREE.Vector3()), rec, dur, oy: 0, op: 0 };
+  const factor = () => (s.speedMode === 'time' ? dur / Math.max(1, s.timeSec) : Math.pow(1.6, s.speed - 5));
+  g.fwdTime = () => dur / factor();
+  g.P = (t, o) => {
+    const time = S[0][0] + Math.max(0, Math.min(1, t)) * dur;
+    let lo = 0, hi = S.length - 1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (S[mid][0] <= time) lo = mid; else hi = mid; }
+    const span = S[hi][0] - S[lo][0], fr = span > 1e-9 ? Math.max(0, Math.min(1, (time - S[lo][0]) / span)) : 0;
+    curve.getPoint((lo + fr) / (S.length - 1), o);
+    g.oy = S[lo][4] + autoWrap(S[hi][4] - S[lo][4]) * fr;
+    g.op = S[lo][5] + (S[hi][5] - S[lo][5]) * fr;
+    return o;
+  };
+  g.startU = () => (s.reverse && !autoIsPP(g) ? 0.9999 : 0); // 記録は最初から(逆向きは最後から)
+  return g;
+}
+
+// ── 進め方(共通) ──
+function autoSOf(g, u) {
+  if (autoIsPP(g)) return autoS(autoTri(u));
+  return autoFrac(u);
+}
+// 経路の上を進む速さ(シーンの単位/秒)。ふつう=大きさ 1.5 の楕円を約40秒で1周。時間で指定なら、その時間になる速さ
+function autoV(g) {
+  const s = autoState;
+  let v;
+  if (s.speedMode === 'time') v = g.timeBased ? (g.vForTime ? g.vForTime(s.timeSec) : 1) : g.K / Math.max(1, s.timeSec);
+  else v = g.U * 0.33 * Math.pow(1.6, s.speed - 5);
+  if (renderer.xr.isPresenting && g.kind !== 'record') v = Math.min(v, s.vrCap * (worldScale || 1)); // VR 酔いの対策: 速さの上限
+  return v;
+}
+// u(一巡りの中の位置)の進む速さ(/秒)
+function autoRate(g, v, u) {
+  const pp = autoIsPP(g);
+  const k = pp ? 2 * autoSnom() : 1;
+  if (g.timeBased) return 1 / (Math.max(0.2, g.fwdTime(v)) * k);
+  const sv = autoSOf(g, u);
+  return v * autoTab(g, g.multTab, sv) / (Math.max(autoTab(g, g.lenTab, sv), 1e-9) * k);
+}
+// 片道(1周・1巡)の目安の時間
+function autoFwdTime(g) {
+  if (!g) return NaN;
+  const v = autoV(g);
+  if (g.setV) g.setV(v);
+  return g.timeBased ? g.fwdTime(v) : g.K / v;
+}
+// 位置・進む向き(と★・記録の向き)
+const _autoE = { pos: new THREE.Vector3(), tan: new THREE.Vector3(), s: 0, oy: NaN, op: NaN };
+const _aQ = new THREE.Vector3(), _aR = new THREE.Vector3(), _aL = new THREE.Vector3(), _aLastTan = new THREE.Vector3(0, 0, -1);
+function autoEval(g, u, out = _autoE) {
+  const sv = autoSOf(g, u), pp = autoIsPP(g);
+  const e = 1e-3;
+  let a = sv - e, b = sv + e;
+  if (!g.closed) { a = Math.max(0, a); b = Math.min(1, b); }
+  g.P(g.closed ? autoFrac(a) : a, _aQ);
+  g.P(g.closed ? autoFrac(b) : b, _aR);
+  out.tan.subVectors(_aR, _aQ);
+  const travel = (autoState.reverse ? -1 : 1) * (pp ? (autoFrac(u) < 0.5 ? 1 : -1) : 1);
+  if (travel < 0) out.tan.negate();
+  if (out.tan.lengthSq() < 1e-18) out.tan.copy(_aLastTan); else { out.tan.normalize(); _aLastTan.copy(out.tan); }
+  g.P(g.closed ? autoFrac(sv) : sv, out.pos);
+  out.oy = g.oy; out.op = g.op; out.s = sv;
+  return out;
+}
+// 1回で進む量(一周する経路は1周、往復する経路は片道、「往復」なら行って戻る)
+function autoOnceLen(g) { return AUTO_NATURAL_PP.has(g.kind) && autoState.play === 'once' ? 0.5 : 1; }
+// 視線(向き・見上げ)の目標
+function autoLookTarget(g, E) {
+  const s = autoState;
+  const tanYaw = Math.atan2(-E.tan.x, -E.tan.z), tanPitch = Math.atan2(E.tan.y, Math.max(1e-9, Math.hypot(E.tan.x, E.tan.z)));
+  const center = () => (g.lookAt ? g.lookAt(E.s, _aL) : g.center);
+  const toward = (p, level) => { const r = lookYawPitch(E.pos, p); return { yaw: r.yaw, pitch: level ? 0 : r.pitch }; };
+  switch (s.look) {
+    case 'bm': case 'rec':
+      if (Number.isFinite(E.oy)) return { yaw: E.oy, pitch: E.op };
+      return toward(center(), false);
+    case 'ahead': return { yaw: tanYaw, pitch: tanPitch };
+    case 'lead': {
+      // 何秒か先に通る所を見る
+      const du = (s.reverse ? -1 : 1) * s.rate * s.leadSec;
+      let uL = s.u + du;
+      if (!g.closed && !autoIsPP(g)) uL = Math.max(0, Math.min(1, uL));
+      const sv = autoSOf(g, uL);
+      g.P(g.closed ? autoFrac(sv) : sv, _aL);
+      if (_aL.distanceTo(E.pos) > 0.01 * g.U) return toward(_aL, false);
+      return { yaw: tanYaw, pitch: tanPitch };
+    }
+    case 'level': return toward(center(), true);
+    case 'side': return { yaw: tanYaw + s.sideDir * Math.PI / 2, pitch: 0 };
+    case 'fixed': return s.fixedMode === 'north' ? { yaw: topdownState.northYaw || 0, pitch: 0 } : { yaw: s.fixedYaw, pitch: s.fixedPitch };
+    case 'focus': {
+      const F = autoFocusPts();
+      if (!F.length) return toward(center(), false);
+      if (F.length === 1 || s.focusT < s.focusSec) return toward(F[0], false);
+      const per = s.focusSec, i = Math.floor(s.focusT / per) % F.length, prev = (i - 1 + F.length) % F.length;
+      _aL.lerpVectors(F[prev], F[i], autoSmooth((s.focusT % per) / Math.min(1.5, per * 0.5)));
+      return toward(_aL, false);
+    }
+    case 'nadir': return { yaw: tanYaw, pitch: -(PITCH_MAX - 0.03) };
+    default: return toward(center(), false);
+  }
+}
+// 視線を滑らかに: 曲がり続ける間は遅れずに追い(向きの変わる速さを先に足す)、折り返し・真上を通る所などの急な変わり目だけ滑らかにする
+function autoLookFilter(ty, tp, dt) {
+  const s = autoState;
+  if (s.lookYaw == null) { s.lookYaw = ty; s.lookPitch = tp; } else {
+    const k = 1 - Math.exp(-3.5 * dt);
+    const dy = autoWrap(ty - s.tyPrev), dp = tp - s.tpPrev;
+    s.lookYaw += Math.abs(dy) < 0.1 ? dy : 0; s.lookYaw += autoWrap(ty - s.lookYaw) * k;
+    s.lookPitch += Math.abs(dp) < 0.1 ? dp : 0; s.lookPitch += (tp - s.lookPitch) * k;
+  }
+  s.tyPrev = ty; s.tpPrev = tp;
+  return { yaw: s.lookYaw, pitch: autoClampPitch(s.lookPitch) };
+}
+// 再生を始めた時の、経路の上の位置(今の視点にいちばん近い所)
+function autoStartU(g) {
+  const s = autoState;
+  if (g.startU) return g.startU();
+  if (s.play === 'once' && (autoIsPP(g) || !g.closed)) return s.reverse ? 0.5 : 0; // 1回の往復する経路は端から
+  const pp = autoIsPP(g), M = 256;
+  let best = 0, bd = Infinity;
+  for (let j = 0; j < M; j++) {
+    const u = pp ? (s.reverse ? 0.5 : 0) + j / M * 0.5 : j / M;
+    const sv = autoSOf(g, u);
+    g.P(g.closed ? autoFrac(sv) : sv, _aQ);
+    const d = _aQ.distanceToSquared(dolly.position);
+    if (d < bd) { bd = d; best = u; }
+  }
+  return best;
+}
+function autoGeoKey() {
+  const s = autoState;
+  return s.path === 'tour' ? `tour:${autoTourPoints().length}` : s.path === 'record' ? `record:${(autoRecCurrent() || {}).id || ''}` : s.path;
 }
 // 今の視点 → 経路 へ滑らかに乗り移る
 function autoBeginBlend(minDur = 1.0) {
   const s = autoState, g = s.geo;
-  const P = autoPose(g);
-  const d = dolly.position.distanceTo(P.pos);
-  s.blend = { t: 0, dur: Math.max(minDur, Math.min(3.2, 0.8 + 1.2 * Math.log2(1 + d / g.U))),
-    pos: dolly.position.clone(), yaw: dolly.rotation.y, pitch: pitchTarget };
-  s.aheadYaw = null;
+  if (g.setV) g.setV(autoV(g));
+  const E = autoEval(g, s.u);
+  const d = dolly.position.distanceTo(E.pos);
+  s.blend = { t: 0, dur: Math.max(minDur, Math.min(3.2, 0.8 + 1.2 * Math.log2(1 + d / g.U))), pos: dolly.position.clone(), yaw: dolly.rotation.y, pitch: pitchTarget };
+  s.lookYaw = null;
 }
 function autoPlay() {
   const s = autoState;
-  if (renderer.xr.isPresenting && topdownState.active) return false;
+  if (autoRec.on) autoRecStop();
   if (topdownState.active) setNavMode(navState.mode); // 真上・正対は終える(遠近のある視点で動かす)
+  const fresh = s.status === 'idle';
+  if (fresh) { s.anchor = autoAnchorNow(); s.origin = { pos: dolly.position.clone(), yaw: dolly.rotation.y, pitch: pitchTarget }; s.fixedYaw = dolly.rotation.y; s.fixedPitch = pitchTarget; s.focusT = 0; }
+  if (s.path === 'slice' && !sliceState.on) sliceSetOn(true);
+  if (s.path === 'slice') sliceState.auto = false; // 断面はこちらで動かす
   const g = autoBuild();
   if (!g) {
-    showToast(s.path === 'tour' ? '★の巡回: このデータの★が2件以上必要です(データ名の隣の ★ で今の視点を追加)' : '自動: モデルの読み込みを待っています');
+    showToast(s.path === 'tour' ? '★の巡回: このデータの★が2件以上必要です(データ名の隣の ★ で今の視点を追加)'
+      : s.path === 'record' ? '記録: まだ記録がありません(「● 記録を始める」で、動かした視点を記録)' : '自動: モデルの読み込みを待っています');
     autoSyncUi();
     return false;
   }
-  const fresh = s.status === 'idle' || !s.geo || s.geo.kind !== g.kind || (g.kind === 'tour' && s.geo.n !== g.n);
-  s.geo = g;
-  if (fresh) autoInitParams(g);
+  const key = autoGeoKey();
+  const restart = fresh || s.ended || s.geoKey !== key;
+  s.geo = g; s.geoKey = key;
+  if (restart) { s.u = autoStartU(g); s.trav = 0; }
   navState.anim = null; navState.wheelMove.set(0, 0, 0);
   autoBeginBlend();
-  s.status = 'play'; s.pausedBy = ''; s.last = null;
+  s.status = 'play'; s.pausedBy = ''; s.ended = false; s.last = null;
   autoSyncUi();
   return true;
 }
@@ -13903,22 +14625,68 @@ function autoPause(reason) {
   if (reason === 'user') showToast('自動: 操作したので一時停止しました(▶ 再生で続きから)');
   autoSyncUi();
 }
+// 元の視点へ滑らかに戻る
+function autoGoHome() {
+  const o = autoState.origin;
+  if (!o || renderer.xr.isPresenting) return;
+  navState.anim = { t0: performance.now(), dur: 1200, from: dolly.position.clone(), to: o.pos.clone(), yaw0: dolly.rotation.y,
+    dyaw: autoWrap(o.yaw - dolly.rotation.y), pitch0: pitchTarget, pitch1: autoClampPitch(o.pitch) };
+  navState.wheelMove.set(0, 0, 0);
+}
 function autoStop() {
   const s = autoState;
-  s.status = 'idle'; s.pausedBy = ''; s.blend = null; s.last = null; s.geo = null;
+  const wasActive = s.status !== 'idle';
+  s.status = 'idle'; s.pausedBy = ''; s.blend = null; s.last = null; s.geo = null; s.ended = false; s.geoKey = '';
+  if (wasActive && s.returnHome) autoGoHome();
+  autoSyncUi();
+}
+function autoFinishOnce() {
+  const s = autoState;
+  s.status = 'idle'; s.ended = true; s.blend = null; s.last = null; s.geo = null; s.geoKey = '';
+  if (s.returnHome) autoGoHome();
   autoSyncUi();
 }
 // 再生中に経路・視線・大きさなどを変えた: 作り直して、今の視点から滑らかに乗り移る
 function autoRefresh() {
   const s = autoState;
   autoSave();
-  if (s.status === 'play') {
+  if (s.status === 'play' || s.status === 'pause') {
+    if (s.path === 'slice' && !sliceState.on) sliceSetOn(true);
     const g = autoBuild();
-    if (!g) { autoPause('nogeo'); return; }
-    if (!s.geo || s.geo.kind !== g.kind || (g.kind === 'tour' && s.geo.n !== g.n)) autoInitParams(g);
-    s.geo = g;
-    autoBeginBlend(0.6);
+    if (!g) { if (s.status === 'play') autoPause('nogeo'); s.geo = null; autoSyncUi(); return; }
+    const key = autoGeoKey();
+    if (s.geoKey !== key) { s.u = autoStartU(g); s.trav = 0; }
+    s.geo = g; s.geoKey = key;
+    if (s.status === 'play') autoBeginBlend(0.6);
   }
+  autoSyncUi();
+}
+// 位置のスライダー: 経路の上のその位置へ(止まっていれば、そこで一時停止)
+function autoScrubTo(frac) {
+  const s = autoState;
+  if (s.status === 'idle') {
+    s.anchor = autoAnchorNow(); s.origin = { pos: dolly.position.clone(), yaw: dolly.rotation.y, pitch: pitchTarget };
+    s.fixedYaw = dolly.rotation.y; s.fixedPitch = pitchTarget; s.focusT = 0;
+    if (topdownState.active) setNavMode(navState.mode);
+    if (s.path === 'slice' && !sliceState.on) sliceSetOn(true);
+    const g = autoBuild();
+    if (!g) { autoSyncUi(); return; }
+    s.geo = g; s.geoKey = autoGeoKey(); s.trav = 0; s.ended = false;
+    s.status = 'pause'; s.pausedBy = 'scrub';
+  }
+  if (!s.geo) { s.geo = autoBuild(); if (!s.geo) return; }
+  s.u = Math.max(0, Math.min(0.9999, frac));
+  if (s.status === 'play') { autoBeginBlend(0.35); return; }
+  s.pausedBy = 'scrub';
+  const g = s.geo;
+  if (g.setV) g.setV(autoV(g));
+  const E = autoEval(g, s.u);
+  if (g.onFrame) g.onFrame(E.s);
+  const L = autoLookTarget(g, E);
+  dolly.position.copy(E.pos);
+  if (!renderer.xr.isPresenting) { dolly.rotation.y += autoWrap(L.yaw - dolly.rotation.y); pitchTarget = autoClampPitch(L.pitch); }
+  navState.anim = null; navState.wheelMove.set(0, 0, 0);
+  s.lookYaw = null;
   autoSyncUi();
 }
 // ほかの操作で視点が動いたか(VR は向きを自由にしているので位置だけ)
@@ -13931,6 +14699,7 @@ function autoUserMoved(xr) {
   return Math.abs(autoWrap(dolly.rotation.y - L.yaw)) > 1e-6 || Math.abs(pitchTarget - L.pitch) > 1e-6;
 }
 // 毎フレーム(再生中)
+const _autoTmpPos = new THREE.Vector3();
 function autoFrame(dt) {
   const s = autoState, xr = renderer.xr.isPresenting;
   // 操作の入力: 移動・回転があれば一時停止(VR の右スティックの左右は向きなので止めない)
@@ -13946,17 +14715,35 @@ function autoFrame(dt) {
   if (moved) { autoPause('user'); return; }
   const g = s.geo;
   if (!g) { autoPause('nogeo'); return; }
+  autoGroundTick(g, dt);
   // 進める(乗り移りの間は動き出しをゆっくり)
   let kE = 1;
-  if (s.blend) { s.blend.t += dt; const u = Math.min(1, s.blend.t / s.blend.dur); kE = u * u * (3 - 2 * u); }
-  autoAdvance(g, dt, s.blend ? Math.max(0.12, kE) : 1);
-  const P = autoPose(g);
-  const L = autoLookOf(g, P, dt);
+  if (s.blend) { s.blend.t += dt; const b = Math.min(1, s.blend.t / s.blend.dur); kE = b * b * (3 - 2 * b); }
+  const v = autoV(g);
+  if (g.setV) g.setV(v);
+  s.rate = autoRate(g, v, s.u);
+  const du = (s.reverse ? -1 : 1) * s.rate * dt * (s.blend ? Math.max(0.12, kE) : 1);
+  s.u += du; s.trav += Math.abs(du);
+  let ended = false;
+  const once = autoOnceLen(g);
+  if (s.play === 'once' && s.trav >= once) { s.u -= (s.reverse ? -1 : 1) * (s.trav - once); ended = true; }
+  let uEval = s.u;
+  if (ended) uEval = !g.closed && !autoIsPP(g) ? (s.reverse ? 0 : 0.999999) : autoFrac(s.u);
+  else if (!g.closed && !autoIsPP(g) && (s.u >= 1 || s.u < 0)) {
+    // 最後まで来た(記録など): 最初へ滑らかに戻って繰り返す
+    s.u = autoFrac(s.u); uEval = s.u;
+    autoBeginBlend(1.2);
+  } else { s.u = autoFrac(s.u); uEval = s.u; }
+  const E = autoEval(g, uEval);
+  if (g.onFrame) g.onFrame(E.s);
+  s.focusT += dt;
+  const T = autoLookTarget(g, E);
+  const L = autoLookFilter(T.yaw, T.pitch, dt);
   let yaw = L.yaw, pitch = L.pitch;
-  const pos = _autoTmpPos.copy(P.pos);
+  const pos = _autoTmpPos.copy(E.pos);
   if (s.blend) {
     const b = s.blend;
-    pos.lerpVectors(b.pos, P.pos, kE);
+    pos.lerpVectors(b.pos, E.pos, kE);
     yaw = b.yaw + autoWrap(yaw - b.yaw) * kE;
     pitch = b.pitch + (pitch - b.pitch) * kE;
     if (b.t >= b.dur) s.blend = null;
@@ -13967,10 +14754,10 @@ function autoFrame(dt) {
     pitchTarget = autoClampPitch(pitch);
   }
   s.last = { pos: dolly.position.clone(), yaw: dolly.rotation.y, pitch: pitchTarget };
+  if (ended) { autoFinishOnce(); return; }
   if (s.blend == null && s._wasBlend) autoSyncUi();
   s._wasBlend = !!s.blend;
 }
-const _autoTmpPos = new THREE.Vector3();
 // VR: 右スティックの押し込みで再生 / 一時停止
 let _autoVrBtn = false;
 function autoVrButtons() {
@@ -13988,111 +14775,336 @@ function autoVrButtons() {
   }
   _autoVrBtn = pressed;
 }
-// 目安の時間
+
+// ── 経路の線・注目点の印 ──
+const autoGroup = new THREE.Group();
+autoGroup.name = 'autoPath';
+scene.add(autoGroup);
+window.__autoGroup = autoGroup;
+const autoLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x7dffb0, transparent: true, opacity: 0.85, depthTest: false }));
+autoLine.renderOrder = 998; autoLine.frustumCulled = false; autoLine.visible = false;
+autoGroup.add(autoLine);
+const autoMarkers = new THREE.Group();
+autoGroup.add(autoMarkers);
+let _autoLineGeo = null, _autoPreview = null;
+function autoLineSet(g) {
+  if (g === _autoLineGeo) return;
+  _autoLineGeo = g;
+  if (!g) { autoLine.visible = false; return; }
+  const N = 400, arr = new Float32Array((N + 1) * 3), p = new THREE.Vector3();
+  if (g.setV) g.setV(autoV(g));
+  for (let i = 0; i <= N; i++) { g.P(i / N, p); arr[i * 3] = p.x; arr[i * 3 + 1] = p.y; arr[i * 3 + 2] = p.z; }
+  autoLine.geometry.dispose();
+  autoLine.geometry = new THREE.BufferGeometry();
+  autoLine.geometry.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+}
+let _autoMarkId;
+function autoMarkersUpdate() {
+  _autoMarkId = bmCurId();
+  while (autoMarkers.children.length) { const c = autoMarkers.children.pop(); c.geometry.dispose(); c.material.dispose(); }
+  const F = autoFocusPts(), m = autoModelGeo();
+  const r = (m ? m.U : 5) * 0.02;
+  F.forEach((p) => {
+    const mk = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffd24a, depthTest: false, transparent: true, opacity: 0.9 }));
+    mk.position.copy(p); mk.renderOrder = 999;
+    autoMarkers.add(mk);
+  });
+}
+// 表示する・しない(毎フレーム): 線は「止まっている時(パネルを開いている間)」「常に」「表示しない」。注目点の印はパネルを開いて「注目点」の時
+function autoAfterFrame(dt) {
+  const s = autoState;
+  autoRecTick();
+  const panel = document.getElementById('auto-panel');
+  const open = panel && !panel.hidden;
+  const g = s.status !== 'idle' && s.geo ? s.geo : (open ? _autoPreview : null);
+  const show = s.lineMode === 'always' ? !!g : s.lineMode === 'stopped' ? !!g && open && s.status !== 'play' : false;
+  if (show) autoLineSet(g);
+  autoLine.visible = show && !!_autoLineGeo;
+  autoMarkers.visible = !!open && s.look === 'focus';
+  if (autoMarkers.visible && _autoMarkId !== bmCurId()) autoMarkersUpdate();
+  // 位置のスライダー・状態の表示(再生中は 4 回/秒)
+  if (open && (s.status === 'play' || autoRec.on)) {
+    const now = performance.now();
+    if (now - (s._uiAt || 0) > 250) { s._uiAt = now; autoSyncLive(); }
+  }
+}
+
+// ── 表示 ──
 function autoFmtSec(sec) {
   if (!Number.isFinite(sec)) return '-';
   if (sec < 60) return `約${Math.max(1, Math.round(sec))}秒`;
   const m = Math.floor(sec / 60), r = Math.round(sec - m * 60);
   return r ? `約${m}分${r}秒` : `約${m}分`;
 }
-function autoEllPerimeter(a, b) { return Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b))); }
+function autoFmtClock(sec) { sec = Math.max(0, Math.round(sec)); return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; }
 function autoTimeText(g) {
   if (!g) return '-';
-  const v = autoSpeedOf(g), s = autoState;
-  if (g.kind === 'tour') {
-    let T = 0;
-    for (let i = 0; i < g.n; i++) T += autoTourSegT(g, i, v);
-    return `1巡 ${autoFmtSec(T)}(★ ${g.n}件)`;
-  }
-  if (g.kind === 'arc') return `片道 ${autoFmtSec(2 * g.alpha * autoEllR(g, s.thC || 0) / v)}`;
-  const lap = autoEllPerimeter(g.a, g.b) / v;
-  if (g.kind === 'spiral') return `1周 ${autoFmtSec(lap)} · 上下の片道 ${autoFmtSec(lap * s.turns)}`;
-  if (g.kind === 'approach') return `1周 ${autoFmtSec(lap)}(遠い時) · 寄るまで 約${s.turns}周`;
-  return `1周 ${autoFmtSec(lap)}`;
+  const s = autoState, T = autoFwdTime(g);
+  if (g.kind === 'record') return `最後まで ${autoFmtSec(T)}(記録 ${autoFmtClock(g.dur)} · ×${(g.dur / T).toFixed(2)})`;
+  if (g.kind === 'tour') return `1巡 ${autoFmtSec(T)}(★ ${g.n}件${s.dwell > 0 ? ` · ★で${s.dwell}秒止まる` : ''})`;
+  const unit = AUTO_UNIT[g.kind] || '1周';
+  let extra = '';
+  if (g.kind === 'spiral') extra = ` · 1周 ${autoFmtSec(T / (2 * s.turns))}`;
+  if (g.kind === 'approach') extra = ` · 1周 ${autoFmtSec(T / (2 * s.turns))}`;
+  if (g.kind === 'floors') extra = `(${g.F}段)`;
+  return `${unit} ${autoFmtSec(T)}${extra}`;
 }
-// パネルの表示を今の状態に合わせる
+function autoSyncLive() {
+  const s = autoState, $ = (id) => document.getElementById(id);
+  const pos = $('auto-pos');
+  if (pos && document.activeElement !== pos) pos.value = String(Math.round(autoFrac(s.u) * 1000));
+  const pv = $('auto-pos-val');
+  if (pv) pv.textContent = s.status === 'idle' ? '-' : `${Math.round(autoFrac(s.u) * 100)}%`;
+  const rt = $('auto-rec-time');
+  if (rt) rt.textContent = autoRec.on ? `● 記録中 ${autoFmtClock(autoRec.samples.length ? autoRec.samples[autoRec.samples.length - 1][0] : 0)}` : '';
+}
+let _autoRecListSig = '';
+function autoRenderRecList() {
+  const box = document.getElementById('auto-rec-list');
+  if (!box || box.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+  const list = autoRecList(), cur = autoRecCurrent();
+  const sig = JSON.stringify([list.map(r => [r.id, r.name, r.dur]), cur && cur.id]);
+  if (sig === _autoRecListSig) return;
+  _autoRecListSig = sig;
+  box.innerHTML = list.length ? list.map(r => `
+    <div class="auto-li" data-rec="${escapeHtml(r.id)}">
+      <button type="button" class="cut-b auto-li-sel" data-rec-sel aria-pressed="${cur && cur.id === r.id ? 'true' : 'false'}" title="この記録を再生する">${escapeHtml(r.name)}<span class="auto-li-sub">${autoFmtClock(r.dur)}</span></button>
+      <button type="button" class="bm-ic" data-rec-ren title="名前を変える" aria-label="名前を変える">✎</button>
+      <button type="button" class="bm-ic warn" data-rec-del title="削除(2回押し)" aria-label="削除">×</button>
+    </div>`).join('') : '<div class="cut-hint">まだありません。「● 記録を始める」を押して視点を動かし、「■ 記録を終える」で保存します</div>';
+}
 function autoSyncUi() {
   const $ = (id) => document.getElementById(id);
   const panel = $('auto-panel'), rail = $('auto-btn');
   const s = autoState;
   if (rail) {
-    rail.classList.toggle('on', s.status === 'play');
+    rail.classList.toggle('on', s.status === 'play' || autoRec.on);
     rail.setAttribute('aria-pressed', panel && !panel.hidden ? 'true' : 'false');
   }
   if (!panel) return;
-  const tour = s.path === 'tour';
-  panel.querySelectorAll('[data-auto-path]').forEach(b => b.setAttribute('aria-pressed', b.dataset.autoPath === s.path ? 'true' : 'false'));
+  const P = s.path, tour = P === 'tour', rec = P === 'record';
+  const pressed = (sel, fn) => panel.querySelectorAll(sel).forEach(b => b.setAttribute('aria-pressed', fn(b) ? 'true' : 'false'));
+  pressed('[data-auto-path]', b => b.dataset.autoPath === P);
   panel.querySelectorAll('[data-auto-look]').forEach(b => {
-    b.setAttribute('aria-pressed', b.dataset.autoLook === s.look ? 'true' : 'false');
-    if (b.dataset.autoLook === 'bm') b.hidden = !tour;
+    const k = b.dataset.autoLook;
+    b.setAttribute('aria-pressed', k === s.look ? 'true' : 'false');
+    if (k === 'bm') b.hidden = !tour;
+    if (k === 'rec') b.hidden = !rec;
   });
-  panel.querySelectorAll('[data-auto-ease]').forEach(b => b.setAttribute('aria-pressed', (b.dataset.autoEase === '1') === s.ease ? 'true' : 'false'));
-  panel.querySelectorAll('[data-auto-dir]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.autoDir) === s.dir ? 'true' : 'false'));
-  $('auto-size-row').hidden = tour;
-  $('auto-height-row').hidden = tour;
-  $('auto-dir-row').hidden = tour;
-  $('auto-turns-row').hidden = !(s.path === 'spiral' || s.path === 'approach');
-  $('auto-arc-row').hidden = s.path !== 'arc';
-  $('auto-tour-row').hidden = !tour;
+  pressed('[data-auto-ease]', b => (b.dataset.autoEase === '1') === s.ease);
+  pressed('[data-auto-dir]', b => Number(b.dataset.autoDir) === s.dir);
+  pressed('[data-auto-smode]', b => b.dataset.autoSmode === s.speedMode);
+  pressed('[data-auto-href]', b => b.dataset.autoHref === s.heightRef);
+  pressed('[data-auto-play]', b => b.dataset.autoPlay === s.play);
+  pressed('[data-auto-side]', b => Number(b.dataset.autoSide) === s.sideDir);
+  pressed('[data-auto-fixed]', b => b.dataset.autoFixed === s.fixedMode);
+  pressed('[data-auto-line]', b => b.dataset.autoLine === s.lineMode);
+  const tg = (id, on) => { const el = $(id); if (el) el.setAttribute('aria-pressed', on ? 'true' : 'false'); };
+  tg('auto-reverse', s.reverse); tg('auto-home', s.returnHome); tg('auto-curve', s.curveSlow); tg('auto-dist', s.distSlow);
+  tg('auto-focus-add', autoFocusArmed);
+  $('auto-focus-add').textContent = autoFocusArmed ? '追加を終える' : '＋ 点群をクリックして追加';
+  // 経路ごとの調整
+  const hide = (id, h) => { const el = $(id); if (el) el.hidden = h; };
+  hide('auto-size-row', tour || rec);
+  hide('auto-height-row', !AUTO_HEIGHT.has(P));
+  hide('auto-href-row', !AUTO_GROUNDABLE.has(P));
+  hide('auto-agl-row', !(AUTO_GROUNDABLE.has(P) && s.heightRef === 'ground'));
+  const groundH = AUTO_GROUNDABLE.has(P) && s.heightRef === 'ground';
+  $('auto-height').disabled = groundH;
+  hide('auto-turns-row', !(P === 'spiral' || P === 'approach'));
+  hide('auto-near-row', P !== 'approach');
+  hide('auto-arc-row', P !== 'arc');
+  hide('auto-floor-row', P !== 'floors');
+  hide('auto-dir-row', !AUTO_ROT.has(P));
+  hide('auto-tour-row', !tour);
+  hide('auto-dwell-row', !tour);
+  hide('auto-rec-box', !rec);
+  hide('auto-slice-row', P !== 'slice');
+  // 視線ごとの調整
+  hide('auto-lead-row', s.look !== 'lead');
+  hide('auto-side-row', s.look !== 'side');
+  hide('auto-fixed-row', s.look !== 'fixed');
+  hide('auto-focus-box', s.look !== 'focus');
+  // 速さ
+  hide('auto-speed-row', s.speedMode !== 'speed');
+  hide('auto-time-row', s.speedMode !== 'time');
   const setV = (id, v) => { const el = $(id); if (el && document.activeElement !== el) el.value = String(v); };
-  setV('auto-speed', s.speed); setV('auto-size', s.size); setV('auto-height', s.height); setV('auto-turns', s.turns); setV('auto-arc', s.arc);
-  const g = s.status === 'play' && s.geo ? s.geo : autoBuild();
-  $('auto-speed-val').textContent = autoTimeText(g);
-  $('auto-size-val').textContent = `×${s.size.toFixed(2)}`;
+  setV('auto-speed', s.speed); setV('auto-time', s.timeSec); setV('auto-size', s.size); setV('auto-height', s.height); setV('auto-agl', s.agl);
+  setV('auto-turns', s.turns); setV('auto-near', Math.round(s.near * 10)); setV('auto-arc', s.arc); setV('auto-floor', s.floorH);
+  setV('auto-dwell', s.dwell); setV('auto-lead', s.leadSec); setV('auto-focus-sec', s.focusSec); setV('auto-vrcap', s.vrCap);
+  // 経路(止まっている時は、今の視点から始めた時の形で)
+  let g = s.status !== 'idle' && s.geo ? s.geo : null;
+  if (!g) { g = autoBuild({ preview: true, anchor: autoAnchorNow() }); _autoPreview = g; _autoLineGeo = null; }
   const m = g && g.m ? g.m : autoModelGeo();
+  $('auto-speed-val').textContent = autoTimeText(g);
+  $('auto-time-unit').textContent = `秒で${AUTO_UNIT[P] || '1周'}`;
+  $('auto-size-val').textContent = `×${s.size.toFixed(2)}`;
   $('auto-height-val').textContent = m ? `下端から ${(s.height * m.hUnit / (worldScale || 1)).toFixed(1)} m` : '-';
+  $('auto-agl-val').textContent = `${s.agl} m`;
   $('auto-turns-val').textContent = `片道 ${s.turns}周`;
+  $('auto-near-val').textContent = `寄る前の距離の ${Math.round(s.near * 10)}割`;
   $('auto-arc-val').textContent = `±${s.arc}°`;
+  $('auto-floor-val').textContent = `${s.floorH.toFixed(1)} m${g && g.F ? `(${g.F}段)` : ''}`;
+  $('auto-dwell-val').textContent = s.dwell > 0 ? `${s.dwell}秒` : '止まらない';
+  $('auto-lead-val').textContent = `${s.leadSec}秒先`;
+  $('auto-focus-sec-val').textContent = `${s.focusSec}秒ごと`;
+  $('auto-vrcap-val').textContent = `${s.vrCap} m/秒`;
   const nBm = tour ? autoTourPoints().length : 0;
   if (tour) {
     $('auto-tour-info').textContent = nBm >= 2 ? `このデータの★ ${nBm}件を、今いる所に近い★から順に巡ります(最後の★の次は最初の★へ)`
       : `★が2件以上必要です(いま ${nBm}件)。データ名の隣の ★ で、今の視点を追加できます`;
   }
+  const nF = autoFocusPts().length;
+  $('auto-focus-info').textContent = nF ? `注目点 ${nF}件(黄色い印)${nF > 1 ? `を ${s.focusSec}秒ごとに順に見る` : 'を見続ける'}` : '注目点がありません(モデル中央を見ます)';
+  $('auto-focus-clear').disabled = !nF;
+  if (rec) {
+    autoRenderRecList();
+    const rb = $('auto-rec-btn');
+    rb.textContent = autoRec.on ? '■ 記録を終える' : '● 記録を始める';
+    rb.setAttribute('aria-pressed', autoRec.on ? 'true' : 'false');
+  }
+  // 見出しの今の値
+  const sum = (id, t) => { const el = $(id); if (el) el.textContent = t; };
+  sum('auto-sum-path', AUTO_PATHS[P]);
+  sum('auto-sum-look', AUTO_LOOKS[s.look]);
+  sum('auto-sum-speed', `${s.ease ? '緩急' : '一定'} · ${autoTimeText(g)}`);
+  sum('auto-sum-play', `${{ loop: '繰り返し', pingpong: '往復', once: '1回' }[s.play]}${s.reverse ? ' · 逆向き' : ''}${s.returnHome ? ' · 元の視点に戻る' : ''}`);
+  sum('auto-sum-view', `線: ${{ stopped: '止まっている時', always: '常に', off: '表示しない' }[s.lineMode]} · VR ${s.vrCap} m/秒まで`);
+  panel.querySelectorAll('.auto-sec').forEach(sec => {
+    const k = sec.dataset.sec, open = !!s.secOpen[k];
+    sec.querySelector('.auto-sec-h').setAttribute('aria-expanded', open ? 'true' : 'false');
+    sec.querySelector('.auto-sec-b').hidden = !open;
+  });
+  // 再生ボタン・状態
   const play = $('auto-play');
   play.textContent = s.status === 'play' ? '❚❚ 一時停止' : '▶ 再生';
   play.setAttribute('aria-pressed', s.status === 'play' ? 'true' : 'false');
-  play.disabled = s.status !== 'play' && tour && nBm < 2;
+  play.disabled = s.status !== 'play' && !g;
   $('auto-stop').disabled = s.status === 'idle';
   const st = $('auto-status');
-  st.className = `auto-status ${s.status}`;
-  st.textContent = s.status === 'play' ? (s.blend ? `経路へ移っています · ${AUTO_PATHS[s.path]}` : `再生中 · ${AUTO_PATHS[s.path]} · ${AUTO_LOOKS[s.look]}`)
+  st.className = `auto-status ${autoRec.on ? 'pause' : s.status}`;
+  st.textContent = autoRec.on ? '● 記録中: 視点を動かしてください(■ 記録を終える で保存)'
+    : s.status === 'play' ? (s.blend ? `経路へ移っています · ${AUTO_PATHS[P]}` : `再生中 · ${AUTO_PATHS[P]} · ${AUTO_LOOKS[s.look]}`)
     : s.status === 'pause' ? ({ user: '一時停止中(操作したため)。▶ 再生で今の視点から続きへ', blocked: '一時停止中(移動・真上・読み込みのため)。▶ 再生で続きから',
-      nogeo: '一時停止中(経路を作れません)', vr: '一時停止中(VR で止めました)。▶ 再生で続きから' }[s.pausedBy] || '一時停止中。▶ 再生で続きから')
-    : '止まっています。▶ 再生で動き出します';
+      nogeo: '一時停止中(経路を作れません)', vr: '一時停止中(VR で止めました)。▶ 再生で続きから', scrub: '位置を選びました。▶ 再生でここから' }[s.pausedBy] || '一時停止中。▶ 再生で続きから')
+    : s.ended ? `最後まで動きました${s.returnHome ? '(元の視点に戻ります)' : ''}。▶ 再生でもう一度`
+    : !g ? (tour ? '★が2件以上必要です' : rec ? '記録がありません(下の「● 記録を始める」で記録)' : 'モデルの読み込みを待っています') : '止まっています。▶ 再生で動き出します';
+  autoSyncLive();
 }
 (function setupAutoPanel() {
   const $ = (id) => document.getElementById(id);
   const panel = $('auto-panel'), rail = $('auto-btn');
   if (!panel || !rail) return;
+  const s = autoState;
   rail.addEventListener('click', () => {
     const open = panel.hidden;
     panel.hidden = !open;
+    if (!open) autoFocusArmed = false;
     autoSyncUi();
-    if (open && autoState.status === 'idle') showToast('自動: 経路・視線・速さを選んで ▶ 再生。パネルを閉じても動き続けます');
+    if (open && s.status === 'idle') showToast('自動: 経路・視線・速さを選んで ▶ 再生。パネルを閉じても動き続けます');
   });
-  $('auto-close').addEventListener('click', () => { panel.hidden = true; autoSyncUi(); });
-  $('auto-play').addEventListener('click', () => { if (autoState.status === 'play') autoPause('button'); else autoPlay(); });
+  $('auto-close').addEventListener('click', () => { panel.hidden = true; autoFocusArmed = false; autoSyncUi(); });
+  $('auto-play').addEventListener('click', () => { if (s.status === 'play') autoPause('button'); else autoPlay(); });
   $('auto-stop').addEventListener('click', autoStop);
+  panel.querySelectorAll('.auto-sec-h').forEach(h => h.addEventListener('click', () => {
+    const k = h.closest('.auto-sec').dataset.sec;
+    s.secOpen[k] = !s.secOpen[k]; autoSave(); autoSyncUi();
+  }));
   panel.querySelectorAll('[data-auto-path]').forEach(b => b.addEventListener('click', () => {
-    const s = autoState, p = b.dataset.autoPath;
+    const p = b.dataset.autoPath;
     if (s.path === p) return;
     s.path = p;
-    if (p === 'tour') s.look = 'bm';                  // ★の巡回は ★の向き から
-    else if (s.look === 'bm') s.look = 'center';
+    if (p === 'tour') s.look = 'bm';                 // ★の巡回は ★の向き から
+    else if (p === 'record') s.look = 'rec';         // 記録は 記録の向き から
+    else if (s.look === 'bm' || s.look === 'rec') s.look = 'center';
     autoRefresh();
   }));
-  panel.querySelectorAll('[data-auto-look]').forEach(b => b.addEventListener('click', () => { autoState.look = b.dataset.autoLook; autoRefresh(); }));
-  panel.querySelectorAll('[data-auto-ease]').forEach(b => b.addEventListener('click', () => { autoState.ease = b.dataset.autoEase === '1'; autoRefresh(); }));
-  panel.querySelectorAll('[data-auto-dir]').forEach(b => b.addEventListener('click', () => { autoState.dir = Number(b.dataset.autoDir) === -1 ? -1 : 1; autoRefresh(); }));
-  $('auto-speed').addEventListener('input', (e) => { autoState.speed = autoNum(e.target.value, 1, 9, 5); autoSave(); autoSyncUi(); });
-  for (const [id, key, lo, hi, def] of [['auto-size', 'size', 0.6, 4, 1.5], ['auto-height', 'height', 0, 3, 1.3], ['auto-turns', 'turns', 1, 6, 3], ['auto-arc', 'arc', 15, 90, 60]]) {
-    $(id).addEventListener('input', (e) => { autoState[key] = autoNum(e.target.value, lo, hi, def); autoRefresh(); });
+  panel.querySelectorAll('[data-auto-look]').forEach(b => b.addEventListener('click', () => {
+    s.look = b.dataset.autoLook;
+    if (s.look === 'fixed') { s.fixedYaw = dolly.rotation.y; s.fixedPitch = pitchTarget; } // 今の向きのまま
+    if (s.look !== 'focus') autoFocusArmed = false;
+    autoRefresh();
+  }));
+  const bindSeg = (attr, key, conv) => panel.querySelectorAll(`[${attr}]`).forEach(b => b.addEventListener('click', () => { s[key] = conv(b.getAttribute(attr)); autoRefresh(); }));
+  bindSeg('data-auto-ease', 'ease', v => v === '1');
+  bindSeg('data-auto-dir', 'dir', v => (Number(v) === -1 ? -1 : 1));
+  bindSeg('data-auto-smode', 'speedMode', v => (v === 'time' ? 'time' : 'speed'));
+  bindSeg('data-auto-href', 'heightRef', v => (v === 'ground' ? 'ground' : 'base'));
+  bindSeg('data-auto-play', 'play', v => (['loop', 'pingpong', 'once'].includes(v) ? v : 'loop'));
+  bindSeg('data-auto-side', 'sideDir', v => (Number(v) === -1 ? -1 : 1));
+  bindSeg('data-auto-fixed', 'fixedMode', v => (v === 'north' ? 'north' : 'now'));
+  bindSeg('data-auto-line', 'lineMode', v => (['stopped', 'always', 'off'].includes(v) ? v : 'stopped'));
+  const bindTg = (id, key) => $(id).addEventListener('click', () => { s[key] = !s[key]; autoRefresh(); });
+  bindTg('auto-reverse', 'reverse'); bindTg('auto-home', 'returnHome'); bindTg('auto-curve', 'curveSlow'); bindTg('auto-dist', 'distSlow');
+  // スライダー(形が変わるものは作り直す。速さ・切り替えの秒数などは表示だけ)
+  const sliders = [
+    ['auto-size', 'size', 0.6, 4, 1.5, true], ['auto-height', 'height', 0, 3, 1.3, true], ['auto-agl', 'agl', 1, 60, 10, true],
+    ['auto-turns', 'turns', 1, 6, 3, true], ['auto-near', 'near', 1, 9, 5, true, 0.1], ['auto-arc', 'arc', 15, 90, 60, true],
+    ['auto-floor', 'floorH', 2, 8, 3.5, true], ['auto-dwell', 'dwell', 0, 10, 2, false], ['auto-speed', 'speed', 1, 9, 5, false],
+    ['auto-lead', 'leadSec', 0.5, 5, 2, false], ['auto-focus-sec', 'focusSec', 2, 20, 6, false], ['auto-vrcap', 'vrCap', 1, 10, 3, false],
+  ];
+  for (const [id, key, lo, hi, def, rebuild, mul] of sliders) {
+    $(id).addEventListener('input', (e) => {
+      s[key] = autoNum(e.target.value, lo, hi, def) * (mul || 1);
+      if (rebuild) autoRefresh(); else { autoSave(); autoSyncUi(); }
+    });
   }
-  // パネルを開いている間は、★の件数・モデルの大きさの変化を表示に反映
-  setInterval(() => { if (!panel.hidden) autoSyncUi(); }, 1000);
+  $('auto-time').addEventListener('change', (e) => { s.timeSec = autoNum(e.target.value, 2, 3600, 40); e.target.value = String(s.timeSec); autoSave(); autoSyncUi(); });
+  $('auto-pos').addEventListener('input', (e) => autoScrubTo(Number(e.target.value) / 1000));
+  // 注目点
+  $('auto-focus-add').addEventListener('click', () => {
+    autoFocusArmed = !autoFocusArmed;
+    if (autoFocusArmed) { if (measureState.tool) showToast('注目点: 計測より先に、クリックした点を注目点にします'); else showToast('注目点: 点群をクリック(タップ)して追加します'); }
+    autoSyncUi();
+  });
+  $('auto-focus-clear').addEventListener('click', (e) => {
+    const b = e.currentTarget;
+    if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'もう一度押すと消す'; clearTimeout(b._t); b._t = setTimeout(() => { b.dataset.armed = ''; b.textContent = 'すべて消す'; }, 3000); return; }
+    b.dataset.armed = ''; b.textContent = 'すべて消す';
+    autoFocusSave([]); autoSyncUi();
+  });
+  // 記録
+  $('auto-rec-btn').addEventListener('click', () => { if (autoRec.on) autoRecStop(); else autoRecStart(); });
+  $('auto-rec-list').addEventListener('click', (e) => {
+    const row = e.target.closest('.auto-li');
+    if (!row) return;
+    const id = row.dataset.rec;
+    if (e.target.closest('[data-rec-sel]')) { s.recSel = id; autoRefresh(); _autoRecListSig = ''; autoSyncUi(); return; }
+    if (e.target.closest('[data-rec-del]')) {
+      const b = e.target.closest('[data-rec-del]');
+      if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = '削除?'; clearTimeout(b._t); b._t = setTimeout(() => { b.dataset.armed = ''; b.textContent = '×'; }, 3000); return; }
+      autoRecSetList(autoRecList().filter(r => r.id !== id));
+      if (s.recSel === id) s.recSel = '';
+      if (s.path === 'record' && s.status !== 'idle' && s.geo && s.geo.rec && s.geo.rec.id === id) autoStop();
+      _autoRecListSig = ''; autoSave(); autoSyncUi();
+      return;
+    }
+    if (e.target.closest('[data-rec-ren]')) {
+      const list = autoRecList(), r = list.find(x => x.id === id);
+      if (!r) return;
+      row.innerHTML = `<input type="text" class="bm-input" maxlength="40" value="${escapeHtml(r.name)}" aria-label="名前">` +
+        '<button type="button" class="bm-ic" data-rec-ok title="決める" aria-label="決める">✓</button>';
+      const inp = row.querySelector('input');
+      inp.focus(); inp.select();
+      const ok = () => { const l2 = autoRecList(), r2 = l2.find(x => x.id === id); if (r2) { r2.name = inp.value.trim() || r2.name; autoRecSetList(l2); } _autoRecListSig = ''; inp.blur(); autoSyncUi(); };
+      row.querySelector('[data-rec-ok]').addEventListener('click', ok);
+      inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); ok(); } if (ev.key === 'Escape') { ev.stopPropagation(); _autoRecListSig = ''; inp.blur(); autoSyncUi(); } });
+    }
+  });
+  // パネルを開いている間は、★・記録・モデルの大きさの変化を表示に反映
+  setInterval(() => {
+    if (panel.hidden) return;
+    const ae = document.activeElement;
+    if (ae && panel.contains(ae) && ae.tagName === 'INPUT' && ae.type !== 'range') return; // 入力中(秒数・名前)は書き換えない
+    autoSyncUi();
+  }, 1000);
   autoSyncUi();
+  autoMarkersUpdate();
 })();
-window.__v19 = { autoState, autoPlay, autoPause, autoStop, autoBuild, autoPose, autoAdvance, autoSpeedOf, autoModelGeo, autoTourPoints, autoTimeText };
+window.__v19 = { autoState, autoPlay, autoPause, autoStop, autoBuild, autoEval, autoRate, autoV, autoModelGeo, autoTourPoints, autoTimeText,
+  autoS, autoSOf, autoScrubTo, autoFwdTime, pickDownAt, autoRecStart, autoRecStop, autoRecList, autoRec, autoFocusPts, autoFocusSave, autoLookTarget,
+  autoGroundAt, autoLine: () => autoLine, autoIsPP, worldScale: () => worldScale };
+window.__v20 = window.__v19;
 
 // ═══════════════ スマホ: ページが拡大されたままにならないように(tiles_016) ═══════════════
 // ・入力欄の文字は 16px(iPhone は 16px 未満の入力欄に触ると自動で拡大する)。CSS で指定
@@ -15432,6 +16444,7 @@ renderer.setAnimationLoop(() => {
 
   // ホイール・ピンチの移動の残りを滑らかに消化 / 周りまでの距離(移動の速さ)を平滑化
   if (!topdownState.active && !gate.active) { tickWheelMove(dt); tickNearDistance(dt); }
+  autoAfterFrame(dt); // 自動: 操作の記録・経路の線・状態の表示
 
   // dollyを動かしたあと、シーン全体のワールド行列を更新
   scene.updateMatrixWorld(true);

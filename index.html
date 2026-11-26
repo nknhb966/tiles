@@ -2919,9 +2919,9 @@
       <input id="cut-ahead" type="range" min="0" max="100" step="1" value="10" aria-label="カメラから断面までの距離(m)"><span class="cut-val" id="cut-ahead-val">10 m</span>
     </div>
     <div class="cut-row" id="cut-tilt-row" hidden><span class="cut-k">面</span>
-      <div class="cut-seg" role="group" aria-label="進行方向の面">
-        <button type="button" class="cut-b" data-cut-tilt="0" aria-pressed="true" title="水平に進む向きだけに合わせる(縦の面のまま)">縦の面のまま</button>
-        <button type="button" class="cut-b" data-cut-tilt="1" aria-pressed="false" title="上り下りにも合わせる(面も傾く)">傾きも</button>
+      <div class="cut-seg" role="group" aria-label="視線に追従する面">
+        <button type="button" class="cut-b" data-cut-tilt="0" aria-pressed="true" title="見ている方角だけに合わせる(縦の面のまま)">縦の面のまま</button>
+        <button type="button" class="cut-b" data-cut-tilt="1" aria-pressed="false" title="見上げ・見下ろしにも合わせる(面も傾く)">傾きも</button>
       </div>
     </div>
     <div class="cut-sep" role="separator"></div>
@@ -2932,7 +2932,7 @@
         <button type="button" class="cut-b" data-cut-dir="ns" aria-pressed="false" title="南北に伸びる縦の面(東西に動かす)">南北の面</button>
         <button type="button" class="cut-b" data-cut-dir="view" aria-pressed="false" title="向いている方角の縦の面(水平に前後に動かす)">今の方角</button>
         <button type="button" class="cut-b" data-cut-dir="gaze" aria-pressed="false" title="視線に直角な面(傾きも合わせ、視線の方向に前後に動かす)">今の視線</button>
-        <button type="button" class="cut-b" data-cut-dir="travel" aria-pressed="false" title="進む向きに直角な面(カメラの前方に置き、動くと一緒に進む。自動でも手で動かしても)">進行方向</button>
+        <button type="button" class="cut-b" data-cut-dir="travel" aria-pressed="false" title="視線に直角な面をカメラの前方に置き、見回したり動いたりすると付いていく(自動でも手で動かしても)">視線に追従</button>
       </div>
     </div>
     <div class="cut-row" id="cut-reaim-row" hidden><button type="button" class="cut-b" id="cut-reaim">今の方角に合わせ直す</button></div>
@@ -11048,8 +11048,8 @@ function showToast(text, ms = 2200) {
   const cutHtml = (tap) => `
     <h3>断面</h3>
     <dl><dt>断面ボタン</dt><dd>断面のパネルを開く(最初は切った状態)。パネルを閉じても断面は残る</dd>
-    <dt>向き</dt><dd>水平 / 東西の面 / 南北の面 / 今の方角(向いている方角の縦の面。水平に前後) / 今の視線(視線に直角な面。傾きも合わせ、視線の方向に前後) / 進行方向(進む向きに直角な面)</dd>
-    <dt>進行方向</dt><dd>カメラの前方(「前方」の距離)に面を置き、動くと一緒に進む(自動でも手で動かしても)。手前を消すので、先の切り口を見ながら切り進む。面は「縦の面のまま」か「傾きも」。止まっている間は最後の向きのまま</dd>
+    <dt>向き</dt><dd>水平 / 東西の面 / 南北の面 / 今の方角(向いている方角の縦の面。水平に前後) / 今の視線(視線に直角な面。傾きも合わせ、視線の方向に前後) / 視線に追従(視線に直角な面がカメラに付いていく)</dd>
+    <dt>視線に追従</dt><dd>カメラの前方(「前方」の距離)に視線に直角な面を置き、見回したり動いたりすると付いていく(自動でも手で動かしても)。手前を消すので、目線の先に切り口、その奥に点群が見える。面は「縦の面のまま」(見ている方角だけ)か「傾きも」</dd>
     <dt>見せ方</dt><dd>片側を消す(反転で残す側を入れ替え) / 薄く切る(厚さだけ残す)</dd>
     <dt>自動・速さ・位置</dt><dd>パネルの上: 「▶ 自動で往復」(モデルの端から端。「■ 往復を止める」で止める)と速さ、位置のスライダー・−/＋(長押しで続けて)</dd>
     <dt>外枠を表示</dt><dd>断面の外枠(白い線)を表示する・しない</dd>
@@ -13077,7 +13077,7 @@ function csvSourceShort(kind) {
 // 見せ方は「片側を消す」(反転で残す側を入れ替え)と「薄く切る」(面の前後の厚さだけ残す)。
 // 位置はスライダー・−/＋(長押しで連続)・自動(モデルの端から端を往復)。回す・歩く・真上・正対・VR のどれでも効く。
 // 面はデータセット座標(W系)で持ち、毎フレーム ワールド座標に直してシェーダ(点群)とクリップ面(メッシュ)へ渡す。
-const SLICE_DIR_LABEL = { h: '水平', ew: '東西の面', ns: '南北の面', view: '今の方角', gaze: '今の視線', travel: '進行方向' };
+const SLICE_DIR_LABEL = { h: '水平', ew: '東西の面', ns: '南北の面', view: '今の方角', gaze: '今の視線', travel: '視線に追従' };
 const SLICE_AXIS = { h: ['高さ', '下端から'], ew: ['南北', '南端から'], ns: ['東西', '西端から'], view: ['前後', '手前の端から'], gaze: ['前後', '手前の端から'], travel: ['前方', '手前の端から'] };
 const SLICE_AUTO_SEC = { slow: 30, normal: 15, fast: 6 }; // 端から端までの秒数
 const _sliceSaved = savedSettings.slice || {};
@@ -13089,9 +13089,9 @@ const sliceState = {
   thick: Number.isFinite(_sliceSaved.thick) ? Math.max(0.05, Math.min(5, _sliceSaved.thick)) : 0.5,
   pos: 0,                       // 面の位置(W系で、法線方向の座標)
   viewYaw: 0,                   // 「今の方角」「今の視線」で決めた向き(左右)
-  viewPitch: 0,                 // 「今の視線」で決めた傾き(上下。下向きが負)。「進行方向」では進む向き
-  travelTilt: _sliceSaved.travelTilt === true,  // 進行方向: 傾きも合わせる(初めは縦の面のまま)
-  travelAhead: Number.isFinite(_sliceSaved.travelAhead) ? Math.max(0, Math.min(100, _sliceSaved.travelAhead)) : 10, // 進行方向: カメラの前方(m)
+  viewPitch: 0,                 // 「今の視線」で決めた傾き(上下。下向きが負)。「視線に追従」では今の視線
+  travelTilt: _sliceSaved.travelTilt === true,  // 視線に追従: 傾きも合わせる(初めは縦の面のまま)
+  travelAhead: Number.isFinite(_sliceSaved.travelAhead) ? Math.max(0, Math.min(100, _sliceSaved.travelAhead)) : 10, // 視線に追従: カメラの前方(m)
   auto: false, autoDir: 1,
   autoSpeed: SLICE_AUTO_SEC[_sliceSaved.autoSpeed] ? _sliceSaved.autoSpeed : 'normal',
   edge: !!_sliceSaved.edge,     // 切り口を強調
@@ -13109,7 +13109,7 @@ function sliceNormal(dir = sliceState.dir, out = _sliceN) {
   if (dir === 'ew') return out.set(-Math.sin(ny), 0, -Math.cos(ny));      // 北向き(東西に伸びる面)
   if (dir === 'ns') return out.set(Math.cos(ny), 0, -Math.sin(ny));       // 東向き(南北に伸びる面)
   if (dir === 'view' || (dir === 'travel' && !sliceState.travelTilt)) return out.set(-Math.sin(sliceState.viewYaw), 0, -Math.cos(sliceState.viewYaw)); // 前向き(水平)
-  if (dir === 'gaze' || (dir === 'travel' && sliceState.travelTilt)) { // 視線の向き・進む向き(傾きも)
+  if (dir === 'gaze' || (dir === 'travel' && sliceState.travelTilt)) { // 視線の向き(傾きも)
     const cp = Math.cos(sliceState.viewPitch);
     return out.set(-Math.sin(sliceState.viewYaw) * cp, Math.sin(sliceState.viewPitch), -Math.cos(sliceState.viewYaw) * cp);
   }
@@ -13136,28 +13136,16 @@ function sliceAimNow() {
 }
 // 今の視線の面がほぼ水平(真下・真上を見ていた)か
 const sliceNearlyHorizontal = () => sliceState.dir === 'h' || ((sliceState.dir === 'gaze' || (sliceState.dir === 'travel' && sliceState.travelTilt)) && Math.abs(Math.sin(sliceState.viewPitch)) > 0.9);
-// ── 進行方向: 動いた向き(なめらかにした速さ)から面の向きを決め、カメラの前方に面を置く ──
-const _travel = { last: new THREE.Vector3(), has: false, vel: new THREE.Vector3() };
-const _travelV = new THREE.Vector3(), _travelEye = new THREE.Vector3(), _travelN = new THREE.Vector3();
-function sliceTravelTick(dt) {
-  // 位置は乗り物(dolly)の動きで見る(VR で頭を少し動かしただけでは向きを変えない)
-  const p = dolly.position;
-  if (!_travel.has || dt <= 0) { _travel.last.copy(p); _travel.has = true; }
-  else {
-    _travelV.subVectors(p, _travel.last).multiplyScalar(1 / dt);
-    _travel.last.copy(p);
-    if (_travelV.length() > 1e6) _travelV.set(0, 0, 0); // データの切り替え・初期位置への瞬間移動などは無視
-    _travel.vel.lerp(_travelV, 1 - Math.exp(-6 * dt));
-  }
+// ── 視線に追従: 面の向きは今の視線(縦の面のまま=見ている方角だけ / 傾きも)、位置はカメラの前方。手前(カメラの側)を消す ──
+const _travelEye = new THREE.Vector3(), _travelN = new THREE.Vector3(), _travelD = new THREE.Vector3();
+function sliceTravelTick() {
   // 真上・正対の間、自動の「断面と一緒」の間は動かさない
   if (topdownState.active || (autoState.status === 'play' && autoState.path === 'slice')) return;
-  const ws = worldScale || 1, v = _travel.vel, thr = 0.15 * ws; // 0.15 m/秒より速く動いている時だけ向きを合わせる
-  const hv = Math.hypot(v.x, v.z);
-  if (sliceState.travelTilt ? v.length() > thr : hv > thr) {
-    sliceState.viewYaw = hv > 1e-6 ? Math.atan2(-v.x, -v.z) : sliceState.viewYaw;
-    sliceState.viewPitch = sliceState.travelTilt ? Math.asin(Math.max(-1, Math.min(1, v.y / Math.max(1e-9, v.length())))) : 0;
-  }
-  // 面の位置: 目(カメラ)から進む向きに「前方」の距離の所
+  const d = camera.getWorldDirection(_travelD); // VR では頭の向き
+  if (Math.hypot(d.x, d.z) > 1e-4) sliceState.viewYaw = Math.atan2(-d.x, -d.z); // 真上・真下を見ている間は方角をそのまま
+  sliceState.viewPitch = sliceState.travelTilt ? Math.asin(Math.max(-1, Math.min(1, d.y))) : 0;
+  // 面の位置: 目(カメラ)から面の向きに「前方」の距離の所
+  const ws = worldScale || 1;
   camera.getWorldPosition(_travelEye);
   sliceNormal('travel', _travelN);
   _travelEye.addScaledVector(_travelN, sliceState.travelAhead * ws);
@@ -13328,7 +13316,7 @@ function sliceSetDir(dir) {
   sliceState.dir = dir;
   if (dir === 'view' || dir === 'gaze' || dir === 'travel') sliceAimNow();
   if (dir === 'travel' && !sliceState.travelTilt) sliceState.viewPitch = 0;
-  if (dir === 'travel') sliceState.auto = false; // 位置はカメラに付いていく
+  if (dir === 'travel') sliceState.auto = false; // 向き・位置はカメラに付いていく
   sliceState.flip = sliceDefaultFlip(dir);
   sliceSavePrefs();
   if (wasFace) setNavMode(navState.mode); // 向きを変えたら正対は終える
@@ -13346,7 +13334,7 @@ function sliceStep() {
 }
 // 毎フレーム: 自動で往復・枠・メッシュのクリップ面
 function sliceTick(dt) {
-  if (sliceState.on && sliceState.dir === 'travel') { sliceState.auto = false; sliceTravelTick(dt); } else _travel.has = false;
+  if (sliceState.on && sliceState.dir === 'travel') { sliceState.auto = false; sliceTravelTick(); }
   if (sliceState.on) {
     if (sliceState.auto && dt > 0) {
       const r = sliceRange();
@@ -13418,7 +13406,7 @@ function sliceSyncUi() {
   if (document.activeElement !== $('cut-ahead')) $('cut-ahead').value = String(sliceState.travelAhead);
   $('cut-ahead-val').textContent = `${sliceState.travelAhead} m`;
   panel.querySelectorAll('[data-cut-tilt]').forEach(b => b.setAttribute('aria-pressed', (b.dataset.cutTilt === '1') === sliceState.travelTilt ? 'true' : 'false'));
-  if (travel && on) $('cut-pos-val').textContent = `カメラの ${sliceState.travelAhead} m 前(${sliceState.travelTilt ? '進む向き' : '水平に進む向き'}に直角)。動くと一緒に進む`;
+  if (travel && on) $('cut-pos-val').textContent = `カメラの ${sliceState.travelAhead} m 前(${sliceState.travelTilt ? '視線' : '見ている方角'}に直角)。見回したり動いたりすると付いていく`;
   $('cut-reaim').textContent = sliceState.dir === 'gaze' ? '今の視線に合わせ直す' : '今の方角に合わせ直す';
   [...panel.querySelectorAll('#cut-body button, #cut-body input')].forEach(el => {
     if (el.id === 'cut-flip') return;
@@ -15740,7 +15728,7 @@ function buildAnnotationsCsv() {
 })();
 // 動作確認用
 window.__v22 = { isTabletLayout };
-window.__v24 = { sliceTravel: _travel, eye: () => camera.getWorldPosition(new THREE.Vector3()).toArray() };
+window.__v24 = { eye: () => camera.getWorldPosition(new THREE.Vector3()).toArray(), dir: () => camera.getWorldDirection(new THREE.Vector3()).toArray() };
 window.__v23 = { sliceState, sliceNormal: () => sliceNormal().toArray(), sliceWorldPlane: () => { const p = sliceWorldPlane(); return [p.n.toArray(), p.d]; },
   frameVerts: () => sliceFrame.children.filter(c => c.visible).map(c => { const a = c.geometry.attributes.position; const o = []; for (let i = 0; i < a.count; i++) o.push([a.getX(i), a.getY(i), a.getZ(i)]); return o; }),
   setPitch: (p) => { pitchTarget = p; camera.rotation.x = p; camera.updateMatrixWorld(true); },

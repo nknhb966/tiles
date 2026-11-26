@@ -2087,6 +2087,7 @@
     #cut-pos, #cut-thick { flex: 1 1 120px; min-width: 100px; accent-color: #ffd24a; }
     .cut-val { font-family: monospace; color: #fff; font-size: 11px; }
     .cut-hint { color: #9ab; font-size: 11px; }
+    .cut-sep { border-top: 1px solid rgba(255,210,74,0.3); margin: 3px 0 1px; }
     /* ══ 自動の視点移動(tiles_019) ══ */
     #auto-panel {
       display: flex; flex-direction: column; gap: 6px;
@@ -2166,7 +2167,8 @@
     .bm-ic.warn { color: #ff9a9a; border-color: rgba(255,120,120,0.45); }
     .bm-input { flex: 1 1 auto; min-width: 0; padding: 5px 6px; background: #0b1016; color: #fff; border: 1px solid #00c8ff; border-radius: 3px; font: 14px sans-serif; }
     /* 設定の上部: 項目・個別調整・ⓘ をまとめて開閉 */
-    #cp-toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 0 0 8px; }
+    #cp-toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 2px 6px 10px; }
+    body.touch #cp-toolbar { margin: 6px 12px 10px; }
     #cp-toolbar .cp-info-all { margin-left: 0; white-space: nowrap; line-height: 1.25; padding: 5px 4px; font-size: 11px; }
     body.touch #cp-toolbar { grid-template-columns: 1fr 1fr; }
     body.touch #cp-toolbar .cp-info-all { white-space: normal; }
@@ -2232,7 +2234,7 @@
     <button type="button" id="controls-toggle" aria-label="設定を閉じる" title="設定を閉じる">×</button>
   </div>
   <div id="cp-toolbar" role="group" aria-label="まとめて開閉">
-    <button type="button" id="sec-all-btn" class="cp-info-all" aria-pressed="false" title="表示・移動・視点・データ・作業用と「個別に調整」を、まとめて開く・たたむ">すべて開く</button>
+    <button type="button" id="sec-all-btn" class="cp-info-all" aria-pressed="false" title="表示・移動・視点・データ・作業用と「個別に調整」を、まとめて開く・たたむ">▶ すべて開く</button>
     <button type="button" id="info-all-btn" class="cp-info-all" aria-pressed="false" title="この設定パネルの ⓘ の説明を、まとめて開く・閉じる">ⓘ すべて開く</button>
   </div>
 
@@ -2336,9 +2338,10 @@
       </div>
       <div id="look-legend" hidden><div class="lg-bar"></div><span id="look-legend-val"></span></div>
       <div id="info-look" class="ctrl-info-body" hidden>
-        <b>元の色</b>: データの色のまま。<br>
-        <b>高さ</b>: 点を高さで 青(下)→赤(上) に塗ります。階・段差・傾きが分かりやすくなります。<br>
-        <b>白色</b>: 点を白くし、点そのものはくっきりしたまま、外側に淡い光を付けます。点が重なる密な所ほど明るく光って見えます(奥の点も少し透けます)。
+        <b>元の色</b>: データの色のまま。点の形は立方体になります。<br>
+        <b>高さ</b>: 点を高さで 青(下)→赤(上) に塗ります。階・段差・傾きが分かりやすくなります。点の形は丸になります。<br>
+        <b>白色</b>: 点をすべて白にします(陰影は元の色と同じ)。点の形は丸になります。<br>
+        切り替えた後の点の形は、「点のサイズ」の「点の形」で変えられます。
       </div>
     </div>
 
@@ -2653,10 +2656,10 @@
           <tr class="r-now"><td>いま</td><td id="pm-nx"></td><td id="pm-ny"></td><td id="pm-nz"></td></tr>
         </table>
         <div class="pp-speed" role="group" aria-label="−/＋ の1回の量">
-          <span class="pp-k">−/＋ の量</span>
-          <button type="button" class="dbg-btn" data-pp-speed="slow" aria-pressed="false">遅く</button>
-          <button type="button" class="dbg-btn" data-pp-speed="normal" aria-pressed="true">ふつう</button>
-          <button type="button" class="dbg-btn" data-pp-speed="fast" aria-pressed="false">速く</button>
+          <span class="pp-k">−/＋ の量(m)</span>
+          <button type="button" class="dbg-btn" data-pp-speed="slow" aria-pressed="false" title="1回 0.01 m">0.01</button>
+          <button type="button" class="dbg-btn" data-pp-speed="normal" aria-pressed="true" title="1回 0.10 m">0.10</button>
+          <button type="button" class="dbg-btn" data-pp-speed="fast" aria-pressed="false" title="1回 1.00 m">1.00</button>
         </div>
         <div class="pp-grid">
           <span>東西 X</span><button type="button" class="dbg-btn" data-pp="x-1" aria-label="東西 X を減らす">−</button><button type="button" class="dbg-btn" data-pp="x1" aria-label="東西 X を増やす">＋</button>
@@ -2890,6 +2893,26 @@
     <button type="button" class="m-x" id="cut-close" aria-label="断面のパネルを閉じる(断面は残る)" title="パネルを閉じる(断面は残る)">×</button>
   </div>
   <div id="cut-body">
+    <div class="cut-row cut-top"><span class="cut-k">自動</span>
+      <button type="button" class="cut-b" id="cut-auto" aria-pressed="false" title="モデルの端から端を往復する(もう一度押すと止める)">▶ 自動で往復</button>
+    </div>
+    <div class="cut-row cut-top"><span class="cut-k">速さ</span>
+      <div class="cut-seg" role="group" aria-label="往復の速さ">
+        <button type="button" class="cut-b" data-cut-auto-speed="slow" aria-pressed="false" title="端から端まで約30秒">遅く</button>
+        <button type="button" class="cut-b" data-cut-auto-speed="normal" aria-pressed="true" title="端から端まで約15秒">ふつう</button>
+        <button type="button" class="cut-b" data-cut-auto-speed="fast" aria-pressed="false" title="端から端まで約6秒">速く</button>
+      </div>
+    </div>
+    <div class="cut-row"><span class="cut-k" id="cut-pos-lab">高さ</span>
+      <input id="cut-pos" type="range" min="0" max="1000" step="1" value="500" aria-label="断面の位置">
+    </div>
+    <div class="cut-row"><span class="cut-val" id="cut-pos-val">-</span></div>
+    <div class="cut-row">
+      <button type="button" class="cut-b nudge" data-cut-nudge="-1" aria-label="断面を戻す">−</button>
+      <button type="button" class="cut-b nudge" data-cut-nudge="1" aria-label="断面を進める">＋</button>
+      <span class="cut-hint" id="cut-step">1回 0.1 m · 長押しで続けて</span>
+    </div>
+    <div class="cut-sep" role="separator"></div>
     <div class="cut-row cut-keep"><span class="cut-k">向き</span>
       <div class="cut-seg" role="group" aria-label="断面の向き">
         <button type="button" class="cut-b" data-cut-dir="h" aria-pressed="true" title="水平に切る(上下に動かす)">水平</button>
@@ -2910,26 +2933,9 @@
       <input id="cut-thick" type="range" min="0" max="1000" step="1" value="500" aria-label="薄く切る厚さ">
       <span class="cut-val" id="cut-thick-val">0.50 m</span>
     </div>
-    <div class="cut-row"><span class="cut-k" id="cut-pos-lab">高さ</span>
-      <input id="cut-pos" type="range" min="0" max="1000" step="1" value="500" aria-label="断面の位置">
-    </div>
-    <div class="cut-row"><span class="cut-val" id="cut-pos-val">-</span></div>
     <div class="cut-row">
-      <button type="button" class="cut-b nudge" data-cut-nudge="-1" aria-label="断面を戻す">−</button>
-      <button type="button" class="cut-b nudge" data-cut-nudge="1" aria-label="断面を進める">＋</button>
-      <span class="cut-hint" id="cut-step">1回 0.1 m · 長押しで続けて</span>
-    </div>
-    <div class="cut-row"><span class="cut-k">自動</span>
-      <button type="button" class="cut-b" id="cut-auto" aria-pressed="false" title="モデルの端から端を往復する">自動で往復</button>
-      <div class="cut-seg" role="group" aria-label="往復の速さ">
-        <button type="button" class="cut-b" data-cut-auto-speed="slow" aria-pressed="false" title="端から端まで約30秒">遅く</button>
-        <button type="button" class="cut-b" data-cut-auto-speed="normal" aria-pressed="true" title="端から端まで約15秒">ふつう</button>
-        <button type="button" class="cut-b" data-cut-auto-speed="fast" aria-pressed="false" title="端から端まで約6秒">速く</button>
-      </div>
-    </div>
-    <div class="cut-row">
-      <button type="button" class="cut-b" id="cut-frame" aria-pressed="true" title="断面の外枠(黄色い線)を表示する・しない">外枠を表示</button>
-      <button type="button" class="cut-b" id="cut-edge" aria-pressed="false" title="断面のすぐ近くの点を明るい色にする">切り口を強調</button>
+      <button type="button" class="cut-b" id="cut-frame" aria-pressed="true" title="断面の外枠(白い線)を表示する・しない">外枠を表示</button>
+      <button type="button" class="cut-b" id="cut-edge" aria-pressed="false" title="断面のすぐ近くの点を白にする(色分けが白色の時は水色)">切り口を強調</button>
       <button type="button" class="cut-b" id="cut-face" aria-pressed="false" title="断面を真正面から遠近なしで見る">正対して見る</button>
     </div>
   </div>
@@ -5524,13 +5530,10 @@ const CUBE_VERT = /* glsl */`
   uniform float uSliceHalf;   // 薄く切る厚さの半分(ワールド)
   uniform float uSliceEdgeW;  // 切り口を強調する幅(ワールド。0=強調しない)
   uniform float uColorMode;   // 色分け: 0=元の色 / 1=高さ / 2=白色
-  uniform float uGlowOff;     // 1=白色の外側の光を描かない(当たり判定の時)
   uniform vec2  uHeightRange; // 色分け「高さ」の 下端・上端(ワールド Y)
   varying vec3 vColor;
   varying float vEdge;        // 切り口の強調(0〜1)
 
-  const float GLOW_K = 0.7;     // 白色: 外側の光の幅(点の大きさの何倍か)
-  varying float vGlowK;        // 白色: 描く範囲 ÷ 点そのものの大きさ(光を描かない時は 1)
   // 高さの色: 青 → 水色 → 緑 → 黄 → 赤
   vec3 heightRamp(float t) {
     vec3 c0 = vec3(0.15, 0.25, 0.95), c1 = vec3(0.0, 0.85, 0.95), c2 = vec3(0.2, 0.9, 0.2), c3 = vec3(1.0, 0.9, 0.1), c4 = vec3(0.95, 0.2, 0.1);
@@ -5583,12 +5586,7 @@ const CUBE_VERT = /* glsl */`
 
     vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
     // 基本サイズ: 画面上で常に同じピクセル数(遠くの点も見え、大きなモデルでもスライダーが同じように効く)
-    float px = clamp(uSizePx * uPxScale, 1.0, uMaxPx);
-    // 白色: 外側の光のぶんだけ描く範囲を広げる(点そのものの大きさは変えない)。光の幅は点の大きさに比例、ただし最低 3px・最大 12px
-    float tot = px;
-    if (uColorMode > 1.5 && uGlowOff < 0.5) tot = min(px + 2.0 * clamp(px * GLOW_K, 3.0, 12.0), max(uMaxPx, px));
-    gl_PointSize = tot;
-    vGlowK = tot / px;
+    gl_PointSize = clamp(uSizePx * uPxScale, 1.0, uMaxPx);
     gl_Position = projectionMatrix * mvPos;
   }
 `;
@@ -5598,8 +5596,6 @@ const CUBE_FRAG = /* glsl */`
   varying float vEdge;      // 切り口の強調(0〜1)
   uniform float uShape;     // 点の形: 0=立方体 / 1=丸
   uniform float uColorMode; // 0=元の色 / 1=高さ / 2=白色
-  uniform float uGlowOff;   // 1=白色の外側の光を描かない(当たり判定の時)
-  varying float vGlowK;     // 描く範囲 ÷ 点そのものの大きさ
 
   // ワールド固定の光源方向（上やや斜め）
   const vec3 LIGHT_DIR_WS = normalize(vec3(0.4, 1.0, 0.3));
@@ -5617,22 +5613,11 @@ const CUBE_FRAG = /* glsl */`
   void main() {
     vec2 uv = gl_PointCoord * 2.0 - 1.0; // -1〜1（y下向き正）
 
-    // 白色: 点そのもの(形は設定のまま)はくっきりした白、その外側に淡い光の輪。加算で重ね、密な所ほど光る
-    if (uColorMode > 1.5) {
-      vec2 c = uv * vGlowK; // -1〜1 が点そのもの
-      float rr = uShape > 0.5 ? length(c) : max(abs(c.x), abs(c.y));
-      if (rr <= 1.0) {
-        gl_FragColor = vec4(mix(vec3(0.97, 0.99, 1.0), vec3(1.0, 0.85, 0.2), vEdge * 0.9), 0.95);
-        return;
-      }
-      if (uGlowOff > 0.5 || vGlowK < 1.01) discard; // 光を描かない時(当たり判定・点が最大サイズ)
-      float g = 1.0 - smoothstep(0.0, vGlowK - 1.0, rr - 1.0);
-      g = g * g * 0.45;
-      if (g < 0.004) discard;
-      gl_FragColor = vec4(vec3(0.78, 0.88, 1.0), g);
-      return;
-    }
-    vec3 base = mix(vColor, vec3(1.0, 0.85, 0.2), vEdge * 0.9); // 切り口を強調
+    // 白色: 真っ白(陰影は他の色分けと同じ)。切り口の強調は白(白色の時だけ水色)
+    bool white = uColorMode > 1.5;
+    vec3 col0 = white ? vec3(1.0) : vColor;
+    vec3 edgeCol = white ? vec3(0.35, 0.85, 1.0) : vec3(1.0);
+    vec3 base = mix(col0, edgeCol, vEdge * 0.9);
 
     // 丸: 球のような陰影。縁は1画素ぶんなめらかに(アルファ→カバレッジ。MSAA の無い環境では縁で切り捨て)
     if (uShape > 0.5) {
@@ -5673,7 +5658,6 @@ const cubeUniforms = {
   uSliceHalf:   { value: 0.25 },
   uSliceEdgeW:  { value: 0 },
   uColorMode:   { value: 0 },   // 色分け(0=元の色 / 1=高さ / 2=白色)
-  uGlowOff:     { value: 0 },   // 当たり判定の間だけ 1(白色の外側の光を描かない)
   uHeightRange: { value: new THREE.Vector2(0, 1) },
 
   uShape:   { value: 0.0 },   // 点の形(0=立方体 / 1=丸)
@@ -9534,10 +9518,10 @@ dbgPanel.innerHTML = `
         <tr><td>位置</td><td id="ap-x"></td><td id="ap-y"></td><td id="ap-z"></td></tr>
       </table>
       <div class="pp-speed" role="group" aria-label="−/＋ の1回の量">
-        <span class="pp-k">−/＋ の量</span>
-        <button type="button" class="dbg-btn" data-ap-speed="slow" aria-pressed="false">遅く</button>
-        <button type="button" class="dbg-btn" data-ap-speed="normal" aria-pressed="true">ふつう</button>
-        <button type="button" class="dbg-btn" data-ap-speed="fast" aria-pressed="false">速く</button>
+        <span class="pp-k">−/＋ の量(m)</span>
+        <button type="button" class="dbg-btn" data-ap-speed="slow" aria-pressed="false" title="1回 0.01 m">0.01</button>
+        <button type="button" class="dbg-btn" data-ap-speed="normal" aria-pressed="true" title="1回 0.10 m">0.10</button>
+        <button type="button" class="dbg-btn" data-ap-speed="fast" aria-pressed="false" title="1回 1.00 m">1.00</button>
       </div>
       <div class="pp-grid">
         <span>x</span><button type="button" class="dbg-btn" data-ap="x-1" aria-label="x を減らす">−</button><button type="button" class="dbg-btn" data-ap="x1" aria-label="x を増やす">＋</button>
@@ -9840,19 +9824,16 @@ if (sizeNum) {
 function updateSizeSlider() { applyPointUI(pointSize, false); }
 // 初期値: 前回の値。無ければ PC 2px / スマホ・タブレット 2.5px
 applyPointUI(Number(savedSettings.sizePx) || (isTouchDevice ? 2.5 : 2), false, { save: false });
-// 点の形(立方体/丸)
-{
-  const setShape = (shape) => {
-    pointShape = shape === 'round' ? 'round' : 'cube';
-    cubeUniforms.uShape.value = pointShape === 'round' ? 1.0 : 0.0;
-    document.querySelectorAll('[data-point-shape]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pointShape === pointShape ? 'true' : 'false'));
-  };
-  setShape(savedSettings.pointShape);
-  document.querySelectorAll('[data-point-shape]').forEach(b => b.addEventListener('click', () => {
-    setShape(b.dataset.pointShape);
-    saveSetting('pointShape', pointShape);
-  }));
+// 点の形(立方体/丸)。色分けを切り替えると、その色分けの形(元の色=立方体 / 高さ・白色=丸)になる
+function setPointShape(shape, save = false) {
+  pointShape = shape === 'round' ? 'round' : 'cube';
+  cubeUniforms.uShape.value = pointShape === 'round' ? 1.0 : 0.0;
+  document.querySelectorAll('[data-point-shape]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pointShape === pointShape ? 'true' : 'false'));
+  if (save) saveSetting('pointShape', pointShape);
 }
+// 起動時: 前回の形。無ければ前回の色分けの形
+setPointShape(savedSettings.pointShape || ((savedSettings.look || {}).color && savedSettings.look.color !== 'orig' ? 'round' : 'cube'));
+document.querySelectorAll('[data-point-shape]').forEach(b => b.addEventListener('click', () => setPointShape(b.dataset.pointShape, true)));
 
 // ── WORLD SCALE スライダー ──
 // tiles.group のスケール変更で世界の大きさを変える(1.0=実寸)。
@@ -11049,9 +11030,9 @@ function showToast(text, ms = 2200) {
     <dl><dt>断面ボタン</dt><dd>断面のパネルを開く(最初は切った状態)。パネルを閉じても断面は残る</dd>
     <dt>向き</dt><dd>水平 / 東西の面 / 南北の面 / 今の向き(今見ている方向の縦の面)</dd>
     <dt>見せ方</dt><dd>片側を消す(反転で残す側を入れ替え) / 薄く切る(厚さだけ残す)</dd>
-    <dt>位置</dt><dd>スライダー・−/＋(長押しで続けて)・「自動で往復」(モデルの端から端)</dd>
-    <dt>外枠を表示</dt><dd>断面の外枠(黄色い線)を表示する・しない</dd>
-    <dt>切り口を強調</dt><dd>断面のすぐ近くの点を明るい色にする</dd>
+    <dt>自動・速さ・位置</dt><dd>パネルの上: 「▶ 自動で往復」(モデルの端から端。「■ 往復を止める」で止める)と速さ、位置のスライダー・−/＋(長押しで続けて)</dd>
+    <dt>外枠を表示</dt><dd>断面の外枠(白い線)を表示する・しない</dd>
+    <dt>切り口を強調</dt><dd>断面のすぐ近くの点を白にする(色分けが白色の時は水色)</dd>
     <dt>正対して見る</dt><dd>縦の断面を真正面から遠近なしで表示(${tap}で計測・画像保存も)。水平なら「真上から見る」</dd></dl>`;
   const autoHtml = (touch) => `
     <h3>自動(視点を自動で動かす)</h3>
@@ -11120,12 +11101,12 @@ function showToast(text, ms = 2200) {
     <h3>表示とデータ</h3>
     <dl><dt>表示レベル</dt><dd>1(軽い)〜10(きれい)。「自動」は動きの滑らかさを見て調整します(設定 ⚙ の「表示」)</dd>
     <dt>レベルNで保存 / 完全保存</dt><dd>データの一覧で、そのレベルで見る分 / すべてのタイルを端末に保存(完全保存はオフラインでも全部見られる)。保存中もデータを開けます</dd>
-    <dt>色分け</dt><dd>設定の「表示」で、元の色 / 高さ / 白色</dd>
+    <dt>色分け</dt><dd>設定の「表示」で、元の色 / 高さ / 白色(切り替えると点の形も、元の色は立方体・高さと白色は丸に)</dd>
     <dt>外形の枠・目盛り</dt><dd>設定の「表示するもの」で、モデルの外形の枠と寸法、高さの目盛りと格子</dd>
-    <dt>設定の上のボタン</dt><dd>すべて開く(項目と「個別に調整」をまとめて)・ⓘ(説明)をすべて開く</dd></dl>`;
+    <dt>設定の上のボタン</dt><dd>▶ すべて開く(項目と「個別に調整」をまとめて)・ⓘ(説明)をすべて開く</dd></dl>`;
   const workHtml = () => (!devModes.place && !devModes.annotate) ? '' : `
     <h3>作業用(作業モード中)</h3>
-    <dl><dt>−/＋ を長押し</dt><dd>押している間、続けて動かす(1回の量は各パネルの 遅く / ふつう / 速く)</dd>` +
+    <dl><dt>−/＋ を長押し</dt><dd>押している間、続けて動かす(1回の量は各パネルの 0.01 / 0.10 / 1.00 m)</dd>` +
     (isTouchDevice ? '' : `<dt>R</dt><dd>配置の調整: 最初に見る場所と向き(初期位置)へ</dd>
     <dt>A</dt><dd>アノテーション配置: 黄色い立方体の所に追加</dd>
     <dt>I J K L</dt><dd>アノテーション配置: 押している間、立方体の周りを回る</dd>`) + `</dl>`;
@@ -12387,7 +12368,7 @@ function resetSettingsToDefaults() {
   setLevelAuto(true);
   applyPointUI(isTouchDevice ? 2.5 : 2, false);
   const fire = (el, v) => { if (!el || el.value === v) return; el.value = v; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); };
-  document.querySelector('[data-point-shape="cube"]')?.click();
+  document.querySelector(`[data-point-shape="${lookDefaultShape(lookState.color)}"]`)?.click(); // 点の形は、今の色分けの形
   const press = (id, want) => { const b = document.getElementById(id); if (b && (b.getAttribute('aria-pressed') === 'true') !== want) b.click(); };
   press('model-toggle', true);
   press('annotation-toggle', true);
@@ -13080,7 +13061,7 @@ const sliceState = {
   auto: false, autoDir: 1,
   autoSpeed: SLICE_AUTO_SEC[_sliceSaved.autoSpeed] ? _sliceSaved.autoSpeed : 'normal',
   edge: !!_sliceSaved.edge,     // 切り口を強調
-  frame: _sliceSaved.frame !== false, // 外枠(黄色い線)を表示(最初は表示)
+  frame: _sliceSaved.frame !== false, // 外枠(白い線)を表示(最初は表示)
   movedAt: 0,                   // 最後に動かした時刻(枠を出す)
 };
 function sliceSavePrefs() {
@@ -13171,12 +13152,12 @@ function sliceApplyMeshClipping(force) {
     }
   });
 }
-// 断面の外枠(黄色い線)。断面パネルの「外枠を表示」が ON の間は常に出す(薄く切る時は2枚)
+// 断面の外枠(白い線)。断面パネルの「外枠を表示」が ON の間は常に出す(薄く切る時は2枚)
 const sliceFrame = new THREE.Group();
 sliceFrame.name = 'slice-frame';
 sliceFrame.visible = false;
 {
-  const lineMat = new THREE.LineBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.9, depthTest: false });
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthTest: false });
   for (let i = 0; i < 2; i++) {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(15), 3));
@@ -13331,7 +13312,7 @@ function sliceSyncUi() {
   $('cut-step').textContent = `1回 ${st < 1 ? st.toFixed(2) : st} m · 長押しで続けて`;
   const ab = $('cut-auto');
   ab.setAttribute('aria-pressed', sliceState.auto ? 'true' : 'false');
-  ab.textContent = sliceState.auto ? '往復を止める' : '自動で往復';
+  ab.textContent = sliceState.auto ? '■ 往復を止める' : '▶ 自動で往復';
   $('cut-edge').setAttribute('aria-pressed', sliceState.edge ? 'true' : 'false');
   $('cut-frame').setAttribute('aria-pressed', sliceState.frame ? 'true' : 'false');
   const face = topdownState.active && topdownState.view === 'face';
@@ -13418,24 +13399,22 @@ function sliceSyncUi() {
 
 window.__sliceReady = true;
 
-// ═══════════════ 色分け(tiles_016。tiles_018 で 輪郭の強調と半透明の表示を抹消) ═══════════════
-// 元の色 / 高さ(青→赤) / 白色(くっきりした白い点＋外側に淡い光。加算で重ね、密な所ほど光る)
+// ═══════════════ 色分け(tiles_016。tiles_018 で 輪郭の強調と半透明の表示、tiles_021 で白色の発光を抹消) ═══════════════
+// 元の色 / 高さ(青→赤) / 白色(真っ白。陰影は他と同じ)。切り替えると点の形も 元の色=立方体 / 高さ・白色=丸 にする
 const _lookSaved = savedSettings.look || {};
 const lookState = { color: ['orig', 'height', 'glow'].includes(_lookSaved.color) ? _lookSaved.color : 'orig' };
 function lookSave() { saveSetting('look', { color: lookState.color }); }
-// 共有の点群マテリアルの描き方を切り替える(白色だけ加算・深度を書かない)
+// 共有の点群マテリアルの色の付け方を切り替える(描き方はどの色分けも同じ)
 function applyLookMaterial() {
   const m = sharedCubeMaterial;
-  const glow = lookState.color === 'glow';
-  if (m.transparent !== glow || m.depthWrite !== !glow) {
-    m.transparent = glow;
-    m.blending = glow ? THREE.AdditiveBlending : THREE.NormalBlending;
-    m.depthWrite = !glow;
-    m.alphaToCoverage = !glow;
+  if (m.transparent || !m.depthWrite || m.blending !== THREE.NormalBlending || !m.alphaToCoverage) {
+    m.transparent = false; m.blending = THREE.NormalBlending; m.depthWrite = true; m.alphaToCoverage = true;
     m.needsUpdate = true;
   }
-  cubeUniforms.uColorMode.value = glow ? 2 : (lookState.color === 'height' ? 1 : 0);
+  cubeUniforms.uColorMode.value = lookState.color === 'glow' ? 2 : (lookState.color === 'height' ? 1 : 0);
 }
+// 色分けごとの点の形(切り替えるたびに): 元の色=立方体 / 高さ・白色=丸
+const lookDefaultShape = (color) => (color === 'orig' ? 'cube' : 'round');
 // 高さの範囲(モデルの下端〜上端)。モデルが変わった・動いた時に合わせる
 let _lookRangeAt = 0;
 function lookTick() {
@@ -13446,18 +13425,16 @@ function lookTick() {
   const box = modelWorldBox(new THREE.Box3());
   if (!box.isEmpty()) cubeUniforms.uHeightRange.value.set(box.min.y, box.max.y);
 }
-// 当たり判定(点の位置の取得)は深度で行うので、白色の間も一時的に深度を書き、外側の光は描かない
+// 当たり判定(点の位置の取得)は深度で行うので、念のため深度を書く描き方にしておく
 function pickOpaqueBegin() {
   const m = sharedCubeMaterial;
   const s = { dw: m.depthWrite, tr: m.transparent, bl: m.blending };
   m.depthWrite = true; m.transparent = false; m.blending = THREE.NormalBlending;
-  cubeUniforms.uGlowOff.value = 1;
   return s;
 }
 function pickOpaqueEnd(s) {
   const m = sharedCubeMaterial;
   m.depthWrite = s.dw; m.transparent = s.tr; m.blending = s.bl;
-  cubeUniforms.uGlowOff.value = 0;
 }
 // 画面に描く
 function renderScene(cam) { renderer.render(scene, cam); }
@@ -13475,6 +13452,7 @@ function syncLookUi() {
 (function setupLook() {
   document.querySelectorAll('[data-look-color]').forEach(b => b.addEventListener('click', () => {
     lookState.color = b.dataset.lookColor; lookSave(); applyLookMaterial(); _lookRangeAt = 0; lookTick(); syncLookUi();
+    setPointShape(lookDefaultShape(lookState.color), true); // 点の形も、その色分けの形に
   }));
   applyLookMaterial();
   syncLookUi();
@@ -13833,7 +13811,7 @@ function addBookmarkButton() {
   };
   const sync = () => {
     const all = allOpen();
-    const t = all ? 'すべてたたむ' : 'すべて開く';
+    const t = all ? '▼ すべてたたむ' : '▶ すべて開く';
     if (btn.textContent !== t) btn.textContent = t;
     btn.setAttribute('aria-pressed', all ? 'true' : 'false');
   };
@@ -15433,7 +15411,7 @@ function buildAnnotationsCsv() {
   let sel = -1, lastId = null;
   const curId = () => currentDataset ?? loadingDataset;
   const isLocalId = (id) => id != null && LOCAL_DATASETS.has(id);
-  const stepNow = () => NUDGE_STEPS[annNudgeKey]; // このパネルの 遅く/ふつう/速く(移動の速さとは別)
+  const stepNow = () => NUDGE_STEPS[annNudgeKey]; // このパネルの −/＋ の量 0.01 / 0.10 / 1.00 m(移動の速さとは別)
   const r2 = (v) => Math.round(v * 100) / 100;
   // 一覧の1件(追加したもの・元データから変えたものに印)
   const itemHtml = (a, i) => {
@@ -15653,6 +15631,8 @@ function buildAnnotationsCsv() {
   window.__annSelect = select;
 })();
 // 動作確認用
+window.__v21 = { frameColor: () => sliceFrame.children[0].material.color.getHex(), frag: () => sharedCubeMaterial.fragmentShader, vert: () => sharedCubeMaterial.vertexShader,
+  mat: () => { const m = sharedCubeMaterial; return [m.transparent, m.blending, m.depthWrite, m.alphaToCoverage]; }, shape: () => pointShape };
 window.__v17test = { frameKinds: () => sliceFrame.children.map(c => c.type), white: () => ({ blending: sharedCubeMaterial.blending, frag: sharedCubeMaterial.fragmentShader, vert: sharedCubeMaterial.vertexShader }) };
 window.__v16test = { fitNdc: () => { if (!topdownState.active) return null; const box = modelWorldBox(); if (box.isEmpty()) return null; orthoCamera.updateMatrixWorld(true); let m = 0; const v = new THREE.Vector3(); for (let i = 0; i < 8; i++) { v.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).project(orthoCamera); m = Math.max(m, Math.abs(v.x), Math.abs(v.y)); } return m; }, sliceFrameVisible: () => sliceFrame.visible, mat: () => ({ blending: sharedCubeMaterial.blending, transparent: sharedCubeMaterial.transparent, depthWrite: sharedCubeMaterial.depthWrite }), structVisible: () => [structBoxLines.visible, structGridMajor.visible] };
 window.__v16 = { sliceState, sliceRange, sliceSetOn, sliceSetDir, sliceSetPos, sliceWorldPlane, lookState, structState, modelWorldBox, topdown: topdownState, bmList, levelNow, cubeUniforms };
@@ -16277,7 +16257,7 @@ function perfTick() {
     '― 表示 ―',
     `表示レベル     ${lvName}(${lvMode}) · 起動画面で選んだレベル ${levelState.level}`,
     `フレームレート ${fps.toFixed(1)} fps(目標 ${levelTargetFps()} fps · いちばん遅いコマ ${worst.toFixed(1)} ms)`,
-    `読み込む細かさ ${qualityFromErrorTarget(lodErrorTarget)}/20(errorTarget ${lodErrorTarget})`,
+    `読み込む細かさ ${qualityFromErrorTarget(lodErrorTarget)}/20(画面上の粗さ ${lodErrorTarget}px まで)`,
     `描く点の上限   ${fmtPoints(pcVis.budget)} · いま描いた点 ${fmtInt(perf.points)}点 · 描画の回数 ${fmtInt(perf.calls)}`,
     ...(pcVis.budget ? [`  上限で描かない ${pcVis.stats.hiddenTiles}タイル(${fmtInt(pcVis.stats.hiddenPoints)}点)` +
       (pointDensity < 1 ? ` · 間引き ${Math.round(pointDensity * 100)}%` : '')] : []),

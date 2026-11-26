@@ -1509,6 +1509,7 @@
     .m-head span { margin-left: auto; font-family: monospace; color: #fff; }
     .m-del { background: transparent; border: none; color: #ff9a9a; font-size: 15px; cursor: pointer; padding: 0 2px; }
     .m-detail { font-size: 11px; color: rgba(200,221,232,0.8); line-height: 1.45; word-break: break-all; user-select: text; }
+    .m-detail .m-seg { white-space: nowrap; }
     .m-empty { color: rgba(200,221,232,0.55); padding: 4px 0; }
     #measure-labels { position: fixed; inset: 0; pointer-events: none; z-index: 50; overflow: hidden; }
     .m-label {
@@ -1989,53 +1990,207 @@
     #ch-csv .ch-btn[hidden] { display: none; }
     /* 「VRで開く」は VR 対応端末だけ */
     body:not(.vr-ok) #ch-datasets .ch-btn[data-act="vr"] { display: none !important; }
+
+    /* ══ tiles_015 ══ */
+    /* PC もスマホと同じ: 右端の縦列(⚙・回す・歩く・真上・計測・速さ・?)。設定パネルは ⚙ で開閉し、列の左に出す */
+    body:not(.touch) #tool-rail { left: auto; right: 16px; top: 16px; }
+    #tool-rail #speed-cycle { font-size: 11px; }
+    #boost-group, #vr-help { display: none !important; }
+    body:not(.touch) #controls.collapsed { display: none !important; }
+    body:not(.touch) #controls { max-height: calc(100vh - 16px - var(--ctl-gap, 16px)); }
+    body:not(.touch) #controls-header { cursor: default; gap: 8px; }
+    body:not(.touch) #controls-toggle {
+      display: flex; align-items: center; justify-content: center; width: 34px; height: 30px; padding: 0;
+      font-size: 18px; line-height: 1;
+    }
+    body:not(.touch) #controls-header:hover #controls-toggle { background: transparent; }
+    body:not(.touch) #controls-toggle:hover { background: rgba(0,200,255,0.15) !important; }
+    /* 設定の上部: ⓘ をすべて開く・閉じる */
+    .cp-info-all {
+      margin-left: auto; background: transparent; border: 1px solid rgba(0,200,255,0.45); border-radius: 4px;
+      color: #00c8ff; font: 12px sans-serif; padding: 5px 8px; cursor: pointer; white-space: nowrap; touch-action: manipulation;
+    }
+    .cp-info-all[aria-pressed="true"] { background: rgba(0,200,255,0.2); color: #fff; }
+    body.touch .cp-info-all { font-size: 11px; padding: 5px 6px; }
+    /* 真上のバー・計測パネル(PC): 左側は作業パネル、右は設定パネル */
+    body:not(.touch) #topdown-bar { left: 16px; right: 414px; }
+    body.pc-panel-closed:not(.touch) #topdown-bar { right: 76px; }
+    body:not(.touch) #measure-panel { left: 16px; top: 80px; }
+    /* 作業モードのパネル: 指でスクロールできるように(入れ物も指を受け取る。中身が無い時は高さ 0) */
+    #work-panels { pointer-events: auto; touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+    #work-panels > * { touch-action: pan-y; }
+    body:not(.touch) #work-panels { max-width: none; }
+    /* −/＋: 長押しで連続。押している間に文字の選択やメニューを出さない(指で縦になぞればパネルのスクロール) */
+    [data-pp], [data-ap] { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: pan-y; }
+    #place-panel .dbg-btn.held, #dbg-panel .dbg-btn.held { background: rgba(255,210,74,0.35); color: #fff; }
+    .pp-speed { display: flex; align-items: center; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+    .pp-speed .pp-k { margin-right: 2px; }
+    #place-panel .pp-speed .dbg-btn, #dbg-panel .pp-speed .dbg-btn { flex: 0 0 auto; padding: 2px 10px; min-height: 26px; }
+    .pp-src { color: #9ab; font-size: 11px; margin-top: 2px; }
+    .pp-src b { color: #cde; font-weight: normal; }
+    /* アノテーション: 1件ごとの印・削除した元データ */
+    .ap-tag { font-size: 10px; padding: 0 4px; border-radius: 3px; margin-left: 4px; white-space: nowrap; }
+    .ap-tag.add { background: #7fe3ff; color: #111; }
+    .ap-tag.chg { background: #ffd24a; color: #111; }
+    #dbg-panel .ap-del-item { cursor: default; opacity: 0.85; align-items: center; }
+    #dbg-panel .ap-del-item .dbg-btn { margin-left: auto; padding: 2px 10px; min-height: 26px; }
+    #dbg-panel #ap-sel-state { margin-left: 4px; }
+    /* スマホ: 開いた設定パネルは作業パネルより手前に(閉じると作業パネルが見える) */
+    body.touch #controls { z-index: 210 !important; }
+    /* 操作ガイド */
+    .help-lead { margin: 0 0 8px; color: #cde; font-size: 13px; line-height: 1.6; }
+
+    /* ══ tiles_016 ══ */
+    /* 移動の速さのボタンは「歩く」の時だけ(右端の列の一番下)。設定の「移動の速さ」も */
+    #speed-cycle { display: none !important; }
+    body.nav-walk:not(.topdown-open) #speed-cycle { display: block !important; }
+    body:not(.nav-walk) #speed-group, body.topdown-open #speed-group { display: none; }
+    /* 断面: 右端の列のボタンは、断面がある間は光らせる */
+    #tool-rail #cut-btn.on { border-color: #ffd24a; color: #ffd24a; box-shadow: inset 0 0 0 1px rgba(255,210,74,0.5); }
+    #tool-rail #cut-btn.on[aria-pressed="true"] { background: rgba(255,210,74,0.25); color: #fff; }
+    /* 道具のパネル(計測・断面)の入れ物: 縦に並べ、はみ出す分はスクロール(位置は JS) */
+    #tool-panels {
+      position: fixed; left: 16px; top: 80px; z-index: 106; width: 300px; max-height: calc(100vh - 160px);
+      display: flex; flex-direction: column; gap: 8px; overflow-y: auto; overscroll-behavior: contain; pointer-events: none;
+    }
+    #tool-panels > * { position: static !important; width: auto !important; max-height: none !important; pointer-events: auto; box-sizing: border-box; }
+    body.touch #tool-panels { left: 8px; right: 62px; width: auto; top: var(--top-ui, 56px); max-height: 40vh; pointer-events: auto; touch-action: pan-y; }
+    @media (orientation: landscape) and (max-height: 500px) {
+      body.touch #tool-panels { right: auto; width: min(400px, 48vw); max-height: calc(100vh - var(--top-ui, 44px) - 8px); }
+    }
+    /* 断面パネル */
+    #cut-panel {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 8px 10px; background: rgba(0,0,0,0.86); border: 1px solid rgba(255,210,74,0.5); border-radius: 6px;
+      color: #dcebf2; font: 12px sans-serif; backdrop-filter: blur(8px);
+    }
+    #cut-panel[hidden] { display: none; }
+    #cut-panel .m-title { color: #ffd24a; }
+    .cut-on { margin-left: 10px; padding: 4px 10px; background: transparent; color: #ffd24a; border: 1px solid rgba(255,210,74,0.6); border-radius: 3px; font: bold 12px sans-serif; cursor: pointer; touch-action: manipulation; }
+    .cut-on[aria-pressed="true"] { background: rgba(255,210,74,0.3); color: #fff; }
+    #cut-body { display: flex; flex-direction: column; gap: 6px; }
+    #cut-body.off .cut-row:not(.cut-keep) { opacity: 0.45; }
+    .cut-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .cut-row[hidden] { display: none; }
+    .cut-k { flex: 0 0 auto; min-width: 3em; color: #9ab; }
+    .cut-seg { display: flex; gap: 3px; flex: 1 1 auto; flex-wrap: wrap; }
+    .cut-b {
+      flex: 1 1 auto; padding: 5px 6px; background: transparent; color: #00c8ff; border: 1px solid rgba(0,200,255,0.4);
+      border-radius: 3px; font: 12px sans-serif; cursor: pointer; touch-action: manipulation; white-space: nowrap;
+    }
+    .cut-b[aria-pressed="true"] { background: rgba(0,200,255,0.3); color: #fff; border-color: #00c8ff; }
+    .cut-b:disabled { opacity: 0.35; cursor: default; }
+    .cut-b.nudge { flex: 0 0 44px; font-size: 16px; font-weight: bold; padding: 2px 0; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: pan-y; }
+    .cut-b.nudge.held { background: rgba(255,210,74,0.35); color: #fff; }
+    #cut-pos, #cut-thick { flex: 1 1 120px; min-width: 100px; accent-color: #ffd24a; }
+    .cut-val { font-family: monospace; color: #fff; font-size: 11px; }
+    .cut-hint { color: #9ab; font-size: 11px; }
+    /* ══ 自動の視点移動(tiles_019) ══ */
+    #auto-panel {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 8px 10px; background: rgba(0,0,0,0.86); border: 1px solid rgba(125,255,176,0.5); border-radius: 6px;
+      color: #dcebf2; font: 12px sans-serif; backdrop-filter: blur(8px);
+    }
+    #auto-panel[hidden] { display: none; }
+    #auto-panel .m-title { color: #7dffb0; }
+    .auto-play { margin-left: 8px; padding: 4px 10px; background: transparent; color: #7dffb0; border: 1px solid rgba(125,255,176,0.6); border-radius: 3px; font: bold 12px sans-serif; cursor: pointer; touch-action: manipulation; white-space: nowrap; }
+    .auto-play + .auto-play { margin-left: 4px; }
+    .auto-play[aria-pressed="true"] { background: rgba(125,255,176,0.28); color: #fff; }
+    .auto-play:disabled { opacity: 0.35; cursor: default; }
+    .auto-status { color: #9ab; font-size: 11px; line-height: 1.45; }
+    .auto-status.play { color: #7dffb0; }
+    .auto-status.pause { color: #ffd24a; }
+    #auto-panel input[type="range"] { flex: 1 1 110px; min-width: 90px; accent-color: #7dffb0; }
+    #auto-panel .cut-val { min-width: 4.5em; }
+    #tool-rail #auto-btn.on { border-color: #7dffb0; color: #7dffb0; box-shadow: inset 0 0 0 1px rgba(125,255,176,0.5); }
+    #tool-rail #auto-btn.on[aria-pressed="true"] { background: rgba(125,255,176,0.22); color: #fff; }
+    /* スマホを横にした時: 右端の列が下の方まで届くので、描画中の表示はその左に置く */
+    @media (orientation: landscape) and (max-height: 500px) {
+      body.touch #load-progress { right: 62px; }
+    }
+    /* 目線を水平に戻す(傾いている時だけ。初期位置の右隣。データ名はその分右へ) */
+    #level-btn {
+      position: fixed; top: 16px; left: 144px; z-index: 110; height: 37px; padding: 0 12px;
+      background: rgba(0,0,0,0.8); border: 1px solid #ffd24a; border-radius: 4px; color: #ffd24a;
+      font: bold 13px sans-serif; cursor: pointer; touch-action: manipulation; backdrop-filter: blur(8px);
+    }
+    #level-btn[hidden] { display: none; }
+    #dataset-switch { transition: left 0.15s; }
+    body.tilted:not(.touch) #dataset-switch, body.tilted.touch.touch-wide #dataset-switch { left: 224px; }
+    body.touch:not(.touch-wide) #level-btn { top: 4px; left: 52px; width: 40px; height: 32px; padding: 0; font-size: 12px; }
+    body.touch.touch-wide #level-btn { top: 4px; }
+    body.tilted.touch:not(.touch-wide) #dataset-switch { left: 98px; max-width: calc(100vw - 106px); }
+    /* ★ 視点のブックマーク(データ名の隣) */
+    .dataset-btn.bm-btn { padding: 8px 10px; color: #ffd24a; border-color: rgba(255,210,74,0.55); }
+    .dataset-btn.bm-btn[aria-expanded="true"] { background: rgba(255,210,74,0.2); color: #fff; }
+    body.touch .dataset-btn.bm-btn { padding: 6px 9px; }
+    body.touch:not(.touch-wide) .dataset-btn.ds-current { max-width: calc(100vw - 124px); }
+    body.tilted.touch:not(.touch-wide) .dataset-btn.ds-current { max-width: calc(100vw - 166px); }
+    #bm-pop {
+      position: fixed; z-index: 1100; max-height: min(60vh, 420px); overflow-y: auto; padding: 8px 10px;
+      background: rgba(10,12,16,0.96); border: 1px solid rgba(255,210,74,0.55); border-radius: 6px; color: #dcebf2; font: 12px sans-serif;
+    }
+    #bm-pop[hidden] { display: none; }
+    #bm-pop .m-title { color: #ffd24a; }
+    #bm-add { width: 100%; margin: 6px 0; }
+    .bm-item { display: flex; align-items: stretch; gap: 4px; margin-bottom: 4px; }
+    .bm-go {
+      flex: 1 1 auto; text-align: left; padding: 6px 8px; background: rgba(255,255,255,0.04); color: #fff;
+      border: 1px solid rgba(0,200,255,0.35); border-radius: 3px; font: 13px sans-serif; cursor: pointer; touch-action: manipulation; overflow: hidden; text-overflow: ellipsis;
+    }
+    .bm-sub { margin-left: 8px; color: #9ab; font-size: 11px; }
+    .bm-ic { flex: 0 0 auto; min-width: 34px; background: transparent; color: #00c8ff; border: 1px solid rgba(0,200,255,0.4); border-radius: 3px; cursor: pointer; font: 13px sans-serif; touch-action: manipulation; }
+    .bm-ic.warn { color: #ff9a9a; border-color: rgba(255,120,120,0.45); }
+    .bm-input { flex: 1 1 auto; min-width: 0; padding: 5px 6px; background: #0b1016; color: #fff; border: 1px solid #00c8ff; border-radius: 3px; font: 14px sans-serif; }
+    /* 設定の上部: 項目・個別調整・ⓘ をまとめて開閉 */
+    #cp-toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 0 0 8px; }
+    #cp-toolbar .cp-info-all { margin-left: 0; white-space: nowrap; line-height: 1.25; padding: 5px 4px; font-size: 11px; }
+    body.touch #cp-toolbar { grid-template-columns: 1fr 1fr; }
+    body.touch #cp-toolbar .cp-info-all { white-space: normal; }
+    body.touch #cp-toolbar .cp-info-all { font-size: 11px; }
+    /* 表示するもの: 外形の枠と寸法・目盛りと格子(ほかの表示/非表示ボタンと同じ見た目) */
+    #struct-box-toggle, #struct-grid-toggle {
+      background: transparent; border: 1px solid rgba(0,200,255,0.6); color: #00c8ff;
+      font-family: inherit; font-weight: bold; border-radius: 3px; cursor: pointer;
+    }
+    #struct-box-toggle[aria-pressed="true"], #struct-grid-toggle[aria-pressed="true"] { background: rgba(0,200,255,0.12); border-color: #00c8ff; color: #00c8ff; }
+    #struct-box-toggle[aria-pressed="false"], #struct-grid-toggle[aria-pressed="false"] { background: transparent; border-color: rgba(160,180,195,0.5); color: rgba(160,180,195,0.8); }
+    .show-cap { overflow: hidden; text-overflow: ellipsis; }
+    /* 見え方 */
+    .look-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    .look-grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; margin-top: 4px; }
+    #controls .dbg-btn:disabled { opacity: 0.35; cursor: default; }
+    #look-legend { margin-top: 6px; font-size: 11px; color: #cde; }
+    #look-legend .lg-bar { height: 8px; border-radius: 2px; margin-bottom: 2px; background: linear-gradient(90deg, rgb(38,64,242), rgb(0,217,242), rgb(51,230,51), rgb(255,230,26), rgb(242,51,26)); }
+    #look-legend[hidden] { display: none; }
+    /* 外形の枠・目盛りのラベル(計測のラベルと同じ見た目) */
+    #struct-labels { position: fixed; inset: 0; pointer-events: none; z-index: 49; overflow: hidden; }
+    #struct-labels[hidden] { display: none; }
+    #struct-labels .st-label { border-color: #7fe3ff; }
+    #struct-labels .st-tick { border-color: #ffd24a; background: rgba(0,0,0,0.6); }
+    #struct-labels .st-dim { font-size: 12px; font-weight: bold; }
+    /* 計測: 道具が6つ */
+    .m-tools { grid-template-columns: repeat(7, 1fr); }
+    .m-tools .m-tool { padding-left: 0; padding-right: 0; min-width: 0; }
+    /* スマホ: 入力欄は 16px(iPhone が自動で拡大しないように)。触り損ねで文章が選ばれないように */
+    body.touch input[type="text"], body.touch input[type="number"], body.touch input[type="url"], body.touch input[type="search"],
+    body.touch input:not([type]), body.touch textarea, body.touch select { font-size: 16px !important; }
+    body.touch { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+    body.touch input, body.touch textarea, body.touch select, body.touch .m-detail, body.touch [data-selectable] {
+      -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+    }
+    html, body { touch-action: manipulation; }
+    body.touch button { touch-action: manipulation; }
+
+    /* ══ tiles_017 ══ */
+    /* 計測パネル: 求めた値(高さ・水平距離など)を強調 */
+    #measure-panel .m-head .m-main { font-size: 14px; font-weight: bold; color: #fff; }
   </style>
 </head>
 <body>
 
-<div id="vr-help" style="
-  position: fixed; bottom: 90px; left: 16px;
-  background: rgba(0,0,0,0.8);
-  border: 1px solid rgba(0,200,255,0.3);
-  border-radius: 4px;
-  padding: 12px 16px;
-  color: #00c8ff;
-  font-family: sans-serif;
-  font-size: 13px;
-  z-index: 100;
-  backdrop-filter: blur(8px);
-  line-height: 1.7;
-  min-width: 240px;
-">
-  <button type="button" class="vh-toggle" id="vr-help-toggle">たたむ</button>
-  <div class="vh-sec vh-vr">
-  <div style="margin-bottom:6px; letter-spacing:1px; font-weight:bold; font-size:14px;">VR CONTROLS</div>
-  <div style="color:#c8dde8;">
-    <b style="color:#ff6b35;">L Stick</b> 向いてる方向に移動<br>
-    <b style="color:#ff6b35;">R Stick ←→</b> 視点を回す<br>
-    <b style="color:#ff6b35;">A Button</b> 下降<br>
-    <b style="color:#ff6b35;">B Button</b> 上昇<br>
-    <b style="color:#ff6b35;">X Button</b> 点を小さく<br>
-    <b style="color:#ff6b35;">Y Button</b> 点を大きく<br>
-    <b style="color:#ff6b35;">R Grip</b> 押すほど速く(移動の速さは周りまでの距離で自動)<br>
-    <b style="color:#ff6b35;">L Grip + X</b> 描く点を減らす(上限を下げる)<br>
-    <b style="color:#ff6b35;">L Grip + Y</b> 描く点を増やす(上限を上げる)
-  </div>
-  </div>
-  <div class="vh-sec vh-pc">
-  <div style="margin:10px 0 6px; letter-spacing:1px; font-weight:bold; font-size:14px;">PC CONTROLS</div>
-  <div style="color:#c8dde8;">
-    <b style="color:#ff6b35;">W A S D</b> 移動 / <b style="color:#ff6b35;">↑ ↓</b> 上昇・下降<br>
-    <b style="color:#ff6b35;">左ドラッグ</b> モデルを回す(歩くモードは見回す)<br>
-    <b style="color:#ff6b35;">右ドラッグ</b> 平行移動 / <b style="color:#ff6b35;">ホイール</b> カーソルの所へ<br>
-    <b style="color:#ff6b35;">ダブルクリック</b> その地点へ移動<br>
-    <b style="color:#ff6b35;">Shift</b> ゆっくり / <b style="color:#ff6b35;">?</b> 操作ガイド
-  </div>
-  </div>
-</div>
-
 <div id="controls" style="
-  position: fixed; top: 80px; right: 16px;
+  position: fixed; top: 16px; right: 76px;
   background: rgba(0,0,0,0.8);
   border: 1px solid rgba(0,200,255,0.3);
   border-radius: 4px;
@@ -2046,12 +2201,16 @@
   z-index: 100;
   backdrop-filter: blur(8px);
 ">
-  <!-- ヘッダー: スマホは「設定 ×」、PC は「⚙ 設定 たたむ/ひらく」(押すと開閉)-->
+  <!-- ヘッダー: 「設定 ×」と、その下に まとめて開閉のボタン(すべて開く・ⓘ)。開くのは右端の列の ⚙(PC・スマホ共通)-->
   <!-- 左: 「点のサイズ」のミニスライダー(タップ拡張時もそのまま操作可) -->
   <!-- 右: 本体の開閉トグル -->
   <div id="controls-header">
     <span class="cp-panel-title">設定</span>
-    <button type="button" id="controls-toggle" aria-label="設定を閉じる">×</button>
+    <button type="button" id="controls-toggle" aria-label="設定を閉じる" title="設定を閉じる">×</button>
+  </div>
+  <div id="cp-toolbar" role="group" aria-label="まとめて開閉">
+    <button type="button" id="sec-all-btn" class="cp-info-all" aria-pressed="false" title="表示・移動・視点・データ・作業用と「個別に調整」を、まとめて開く・たたむ">すべて開く</button>
+    <button type="button" id="info-all-btn" class="cp-info-all" aria-pressed="false" title="この設定パネルの ⓘ の説明を、まとめて開く・閉じる">ⓘ すべて開く</button>
   </div>
 
   <!-- 本体 -->
@@ -2141,6 +2300,25 @@
       </div>
     </div>
 
+    <!-- 色分け: 元の色 / 高さ / 白色 -->
+    <div class="ctrl-group" id="look-group">
+      <div class="ctrl-label">
+        <span>色分け</span>
+        <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-look" aria-label="色分けの説明">ⓘ</button>
+      </div>
+      <div class="look-grid">
+        <button type="button" class="dbg-btn" data-look-color="orig" aria-pressed="true">元の色</button>
+        <button type="button" class="dbg-btn" data-look-color="height" aria-pressed="false">高さ</button>
+        <button type="button" class="dbg-btn" data-look-color="glow" aria-pressed="false">白色</button>
+      </div>
+      <div id="look-legend" hidden><div class="lg-bar"></div><span id="look-legend-val"></span></div>
+      <div id="info-look" class="ctrl-info-body" hidden>
+        <b>元の色</b>: データの色のまま。<br>
+        <b>高さ</b>: 点を高さで 青(下)→赤(上) に塗ります。階・段差・傾きが分かりやすくなります。<br>
+        <b>白色</b>: 点を白くし、点そのものはくっきりしたまま、外側に淡い光を付けます。点が重なる密な所ほど明るく光って見えます(奥の点も少し透けます)。
+      </div>
+    </div>
+
     <!-- 点のサイズ: 大きさ(画面px)・点の形 -->
     <div id="size-row" class="ctrl-group">
       <div class="ctrl-label">
@@ -2175,6 +2353,8 @@
         <div class="show-item"><span class="show-cap">点群</span><button type="button" id="model-toggle" aria-pressed="true">表示中</button></div>
         <div class="show-item"><span class="show-cap">説明パネル</span><button type="button" id="annotation-toggle" aria-pressed="true">表示中</button></div>
         <div class="show-item"><span class="show-cap">地図</span><button type="button" id="gsi-toggle" aria-pressed="false">非表示</button></div>
+        <div class="show-item"><span class="show-cap">外形の枠と寸法</span><button type="button" id="struct-box-toggle" aria-pressed="false">非表示</button></div>
+        <div class="show-item"><span class="show-cap">目盛りと格子</span><button type="button" id="struct-grid-toggle" aria-pressed="false">非表示</button></div>
       </div>
       <div id="gsi-options" hidden>
         <button type="button" id="gsi-solid-toggle" aria-pressed="true" style="margin-top:8px;">立体表示</button>
@@ -2190,7 +2370,9 @@
         <b>説明パネル</b>: 各地点の説明(球体とパネル)。球体に近づくとパネルが自動で開きます。<br>
         <b>地図</b>: 国土地理院の地図と標高から周りの地面を作って敷きます。
         「立体表示/平面表示」で起伏の有無、「地形の細かさ」を下げると軽く、「地図の精細さ」を上げるとくっきり(ただし狭く・重く)なります。
-        簡易表示のため、点群とは多少ずれることがあります。出典: 国土地理院(地理院タイルを加工して作成)
+        簡易表示のため、点群とは多少ずれることがあります。出典: 国土地理院(地理院タイルを加工して作成)<br>
+        <b>外形の枠と寸法</b>: データの範囲を囲む枠と、東西・南北・高さの長さ(地理の向きが分からない端末の3Dデータは X・Z)。<br>
+        <b>目盛りと格子</b>: モデルの下端の高さに、切りのよい間隔の格子(太線は5本おき)と、角に高さの目盛り(下端からの高さ)。
       </div>
     </div>
     </div>
@@ -2199,7 +2381,7 @@
   <!-- ════════ 移動・視点 ════════ -->
   <section class="cp-sec" data-sec="move">
     <button type="button" class="cp-head" aria-expanded="true">
-      <span class="cp-title">移動・視点</span><span class="cp-sub">回す/歩く/真上・移動の速さ・表示倍率</span><span class="cp-chev">▾</span>
+      <span class="cp-title">移動・視点</span><span class="cp-sub">回す/歩く/真上・移動の速さ(歩く)・表示倍率</span><span class="cp-chev">▾</span>
     </button>
     <div class="cp-body">
     <div class="ctrl-group">
@@ -2215,13 +2397,14 @@
       <div id="info-nav" class="ctrl-info-body" hidden>
         <b>歩く</b>: 一人称で歩き回ります。建物の中や街並みを見るのに向いています。<br>
         <b>回す</b>: つかんだ所を中心に、模型を手に取って回すようにモデルを回して見ます。全体を見るのに向いています(最初はこちら)。<br>
-        <b>真上</b>: 真上から見下ろした地図のような表示(真俯瞰図)。表示範囲・断面・画像保存などは画面下のバーで操作します。VR 中は使えません。<br>
+        <b>真上</b>: 真上から見下ろした地図のような表示(真俯瞰図)。切り替えるとモデル全体が入るように表示します。表示範囲・全体・断面・画像保存などは画面下のバーで操作します。VR 中は使えません。<br>
+        見上げ・見下ろしている時は、左上の「水平」で目線を水平に戻せます。<br>
         どちらもダブルクリック(ダブルタップ)でその地点へ移動します。キーや指の操作は「操作ガイド」をご覧ください。
       </div>
     </div>
-    <div class="ctrl-group">
+    <div class="ctrl-group" id="speed-group">
       <div class="ctrl-label">
-        <span>移動の速さ</span>
+        <span>移動の速さ(歩く)</span>
         <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-speed" aria-label="移動の速さの説明">ⓘ</button>
         <span class="speed-readout cp-val"></span>
       </div>
@@ -2232,7 +2415,8 @@
       </div>
       <div id="info-speed" class="ctrl-info-body" hidden>
         速さは周りの点群までの距離に合わせて自動で変わります(壁の近くはゆっくり、ひらけた所や上空では速く)。
-        「遅く」「速く」はその全体を 0.3倍・3倍にします。右の数字は今の速さ(秒速)です。<br>
+        「遅く」「速く」はその全体を 0.3倍・3倍にします。右の数字は今の速さ(秒速)です。右端の列の一番下の速さボタン(押すごとに 遅く→ふつう→速く)でも切り替えられます。<br>
+        「歩く」の時だけ使います(回す・真上はつかんで動かす操作なので、速さの切り替えはありません)。<br>
         PC では Shift を押している間ゆっくり、VR では右グリップを握るほど速くなります。
       </div>
     </div>
@@ -2325,7 +2509,8 @@
       編集するとすぐ、モデルごとにこの端末へ一時保存します。A キーでも追加でき(このモード中だけ A は左移動ではなく追加)、I J K L を押している間は立方体の周りを回ります。<br>
       <b>CSV(データの設定)</b>: データの一覧で、元データの切り替え(CSV の読み込み・サーバーの CSV に戻す・読み込んだ CSV に戻す)と、
       datasets.csv・annotations.csv の書き出しを行います。Web 上のデータの追加・一覧から外すのも、データの一覧で行います。<br>
-      パネルは、ボタン列・設定パネルと重ならない場所にまとめて出ます。作業モード中は、60 秒操作しなくても初期位置に戻りません。
+      パネルは「配置の調整」「アノテーション配置」の順に縦に並びます(PC は左上。画面の高さを超える分はスクロール)。
+      −/＋ は長押しで続けて動き、1回の量は各パネルの「遅く・ふつう・速く」で切り替えます(移動の速さとは別)。作業モード中は、60 秒操作しなくても初期位置に戻りません。
       状態は URL(?place=1 など)にも反映され、再読込しても続きます。
     </div>
   </div>
@@ -2336,7 +2521,8 @@
     </div>
     <pre id="perf-mon">計測中…</pre>
     <div id="info-perf" class="ctrl-info-body" hidden>
-      描画の解像度・描いている点の数・フレームレート・表示レベル・メモリ上のタイル(展開済み・保持)・読み直しの回数などです。
+      設定パネルと同じ並び・名前で、<b>表示</b>(表示レベル・フレームレート・読み込む細かさ・描く点の上限・メモリに残す量・描画解像度)、
+      <b>移動・視点</b>(操作・移動の速さ)、<b>読み込み</b>(タイルの数・待ち・回数・取得元)、<b>端末</b>(GPU・JS のメモリ)の順に出します。<br>
       <b>読み直し</b>は一度読み込んだタイルをもう一度読み込んだ回数で、少ないほど移動中の欠けや待ちが減ります。
     </div>
   </div>
@@ -2359,6 +2545,15 @@
   <span class="rv-icon">⌂</span>
   <span class="rv-label">初期位置</span>
 </button>
+<!-- 目線を水平に戻す(見上げ・見下ろしている時だけ) -->
+<button type="button" id="level-btn" hidden title="目線を水平に戻す(H キー)" aria-label="目線を水平に戻す">水平</button>
+<!-- 視点のブックマーク(★ から開く) -->
+<div id="bm-pop" hidden role="dialog" aria-label="視点のブックマーク">
+  <div class="m-top"><span class="m-title">視点のブックマーク</span><button type="button" class="m-x" id="bm-close" aria-label="閉じる">×</button></div>
+  <button type="button" class="m-act" id="bm-add">＋ 今の視点を追加</button>
+  <div id="bm-list"></div>
+  <div class="cut-hint">このデータの視点(位置・向き・回す/歩く/真上/正対)と断面を、この端末に記録します。</div>
+</div>
 
 <!-- アイドル状態のカウントダウン通知(5秒前から表示)。普段はhidden。 -->
 <div id="idle-notice" hidden>まもなく初期位置に戻ります <span id="idle-countdown">5</span></div>
@@ -2395,8 +2590,9 @@
       <input id="topdown-range-num" type="number" min="1" max="100000" step="1" value="25" aria-label="表示範囲(m)"><span class="tdb-unit">m</span>
     </div>
     <div class="tdb-btns">
+      <button type="button" class="tdb-btn" id="td-fit" title="モデル全体が入るように戻す">全体</button>
       <button type="button" class="tdb-btn" id="td-north" aria-pressed="false" title="北を画面の上にする(OFF: 向いていた方向が上)">北を上に</button>
-      <button type="button" class="tdb-btn" id="slice-toggle" aria-pressed="false" title="決めた高さより下だけを表示">断面</button>
+      <button type="button" class="tdb-btn" id="slice-toggle" aria-pressed="false" title="決めた高さより下だけを表示(断面パネルと同じ断面)">断面</button>
       <button type="button" class="tdb-btn" id="td-gsi-solid-toggle" aria-pressed="false" hidden title="地図の起伏の有無">地図: 平面</button>
       <span class="tdb-export">
         <select id="export-scale" aria-label="保存する画像の精細さ"><option value="2">2倍</option><option value="4" selected>4倍</option></select>
@@ -2418,6 +2614,7 @@
 <!-- 作業モード「配置の調整」: モデルの位置(地図に合わせる)と、最初に見る場所・向きを決める。書き出しはデータの一覧で -->
 <div id="place-panel" hidden>
   <div class="pp-h">配置の調整 <span id="pp-id" class="pp-id">-</span><span id="pp-state" class="pp-state"></span></div>
+  <div class="pp-src">元データ: <b id="pp-src">-</b>(datasets.csv)</div>
   <div id="pp-local-note" class="pp-note" hidden>
     端末に取り込んだ3Dデータ(位置情報なし)は、datasets.csv の書き出しの対象外です。位置は「端末の3Dデータ」の位置合わせで決めてください。
   </div>
@@ -2432,12 +2629,18 @@
           <tr class="r-init"><td>初期位置</td><td id="pm-ix"></td><td id="pm-iy"></td><td id="pm-iz"></td></tr>
           <tr class="r-now"><td>いま</td><td id="pm-nx"></td><td id="pm-ny"></td><td id="pm-nz"></td></tr>
         </table>
+        <div class="pp-speed" role="group" aria-label="−/＋ の1回の量">
+          <span class="pp-k">−/＋ の量</span>
+          <button type="button" class="dbg-btn" data-pp-speed="slow" aria-pressed="false">遅く</button>
+          <button type="button" class="dbg-btn" data-pp-speed="normal" aria-pressed="true">ふつう</button>
+          <button type="button" class="dbg-btn" data-pp-speed="fast" aria-pressed="false">速く</button>
+        </div>
         <div class="pp-grid">
           <span>東西 X</span><button type="button" class="dbg-btn" data-pp="x-1" aria-label="東西 X を減らす">−</button><button type="button" class="dbg-btn" data-pp="x1" aria-label="東西 X を増やす">＋</button>
           <span>高さ Y</span><button type="button" class="dbg-btn" data-pp="y-1" aria-label="高さ Y を下げる">−</button><button type="button" class="dbg-btn" data-pp="y1" aria-label="高さ Y を上げる">＋</button>
           <span>南北 Z</span><button type="button" class="dbg-btn" data-pp="z-1" aria-label="南北 Z を減らす">−</button><button type="button" class="dbg-btn" data-pp="z1" aria-label="南北 Z を増やす">＋</button>
         </div>
-        <div class="pp-hint">1回 <span id="pp-step">0.1</span> m(移動の速さ: 遅く 0.01 / ふつう 0.1 / 速く 1)<span class="pp-pc"> · キー [ ] ; : , .(Shift で 0.01)</span></div>
+        <div class="pp-hint">1回 <span id="pp-step">0.1</span> m · 長押しで続けて動く(毎秒 <span id="pp-rate">1</span> m)</div>
         <div class="pp-btns">
           <button type="button" class="dbg-btn" id="pp-set-model">今の位置を初期位置にする</button>
           <button type="button" class="dbg-btn" id="pp-go-model">初期位置に戻す</button>
@@ -2639,26 +2842,131 @@
 </div>
 
 
-<!-- スマホ用 高速移動トグル(ON中は移動量×10)。ジョイスティック上部に配置。 -->
-<!-- 高速移動ボタン群(×10/×30)。PC・スマホ共通。排他選択。 -->
-<div id="boost-group" title="移動の速さ(周りまでの距離に合わせて自動で変わる速さに掛ける倍率)">
-  <div class="boost-btn" data-speed="slow" aria-pressed="false">遅く</div>
-  <div class="boost-btn" data-speed="normal" aria-pressed="true">ふつう</div>
-  <div class="boost-btn" data-speed="fast" aria-pressed="false">速く</div>
-  <span id="speed-readout"></span>
-</div>
 <!-- 左側をなぞると出るスティックの案内(歩くモード・スマホ/タブレットのみ) -->
 <div id="stick-hint" class="touch-ui" aria-hidden="true"><div class="sh-ring"></div><span>左側をなぞって移動</span></div>
 
-<!-- 道具(歩く/回る・計測・操作ガイド) -->
+<!-- 右端の縦列(PC・スマホ共通): ⚙ 設定・回す/歩く/真上・計測・断面・自動・操作ガイド・移動の速さ -->
 <div id="tool-rail" role="toolbar" aria-label="操作">
-  <button type="button" class="tr-btn touch-only" id="panel-toggle" aria-pressed="false" title="設定(表示レベル・点のサイズなど)" aria-label="設定">⚙</button>
+  <button type="button" class="tr-btn" id="panel-toggle" aria-pressed="false" title="設定(表示レベル・点のサイズなど)を開く・閉じる" aria-label="設定">⚙</button>
   <button type="button" class="tr-btn" data-nav-mode="orbit" aria-pressed="true" title="回す(触った所を中心にモデルを回す)">回す</button>
   <button type="button" class="tr-btn" data-nav-mode="walk" aria-pressed="false" title="歩く(一人称で移動)">歩く</button>
   <button type="button" class="tr-btn" data-nav-mode="top" aria-pressed="false" title="真上(真上から見下ろす真俯瞰図)">真上</button>
-  <button type="button" class="tr-btn" id="measure-toggle" aria-pressed="false" title="計測(座標・距離・高さ・面積・角度)">計測</button>
-  <button type="button" class="tr-btn touch-only" id="speed-cycle" aria-pressed="false" title="移動の速さ(遅く→ふつう→速く)">ふつう</button>
-  <button type="button" class="tr-btn" data-open-help title="操作ガイド(?キー)">?</button>
+  <button type="button" class="tr-btn" id="measure-toggle" aria-pressed="false" title="計測(座標・距離・水平・高さ・勾配・面積・角度)">計測</button>
+  <button type="button" class="tr-btn" id="cut-btn" aria-pressed="false" title="断面(モデルを面で切って中を見る)">断面</button>
+  <button type="button" class="tr-btn" id="auto-btn" aria-pressed="false" title="自動(決まった経路で視点を自動で動かす)">自動</button>
+  <button type="button" class="tr-btn" data-open-help title="操作ガイド(? キー)">?</button>
+  <button type="button" class="tr-btn" id="speed-cycle" aria-pressed="false" title="移動の速さ(歩く時だけ。押すごとに 遅く→ふつう→速く)">ふつう</button>
+</div>
+<!-- 道具のパネル(計測・断面・自動)を縦に並べる入れ物 -->
+<div id="tool-panels"></div>
+<!-- 断面パネル -->
+<div id="cut-panel" hidden role="region" aria-label="断面">
+  <div class="m-top">
+    <span class="m-title">断面</span>
+    <button type="button" class="cut-on" id="cut-on" aria-pressed="false" title="断面で切る・切らない">切っていない</button>
+    <button type="button" class="m-x" id="cut-close" aria-label="断面のパネルを閉じる(断面は残る)" title="パネルを閉じる(断面は残る)">×</button>
+  </div>
+  <div id="cut-body">
+    <div class="cut-row cut-keep"><span class="cut-k">向き</span>
+      <div class="cut-seg" role="group" aria-label="断面の向き">
+        <button type="button" class="cut-b" data-cut-dir="h" aria-pressed="true" title="水平に切る(上下に動かす)">水平</button>
+        <button type="button" class="cut-b" data-cut-dir="ew" aria-pressed="false" title="東西に伸びる縦の面(南北に動かす)">東西の面</button>
+        <button type="button" class="cut-b" data-cut-dir="ns" aria-pressed="false" title="南北に伸びる縦の面(東西に動かす)">南北の面</button>
+        <button type="button" class="cut-b" data-cut-dir="view" aria-pressed="false" title="今見ている方向の縦の面(前後に動かす)">今の向き</button>
+      </div>
+    </div>
+    <div class="cut-row" id="cut-reaim-row" hidden><button type="button" class="cut-b" id="cut-reaim">今の向きに合わせ直す</button></div>
+    <div class="cut-row cut-keep"><span class="cut-k">見せ方</span>
+      <div class="cut-seg" role="group" aria-label="断面の見せ方">
+        <button type="button" class="cut-b" data-cut-mode="cut" aria-pressed="true" title="面の片側を消す">片側を消す</button>
+        <button type="button" class="cut-b" data-cut-mode="slab" aria-pressed="false" title="面の前後の厚さだけ残す">薄く切る</button>
+      </div>
+      <button type="button" class="cut-b" id="cut-flip" title="消す側を入れ替える">反転</button>
+    </div>
+    <div class="cut-row" id="cut-thick-row" hidden><span class="cut-k">厚さ</span>
+      <input id="cut-thick" type="range" min="0" max="1000" step="1" value="500" aria-label="薄く切る厚さ">
+      <span class="cut-val" id="cut-thick-val">0.50 m</span>
+    </div>
+    <div class="cut-row"><span class="cut-k" id="cut-pos-lab">高さ</span>
+      <input id="cut-pos" type="range" min="0" max="1000" step="1" value="500" aria-label="断面の位置">
+    </div>
+    <div class="cut-row"><span class="cut-val" id="cut-pos-val">-</span></div>
+    <div class="cut-row">
+      <button type="button" class="cut-b nudge" data-cut-nudge="-1" aria-label="断面を戻す">−</button>
+      <button type="button" class="cut-b nudge" data-cut-nudge="1" aria-label="断面を進める">＋</button>
+      <span class="cut-hint" id="cut-step">1回 0.1 m · 長押しで続けて</span>
+    </div>
+    <div class="cut-row"><span class="cut-k">自動</span>
+      <button type="button" class="cut-b" id="cut-auto" aria-pressed="false" title="モデルの端から端を往復する">自動で往復</button>
+      <div class="cut-seg" role="group" aria-label="往復の速さ">
+        <button type="button" class="cut-b" data-cut-auto-speed="slow" aria-pressed="false" title="端から端まで約30秒">遅く</button>
+        <button type="button" class="cut-b" data-cut-auto-speed="normal" aria-pressed="true" title="端から端まで約15秒">ふつう</button>
+        <button type="button" class="cut-b" data-cut-auto-speed="fast" aria-pressed="false" title="端から端まで約6秒">速く</button>
+      </div>
+    </div>
+    <div class="cut-row">
+      <button type="button" class="cut-b" id="cut-frame" aria-pressed="true" title="断面の外枠(黄色い線)を表示する・しない">外枠を表示</button>
+      <button type="button" class="cut-b" id="cut-edge" aria-pressed="false" title="断面のすぐ近くの点を明るい色にする">切り口を強調</button>
+      <button type="button" class="cut-b" id="cut-face" aria-pressed="false" title="断面を真正面から遠近なしで見る">正対して見る</button>
+    </div>
+  </div>
+</div>
+
+<!-- 自動の視点移動パネル -->
+<div id="auto-panel" hidden role="region" aria-label="自動の視点移動">
+  <div class="m-top">
+    <span class="m-title">自動</span>
+    <button type="button" class="auto-play" id="auto-play" aria-pressed="false" title="再生 / 一時停止">▶ 再生</button>
+    <button type="button" class="auto-play" id="auto-stop" title="止めて終える(その場に止まる)">■ 止める</button>
+    <button type="button" class="m-x" id="auto-close" aria-label="自動のパネルを閉じる(動きは続く)" title="パネルを閉じる(動きは続く)">×</button>
+  </div>
+  <div class="auto-status" id="auto-status">止まっています。▶ 再生で動き出します</div>
+  <div class="cut-row"><span class="cut-k">経路</span>
+    <div class="cut-seg" role="group" aria-label="経路">
+      <button type="button" class="cut-b" data-auto-path="ellipse" aria-pressed="true" title="モデルの周りを楕円で回る">楕円</button>
+      <button type="button" class="cut-b" data-auto-path="spiral" aria-pressed="false" title="回りながら上下する(下から上、上から下)">螺旋</button>
+      <button type="button" class="cut-b" data-auto-path="approach" aria-pressed="false" title="回りながら寄る・離れる">寄りながら回る</button>
+      <button type="button" class="cut-b" data-auto-path="arc" aria-pressed="false" title="今の向きの左右を円弧で行き来する">円弧の往復</button>
+      <button type="button" class="cut-b" data-auto-path="tour" aria-pressed="false" title="★(視点のブックマーク)を順に滑らかに巡る">★の巡回</button>
+    </div>
+  </div>
+  <div class="cut-row"><span class="cut-k">視線</span>
+    <div class="cut-seg" role="group" aria-label="視線">
+      <button type="button" class="cut-b" data-auto-look="center" aria-pressed="true" title="モデルの中央を見続ける">モデル中央</button>
+      <button type="button" class="cut-b" data-auto-look="ahead" aria-pressed="false" title="進む向きを見る">進行方向</button>
+      <button type="button" class="cut-b" data-auto-look="level" aria-pressed="false" title="モデル中央の方を、見上げ・見下ろしなしで見る">水平</button>
+      <button type="button" class="cut-b" data-auto-look="bm" aria-pressed="false" title="★に記録した向きを滑らかにつなぐ" hidden>★の向き</button>
+    </div>
+  </div>
+  <div class="cut-row"><span class="cut-k">速さ</span>
+    <div class="cut-seg" role="group" aria-label="速さの変化">
+      <button type="button" class="cut-b" data-auto-ease="0" aria-pressed="true" title="同じ速さで進む">一定</button>
+      <button type="button" class="cut-b" data-auto-ease="1" aria-pressed="false" title="面の正面・折り返し・★の所でゆっくり、間は速く">緩急</button>
+    </div>
+  </div>
+  <div class="cut-row"><span class="cut-k"></span><span class="cut-hint">遅く</span>
+    <input id="auto-speed" type="range" min="1" max="9" step="0.5" value="5" aria-label="自動の速さ"><span class="cut-hint">速く</span>
+  </div>
+  <div class="cut-row"><span class="cut-k"></span><span class="cut-val" id="auto-speed-val">-</span></div>
+  <div class="cut-row" id="auto-size-row"><span class="cut-k">大きさ</span>
+    <input id="auto-size" type="range" min="0.6" max="4" step="0.05" value="1.5" aria-label="経路の大きさ"><span class="cut-val" id="auto-size-val">-</span>
+  </div>
+  <div class="cut-row" id="auto-height-row"><span class="cut-k">高さ</span>
+    <input id="auto-height" type="range" min="0" max="3" step="0.05" value="1.3" aria-label="経路の高さ"><span class="cut-val" id="auto-height-val">-</span>
+  </div>
+  <div class="cut-row" id="auto-turns-row" hidden><span class="cut-k">巻き数</span>
+    <input id="auto-turns" type="range" min="1" max="6" step="1" value="3" aria-label="片道の巻き数"><span class="cut-val" id="auto-turns-val">-</span>
+  </div>
+  <div class="cut-row" id="auto-arc-row" hidden><span class="cut-k">円弧</span>
+    <input id="auto-arc" type="range" min="15" max="90" step="5" value="60" aria-label="円弧の角度(片側)"><span class="cut-val" id="auto-arc-val">-</span>
+  </div>
+  <div class="cut-row" id="auto-dir-row"><span class="cut-k">回る向き</span>
+    <div class="cut-seg" role="group" aria-label="回る向き">
+      <button type="button" class="cut-b" data-auto-dir="1" aria-pressed="true" title="上から見て反時計回り">左回り</button>
+      <button type="button" class="cut-b" data-auto-dir="-1" aria-pressed="false" title="上から見て時計回り">右回り</button>
+    </div>
+  </div>
+  <div class="cut-row" id="auto-tour-row" hidden><span class="cut-hint" id="auto-tour-info"></span></div>
 </div>
 
 <!-- 計測パネル -->
@@ -2670,7 +2978,9 @@
   <div class="m-tools">
     <button type="button" class="m-tool" data-mtool="point">座標</button>
     <button type="button" class="m-tool" data-mtool="distance">距離</button>
+    <button type="button" class="m-tool" data-mtool="horizontal">水平</button>
     <button type="button" class="m-tool" data-mtool="height">高さ</button>
+    <button type="button" class="m-tool" data-mtool="slope">勾配</button>
     <button type="button" class="m-tool" data-mtool="area">面積</button>
     <button type="button" class="m-tool" data-mtool="angle">角度</button>
   </div>
@@ -3411,6 +3721,9 @@ const topdownState = {
   sliceBottomY: 0,               // 点群の下端Y(断面の下限)
   eyeY: 0,                       // 真俯瞰に入る前の目線の高さ(断面の初期クリップ高さ)
   gsiSolid: false,               // 真俯瞰での地図立体表示(既定:平面)
+  view: 'top',                   // 'top'=真上(真俯瞰図) / 'face'=正対(縦の断面を真正面から)
+  faceDir: new THREE.Vector3(0, 0, 1), // 正対: カメラを置く側(断面の消す側)の水平の向き
+  faceDist: 500,                 // 正対: カメラまでの距離
 };
 
 // VR時のカメラリグ（dolly）：カメラをこの中に入れて移動・回転させる
@@ -3585,7 +3898,7 @@ if (isTouchDevice) {
   };
   // DOM構築済みは即時attach、後から作られる#dbg-panelはMutationObserverで拾う。
   // VRボタンはピンチ阻止対象外(ブラウザ標準動作)。
-  ['controls', 'vr-help', 'dataset-switch', 'credit', 'dbg-panel'].forEach(id => {
+  ['controls', 'work-panels', 'dataset-switch', 'credit', 'dbg-panel'].forEach(id => {
     attachStopPinch(document.getElementById(id));
   });
   new MutationObserver((mutations) => {
@@ -3658,29 +3971,22 @@ if (isTouchDevice) {
   }
   requestAnimationFrame(placeTouchUi);
 }
-// PC: 設定パネルは右上の見出し「⚙ 設定」で開閉する(閉じると見出しだけ残る)。開閉の状態は次回も引き継ぐ
+// PC もスマホと同じ: 右端の列の ⚙ で設定パネルを開閉し、パネル上部の × でも閉じる(パネルは列の左)。
+// 最初は開いた状態。開閉の状態は次回も引き継ぐ
 if (!isTouchDevice) {
   const controlsEl = document.getElementById('controls');
-  const headerEl = document.getElementById('controls-header');
-  const toggleEl = document.getElementById('controls-toggle');
-  const titleEl = headerEl?.querySelector('.cp-panel-title');
-  if (titleEl) titleEl.textContent = '⚙ 設定';
-  if (toggleEl) toggleEl.setAttribute('aria-controls', 'controls-body');
+  const panelBtn = document.getElementById('panel-toggle');
+  const closeBtn = document.getElementById('controls-toggle');
   const setPcPanelOpen = (open, save = true) => {
     if (!controlsEl) return;
     controlsEl.classList.toggle('collapsed', !open);
     document.body.classList.toggle('pc-panel-closed', !open);
-    if (toggleEl) {
-      toggleEl.textContent = open ? 'たたむ ▲' : 'ひらく ▼';
-      toggleEl.setAttribute('aria-expanded', open ? 'true' : 'false');
-      toggleEl.setAttribute('aria-label', open ? '設定をたたむ' : '設定をひらく');
-    }
-    if (headerEl) headerEl.title = open ? '設定をたたむ' : '設定をひらく';
+    if (panelBtn) panelBtn.setAttribute('aria-pressed', open ? 'true' : 'false');
     if (save) saveSetting('pcPanelOpen', open);
   };
   setPcPanelOpen(savedSettings.pcPanelOpen !== false, false);
-  // 見出しのどこを押しても開閉(ボタンもこの中)
-  headerEl?.addEventListener('click', () => setPcPanelOpen(controlsEl.classList.contains('collapsed')));
+  panelBtn?.addEventListener('click', () => setPcPanelOpen(controlsEl.classList.contains('collapsed')));
+  closeBtn?.addEventListener('click', () => setPcPanelOpen(false));
 }
 
 // 仮想スティック状態：正規化された -1〜1
@@ -3693,32 +3999,6 @@ const touchVert = { up: false, down: false };
 // (スティック・スワイプ・2本指の操作は「視点操作」の部品 setupTouchNav で行う)
 
 // (歩く時の上下ボタン ▲▼ は tiles_013 で無くした。上下は2本指でなぞる平行移動で)
-
-// ── 速さボタン(遅く/ふつう/速く)の位置 ──
-(function setupBoostButtons() {
-  // PC時: 左下ヘルプパネル(#vr-help)の上端に追従させ、重なりを防ぐ。
-  // スマホ時(body.touch)はCSSの左下固定をそのまま使う。
-  const group = document.getElementById('boost-group');
-  const help = document.getElementById('vr-help');
-  function positionBoostGroup() {
-    if (!group || !help) return;
-    if (document.body.classList.contains('touch')) {
-      group.style.bottom = ''; // CSS(body.touch)に任せる
-      group.style.left = '';
-      return;
-    }
-    const r = help.getBoundingClientRect();
-    // ヘルプ上端の少し上に置く(8px間隔)。ヘルプが隠れている時(計測中)は左下に
-    const bottomPx = r.height > 0 ? window.innerHeight - r.top + 8 : 24;
-    group.style.bottom = `${bottomPx}px`;
-    group.style.left = '16px';
-  }
-  positionBoostGroup();
-  window.addEventListener('resize', positionBoostGroup);
-  if ('ResizeObserver' in window && help) {
-    new ResizeObserver(positionBoostGroup).observe(help);
-  }
-})();
 
 // タッチ入力をtargetVel/targetYawVelへ反映
 const SWIPE_YAW_SENS = 0.005;   // 1pxあたりのヨー(rad)
@@ -4022,6 +4302,14 @@ function updateTopdownFrustum() {
 const _topUp = new THREE.Vector3();
 function placeTopdownCamera() {
   const c = topdownState.center;
+  if (topdownState.view === 'face') {
+    // 正対: 断面の消す側から、水平に断面を見る(画面の上 = 真上)
+    orthoCamera.position.copy(c).addScaledVector(topdownState.faceDir, topdownState.faceDist);
+    orthoCamera.up.set(0, 1, 0);
+    orthoCamera.lookAt(c.x, c.y, c.z);
+    orthoCamera.updateMatrixWorld(true);
+    return;
+  }
   orthoCamera.position.set(c.x, topdownState.camHeight, c.z);
   // 画面上に向けたいワールド方向(水平)を up に設定。真下を見るカメラでは up が画面の上。
   // northUp: データ由来の真北(northYaw)を上に。そうでなければ heading(向いていた方向)を上に。
@@ -4034,54 +4322,127 @@ function placeTopdownCamera() {
 }
 
 // 真俯瞰モードに入る
-function enterTopdown() {
+// 表示中のモデル(3D Tiles・端末の3Dデータ)の範囲(ワールド座標の箱)。無ければ空の箱。
+// 3D Tiles は、読み込んだ点群の実際の範囲を覚えて使う(タイルセットの外枠は球などで大きめのことがあるため)。
+// 範囲は tiles.group の位置・倍率に対する相対で持つ(表示倍率・モデルの位置の調整で動いても使える)。点がまだ無い時は外枠
+const _mbox = { tiles: null, rel: new THREE.Box3(), seen: new WeakSet(), tmp: new THREE.Box3() };
+function modelContentScan() {
+  if (!tiles || !tiles.group) return;
+  if (_mbox.tiles !== tiles) { _mbox.tiles = tiles; _mbox.rel.makeEmpty(); _mbox.seen = new WeakSet(); }
+  const gp = tiles.group.position, gs = tiles.group.scale.x || 1;
+  tiles.group.traverse(o => {
+    if (!o.isPoints || _mbox.seen.has(o)) return;
+    const g = o.geometry;
+    if (!g || !g.attributes || !g.attributes.position || !g.attributes.position.count) return;
+    if (!g.boundingBox) g.computeBoundingBox();
+    o.updateWorldMatrix(true, false); // 読み込んだばかりのタイルは、まだ位置が反映されていないことがある
+    _mbox.tmp.copy(g.boundingBox).applyMatrix4(o.matrixWorld);
+    _mbox.tmp.min.sub(gp).divideScalar(gs); _mbox.tmp.max.sub(gp).divideScalar(gs);
+    _mbox.rel.union(_mbox.tmp);
+    _mbox.seen.add(o);
+  });
+}
+function modelWorldBox(target = new THREE.Box3()) {
+  target.makeEmpty();
+  if (tiles) {
+    if (_mbox.tiles === tiles && !_mbox.rel.isEmpty()) {
+      const gp = tiles.group.position, gs = tiles.group.scale.x || 1;
+      target.copy(_mbox.rel);
+      target.min.multiplyScalar(gs).add(gp); target.max.multiplyScalar(gs).add(gp);
+      return target;
+    }
+    const b = new THREE.Box3();
+    if (tiles.getBoundingBox(b)) {
+      tiles.group.updateMatrixWorld(true);
+      b.applyMatrix4(tiles.group.matrixWorld);
+      target.union(b);
+    }
+  } else if (localInstances.size) {
+    for (const inst of localInstances.values()) if (inst.item.bbox) target.union(inst.worldBox());
+  }
+  return target;
+}
+const _fitCorner = new THREE.Vector3();
+// 箱の8つの角を、中心 c からの 2つの向き(画面の右・上)に投影した広がり(幅・高さ)
+function boxExtentOn(box, c, right, up) {
+  let r0 = Infinity, r1 = -Infinity, u0 = Infinity, u1 = -Infinity;
+  for (let i = 0; i < 8; i++) {
+    _fitCorner.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).sub(c);
+    const r = _fitCorner.dot(right), u = _fitCorner.dot(up);
+    r0 = Math.min(r0, r); r1 = Math.max(r1, r); u0 = Math.min(u0, u); u1 = Math.max(u1, u);
+  }
+  return { w: r1 - r0, h: u1 - u0, rc: (r0 + r1) / 2, uc: (u0 + u1) / 2 };
+}
+// 幅 w・高さ h が画面に収まる表示範囲(短辺の長さ)。下のバーなどのぶん少し余白を取る
+function fitRangeFor(w, h) {
+  const aspect = window.innerWidth / window.innerHeight;
+  const need = aspect >= 1 ? Math.max(h, w / aspect) : Math.max(w, h * aspect);
+  return Math.max(1, need * 1.2);
+}
+// 真上: モデル全体が入るように、中心と表示範囲を合わせる(画面の上の向きはそのまま)
+// 正対: 断面の上で、モデル全体が入るように合わせる
+const _fitUp = new THREE.Vector3(), _fitRight = new THREE.Vector3(), _fitC = new THREE.Vector3();
+function topdownFit() {
+  const box = modelWorldBox();
+  if (box.isEmpty()) return false;
+  box.getCenter(_fitC);
+  if (topdownState.view === 'face') {
+    const f = topdownState.faceDir;
+    const pl = sliceWorldPlane();
+    _fitC.addScaledVector(pl.n, -(pl.n.dot(_fitC) - pl.d)); // 断面の上へ
+    _fitRight.set(-f.x, 0, -f.z).cross(_Y_UP).normalize();
+    const e = boxExtentOn(box, _fitC, _fitRight, _Y_UP);
+    topdownState.center.copy(_fitC).addScaledVector(_fitRight, e.rc).addScaledVector(_Y_UP, e.uc);
+    topdownState.faceDist = box.getSize(_fitCorner).length() + 50;
+    setTopdownRange(fitRangeFor(e.w, e.h));
+  } else {
+    const upYaw = topdownState.northUp ? topdownState.northYaw : topdownState.heading;
+    _fitUp.set(-Math.sin(upYaw), 0, -Math.cos(upYaw));
+    _fitRight.set(Math.cos(upYaw), 0, -Math.sin(upYaw));
+    const e = boxExtentOn(box, _fitC, _fitRight, _fitUp);
+    topdownState.center.set(_fitC.x, topdownState.center.y, _fitC.z).addScaledVector(_fitRight, e.rc).addScaledVector(_fitUp, e.uc);
+    topdownState.camHeight = Math.max(box.max.y, topdownState.center.y) + 200;
+    setTopdownRange(fitRangeFor(e.w, e.h));
+  }
+  // 正射カメラの奥行き(遠すぎると輪郭の強調などで深度の精度が落ちる)
+  const size = box.getSize(_fitCorner).length();
+  orthoCamera.near = 0.1;
+  orthoCamera.far = Math.max(5000, (topdownState.view === 'face' ? topdownState.faceDist : topdownState.camHeight - box.min.y) + size * 2 + 500);
+  updateTopdownFrustum();
+  placeTopdownCamera();
+  syncTopdownRangeUi();
+  return true;
+}
+const _Y_UP = new THREE.Vector3(0, 1, 0);
+
+// 真俯瞰(view='top')・正対(view='face': 縦の断面を真正面から)に入る。どちらも正射投影で、操作は同じ
+function enterTopdown(view = 'top') {
   if (renderer.xr.isPresenting) return; // VR中は不可
   // 一時ピッチを解除(camera姿勢を水平へ)
   pitchTarget = 0; pitchActive = false; camera.rotation.x = 0;
-  // 真俯瞰に入る前の目線の高さ(ワールドY)を保存。断面の初期クリップ高さに使う。
+  topdownState.view = view === 'face' ? 'face' : 'top';
   topdownState.eyeY = dolly.position.y;
   topdownState.center.set(dolly.position.x, dolly.position.y, dolly.position.z);
-  topdownState.camHeight = dolly.position.y + 500; // 中心の500m上空(正射なので見た目に影響せず)
+  topdownState.camHeight = dolly.position.y + 500;
   // 画面の「上」= 一人称で向いていた方向(dolly.rotation.y)を引き継ぐ
   topdownState.heading = dolly.rotation.y;
+  if (topdownState.view === 'face') topdownState.faceDir.copy(sliceWorldPlane().n).setY(0).normalize();
   topdownState.active = true;
 
   // 正射投影フラグをシェーダに伝える(点サイズをdepth非依存の固定サイズにする)
   cubeUniforms.uOrtho.value = 1.0;
 
-  // 点サイズを自動調整: 真俯瞰だと見え方が変わるため、見やすい値(1)にセット。
-  // 現在のUI値(入力欄の実値。スライダー上限超えも保持)を退避し、真俯瞰中は再調整可能。
-  // (点のサイズは画面px指定なので真俯瞰でもそのまま)
-
-  updateTopdownFrustum();
-  placeTopdownCamera();
-  updateCompass();
-
-  // 断面表示用に点群の上端・下端Y(ワールド)を取得。
-  // 境界ボックスを worldScale 等の適用後の matrixWorld で変換して実Y範囲を求める。
-  if (tiles) {
-    const box = new THREE.Box3();
-    if (tiles.getBoundingBox(box)) {
-      tiles.group.updateMatrixWorld(true);
-      box.applyMatrix4(tiles.group.matrixWorld);
-      topdownState.sliceTopY = box.max.y;
-      topdownState.sliceBottomY = box.min.y;
-    }
-  } else if (localInstances.size) {
-    const box = new THREE.Box3();
-    for (const inst of localInstances.values()) if (inst.item.bbox) box.union(inst.worldBox());
-    if (!box.isEmpty()) { topdownState.sliceTopY = box.max.y; topdownState.sliceBottomY = box.min.y; }
+  // 毎回モデル全体が入るように(真上は中心と広さ、正対は断面の上で)
+  if (!topdownFit()) {
+    updateTopdownFrustum();
+    placeTopdownCamera();
   }
-  // 断面の初期高さは「真俯瞰に入る前の目線の高さ」。点群範囲にクランプ。
-  topdownState.sliceY = Math.max(topdownState.sliceBottomY,
-                        Math.min(topdownState.sliceTopY, topdownState.eyeY));
-  // 断面状態をシェーダへ反映(トグルOFFなら無効)
-  applySliceUniforms();
+  updateCompass();
 
   // 真俯瞰では基準格子は不要なので非表示にする
   grid.visible = false;
   const compass = document.getElementById('topdown-compass');
-  if (compass) compass.removeAttribute('hidden');
+  if (compass) compass.hidden = topdownState.view === 'face';
   const modePanel = document.getElementById('topdown-mode-panel');
   if (modePanel) modePanel.removeAttribute('hidden');
   updateScaleBar(); // 縮尺バー表示
@@ -4098,26 +4459,22 @@ function enterTopdown() {
   syncNavUi();
 }
 
-// 断面クリップのuniformを現在の状態から更新
-function applySliceUniforms() {
-  const on = topdownState.active && topdownState.sliceOn;
-  cubeUniforms.uClipEnabled.value = on ? 1.0 : 0.0;
-  cubeUniforms.uClipY.value = on ? topdownState.sliceY : 1e9;
-}
-
-// 断面の高さ(バーの「断面の高さ」行)を更新
+// 真上のバーの「断面」の行(位置のスライダー)を今の断面にそろえる
 function updateSlicePanel() {
   const row = document.getElementById('slice-row');
+  const tb = document.getElementById('slice-toggle');
+  if (tb) tb.setAttribute('aria-pressed', sliceState.on ? 'true' : 'false');
   if (!row) return;
-  const on = topdownState.active && topdownState.sliceOn;
+  const on = topdownState.active && topdownState.view !== 'face' && sliceState.on;
   row.hidden = !on;
   if (!on) return;
-  const span = Math.max(1e-6, topdownState.sliceTopY - topdownState.sliceBottomY);
-  const rel = topdownState.sliceY - topdownState.sliceBottomY;
+  const r = sliceRange();
+  const lab = row.querySelector('.tdb-lab');
+  if (lab) lab.textContent = sliceState.dir === 'h' ? '断面の高さ' : '断面の位置';
   const valEl = document.getElementById('slice-val');
-  if (valEl) valEl.textContent = rel.toFixed(1);
+  if (valEl) valEl.textContent = (sliceState.pos - r.min).toFixed(1);
   const sl = document.getElementById('slice-slider');
-  if (sl && document.activeElement !== sl) sl.value = String(Math.round(rel / span * 1000));
+  if (sl && document.activeElement !== sl) sl.value = String(Math.round((sliceState.pos - r.min) / Math.max(1e-6, r.max - r.min) * 1000));
 }
 
 // 真俯瞰モードを抜ける(通常の一人称視点へ)
@@ -4137,11 +4494,9 @@ function exitTopdown() {
   grid.visible = true;
   const scalebar = document.getElementById('topdown-scalebar');
   if (scalebar) scalebar.setAttribute('hidden', '');
-  // 断面クリップを解除(全点表示に戻す)
-  cubeUniforms.uClipEnabled.value = 0.0;
-  cubeUniforms.uClipY.value = 1e9;
-  const slicePanel = document.getElementById('slice-panel');
-  if (slicePanel) slicePanel.setAttribute('hidden', '');
+  // 断面はそのまま(切る・切らないは断面パネルで)。正対を終える
+  topdownState.view = 'top';
+  if (window.__sliceReady) { updateSlicePanel(); sliceSyncUi(); }
   // 一人称に戻ったら、地図表示中なら標準ズーム(14)で敷き直す。
   // ズーム据え置きでも、立体トグルの状態(solid)に応じてメッシュを再生成して復帰。
   if (gsiState.visible && gsiState.centerEcef) {
@@ -4215,6 +4570,15 @@ const _tdForward = new THREE.Vector3();
 const _tdRight = new THREE.Vector3();
 function moveTopdownCenter(dx, dy) {
   // dy: 画面上方向(+)、dx: 画面右方向(+)
+  if (topdownState.view === 'face') {
+    // 正対: 画面の右 = 視線(-faceDir) × 上。既存と同じ符号(dx>0 で中心が画面の左へ)
+    const f = topdownState.faceDir;
+    _tdRight.set(-f.x, 0, -f.z).cross(_Y_UP).normalize();
+    topdownState.center.addScaledVector(_tdRight, -dx);
+    topdownState.center.y += dy;
+    placeTopdownCamera();
+    return;
+  }
   const upYaw = topdownState.northUp ? topdownState.northYaw : topdownState.heading;
   // 画面上方向(=up と同じ): (-sin, 0, -cos)
   _tdForward.set(-Math.sin(upYaw), 0, -Math.cos(upYaw));
@@ -4252,6 +4616,7 @@ function maybeRebuildGsiForScroll() {
 
 // 真俯瞰の向き(heading)を回転(←→)。一人称に戻ったときの向きにも反映する。
 function rotateTopdownHeading(deltaRad) {
+  if (topdownState.view === 'face') return; // 正対は向きを変えない
   topdownState.heading += deltaRad;
   // 一人称の dolly 向きにも反映(戻ったとき向きが引き継がれる)
   dolly.rotation.y = topdownState.heading;
@@ -5004,9 +5369,27 @@ const CUBE_VERT = /* glsl */`
   uniform float uMaxPx;       // 1点の最大サイズ(描画バッファ px)
   uniform float uDensity; // 0.0〜1.0 (POINT DENSITY: 描画する点の割合)
   uniform float uOrtho;   // 1.0=正射投影(真俯瞰), 0.0=透視投影
-  uniform float uClipEnabled; // 1.0=断面表示ON(uClipYより上を隠す)
-  uniform float uClipY;       // クリップ高さ(ワールドY)。これより上の点を破棄。
+  uniform float uSliceMode;   // 断面: 0=なし / 1=片側を消す / 2=薄く切る
+  uniform vec4  uSlicePlane;  // 断面(ワールド): xyz=法線(消す側を向く)、w=位置
+  uniform float uSliceHalf;   // 薄く切る厚さの半分(ワールド)
+  uniform float uSliceEdgeW;  // 切り口を強調する幅(ワールド。0=強調しない)
+  uniform float uColorMode;   // 色分け: 0=元の色 / 1=高さ / 2=白色
+  uniform float uGlowOff;     // 1=白色の外側の光を描かない(当たり判定の時)
+  uniform vec2  uHeightRange; // 色分け「高さ」の 下端・上端(ワールド Y)
   varying vec3 vColor;
+  varying float vEdge;        // 切り口の強調(0〜1)
+
+  const float GLOW_K = 0.7;     // 白色: 外側の光の幅(点の大きさの何倍か)
+  varying float vGlowK;        // 白色: 描く範囲 ÷ 点そのものの大きさ(光を描かない時は 1)
+  // 高さの色: 青 → 水色 → 緑 → 黄 → 赤
+  vec3 heightRamp(float t) {
+    vec3 c0 = vec3(0.15, 0.25, 0.95), c1 = vec3(0.0, 0.85, 0.95), c2 = vec3(0.2, 0.9, 0.2), c3 = vec3(1.0, 0.9, 0.1), c4 = vec3(0.95, 0.2, 0.1);
+    float x = t * 4.0;
+    if (x < 1.0) return mix(c0, c1, x);
+    if (x < 2.0) return mix(c1, c2, x - 1.0);
+    if (x < 3.0) return mix(c2, c3, x - 2.0);
+    return mix(c3, c4, x - 3.0);
+  }
 
   // 位置座標から決定論的な疑似乱数を生成(同座標→同値, フレーム間ちらつきなし)。
   float hash13(vec3 p) {
@@ -5017,6 +5400,7 @@ const CUBE_VERT = /* glsl */`
 
   void main() {
     vColor = color;
+    vEdge = 0.0;
 
     // POINT DENSITY 間引き: 位置ハッシュが密度しきい値を超えたらクリップ外へ飛ばして描画スキップ
     // (gl_PointSize=0 と併用で確実に描画されない)
@@ -5027,27 +5411,45 @@ const CUBE_VERT = /* glsl */`
       return;
     }
 
-    // 断面表示: ワールドY座標が uClipY より上なら破棄(クリップ面より下だけ残す)
-    if (uClipEnabled > 0.5) {
+    // 断面・色分けの高さ(どちらもワールド座標を使う)
+    if (uSliceMode > 0.5 || (uColorMode > 0.5 && uColorMode < 1.5)) {
       vec4 worldPos = modelMatrix * vec4(position, 1.0);
-      if (worldPos.y > uClipY) {
-        gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
-        gl_PointSize = 0.0;
-        return;
+      if (uSliceMode > 0.5) {
+        float sd = dot(uSlicePlane.xyz, worldPos.xyz) - uSlicePlane.w;
+        // 残す側までの余裕(0 未満なら消す): 片側を消す=面の手前側 / 薄く切る=厚さの内側
+        float keep = uSliceMode < 1.5 ? -sd : (uSliceHalf - abs(sd));
+        if (keep < 0.0) {
+          gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+          gl_PointSize = 0.0;
+          return;
+        }
+        if (uSliceEdgeW > 0.0) vEdge = 1.0 - smoothstep(0.0, uSliceEdgeW, keep);
+      }
+      if (uColorMode > 0.5 && uColorMode < 1.5) {
+        float t = clamp((worldPos.y - uHeightRange.x) / max(1e-6, uHeightRange.y - uHeightRange.x), 0.0, 1.0);
+        vColor = heightRamp(t);
       }
     }
 
     vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
     // 基本サイズ: 画面上で常に同じピクセル数(遠くの点も見え、大きなモデルでもスライダーが同じように効く)
-    float px = uSizePx * uPxScale;
-    gl_PointSize = clamp(px, 1.0, uMaxPx);
+    float px = clamp(uSizePx * uPxScale, 1.0, uMaxPx);
+    // 白色: 外側の光のぶんだけ描く範囲を広げる(点そのものの大きさは変えない)。光の幅は点の大きさに比例、ただし最低 3px・最大 12px
+    float tot = px;
+    if (uColorMode > 1.5 && uGlowOff < 0.5) tot = min(px + 2.0 * clamp(px * GLOW_K, 3.0, 12.0), max(uMaxPx, px));
+    gl_PointSize = tot;
+    vGlowK = tot / px;
     gl_Position = projectionMatrix * mvPos;
   }
 `;
 
 const CUBE_FRAG = /* glsl */`
   varying vec3 vColor;
-  uniform float uShape;   // 点の形: 0=立方体 / 1=丸
+  varying float vEdge;      // 切り口の強調(0〜1)
+  uniform float uShape;     // 点の形: 0=立方体 / 1=丸
+  uniform float uColorMode; // 0=元の色 / 1=高さ / 2=白色
+  uniform float uGlowOff;   // 1=白色の外側の光を描かない(当たり判定の時)
+  varying float vGlowK;     // 描く範囲 ÷ 点そのものの大きさ
 
   // ワールド固定の光源方向（上やや斜め）
   const vec3 LIGHT_DIR_WS = normalize(vec3(0.4, 1.0, 0.3));
@@ -5065,6 +5467,23 @@ const CUBE_FRAG = /* glsl */`
   void main() {
     vec2 uv = gl_PointCoord * 2.0 - 1.0; // -1〜1（y下向き正）
 
+    // 白色: 点そのもの(形は設定のまま)はくっきりした白、その外側に淡い光の輪。加算で重ね、密な所ほど光る
+    if (uColorMode > 1.5) {
+      vec2 c = uv * vGlowK; // -1〜1 が点そのもの
+      float rr = uShape > 0.5 ? length(c) : max(abs(c.x), abs(c.y));
+      if (rr <= 1.0) {
+        gl_FragColor = vec4(mix(vec3(0.97, 0.99, 1.0), vec3(1.0, 0.85, 0.2), vEdge * 0.9), 0.95);
+        return;
+      }
+      if (uGlowOff > 0.5 || vGlowK < 1.01) discard; // 光を描かない時(当たり判定・点が最大サイズ)
+      float g = 1.0 - smoothstep(0.0, vGlowK - 1.0, rr - 1.0);
+      g = g * g * 0.45;
+      if (g < 0.004) discard;
+      gl_FragColor = vec4(vec3(0.78, 0.88, 1.0), g);
+      return;
+    }
+    vec3 base = mix(vColor, vec3(1.0, 0.85, 0.2), vEdge * 0.9); // 切り口を強調
+
     // 丸: 球のような陰影。縁は1画素ぶんなめらかに(アルファ→カバレッジ。MSAA の無い環境では縁で切り捨て)
     if (uShape > 0.5) {
       float r = length(uv);
@@ -5073,7 +5492,7 @@ const CUBE_FRAG = /* glsl */`
       if (a <= 0.01) discard;
       vec3 n = vec3(uv.x, -uv.y, sqrt(max(0.0, 1.0 - r * r)));
       float b = 0.5 + 0.6 * max(dot(n, normalize(vec3(-0.35, 0.6, 0.7))), 0.0);
-      gl_FragColor = vec4(vColor * b, a);
+      gl_FragColor = vec4(base * b, a);
       return;
     }
 
@@ -5087,7 +5506,7 @@ const CUBE_FRAG = /* glsl */`
     float edge = step(0.90, max(ex, ey));
     brightness *= mix(1.0, 0.55, edge);
 
-    gl_FragColor = vec4(vColor * brightness, 1.0);
+    gl_FragColor = vec4(base * brightness, 1.0);
   }
 `;
 
@@ -5099,8 +5518,14 @@ const cubeUniforms = {
   uMaxPx:   { value: 128.0 }, // 1点の最大サイズ
   uDensity: { value: 1.0 },
   uOrtho:   { value: 0.0 },   // 真俯瞰(正射)中は1.0に
-  uClipEnabled: { value: 0.0 }, // 断面表示ON/OFF
-  uClipY:       { value: 1e9 }, // クリップ高さ(ワールドY)。初期は大きく(全表示)。
+  uSliceMode:   { value: 0 },   // 断面(0=なし / 1=片側 / 2=薄く切る)
+  uSlicePlane:  { value: new THREE.Vector4(0, 1, 0, 1e9) },
+  uSliceHalf:   { value: 0.25 },
+  uSliceEdgeW:  { value: 0 },
+  uColorMode:   { value: 0 },   // 色分け(0=元の色 / 1=高さ / 2=白色)
+  uGlowOff:     { value: 0 },   // 当たり判定の間だけ 1(白色の外側の光を描かない)
+  uHeightRange: { value: new THREE.Vector2(0, 1) },
+
   uShape:   { value: 0.0 },   // 点の形(0=立方体 / 1=丸)
 };
 
@@ -6493,10 +6918,8 @@ function loadTileset(id, opts = {}) {
   }
   // 別のモデルを開く時は計測結果を消す(計測の点は前のモデルの座標に置かれているため)
   if (id !== currentDataset) measureClearAll();
-  // 断面表示もOFFに戻す
-  topdownState.sliceOn = false;
-  { const sb = document.getElementById('slice-toggle');
-    if (sb) sb.setAttribute('aria-pressed', 'false'); }
+  // 断面も切る(向き・見せ方などの好みは残す)
+  sliceReset();
 
   // 読込画面を出し、このデータセットの全タイル先読みを開始する。
   // (進行中の別データセットの先読みは startPreloadJob 内で中止される)
@@ -6768,6 +7191,7 @@ function buildDatasetButtons() {
     return;
   }
   addChooserButton();
+  addBookmarkButton();
   if (fdChip) datasetSwitch.appendChild(fdChip);
   updateDatasetButtons();
   renderFullDlChip();
@@ -8130,8 +8554,7 @@ function teardownCurrentScene() {
   if (topdownState.active) {
     exitTopdown();
   }
-  topdownState.sliceOn = false;
-  { const sb = document.getElementById('slice-toggle'); if (sb) sb.setAttribute('aria-pressed', 'false'); }
+  sliceReset();
   cancelPreloadJob();
   setProgressStage('idle');
   overlayDisposeAll();
@@ -8944,29 +9367,43 @@ dbgPanel.style.display = 'none';
 dbgPanel.innerHTML = `
   <div id="dbg-annotate-block" hidden>
     <div class="pp-h">アノテーション配置 <span id="ap-id" class="pp-id">-</span><span id="ap-state" class="pp-state"></span></div>
+    <div class="pp-src">元データ: <b id="ap-src">-</b>(annotations.csv)</div>
     <div class="pp-hint">黄色い立方体 = 設置点(カメラの3m先)<span class="pp-pc">。I / J / K / L を押している間は立方体の周りを回ります</span></div>
     <div class="pp-btns"><button type="button" class="dbg-btn" id="ap-add">＋ 立方体の所に追加<span class="pp-pc">(A)</span></button></div>
     <div id="ap-list" class="ap-list" role="listbox" aria-label="このモデルのアノテーション"></div>
+    <div id="ap-deleted" hidden>
+      <div class="pp-sec">削除した元データ</div>
+      <div id="ap-deleted-list" class="ap-list"></div>
+    </div>
     <div id="ap-edit" hidden>
-      <div class="pp-sec">選んだアノテーション <span id="ap-sel-no" class="pp-id"></span></div>
+      <div class="pp-sec">選んだアノテーション <span id="ap-sel-no" class="pp-id"></span><span id="ap-sel-state" class="pp-state"></span></div>
       <div class="pp-row">タイトル <input id="ap-title" type="text" maxlength="60" autocomplete="off" aria-label="タイトル"></div>
       <div class="pp-row ap-body-row">本文 <textarea id="ap-body" rows="3" maxlength="800" aria-label="本文"></textarea></div>
       <table class="pp-tbl" aria-label="アノテーションの位置">
         <tr><th></th><th>x</th><th>y</th><th>z</th></tr>
         <tr><td>位置</td><td id="ap-x"></td><td id="ap-y"></td><td id="ap-z"></td></tr>
       </table>
+      <div class="pp-speed" role="group" aria-label="−/＋ の1回の量">
+        <span class="pp-k">−/＋ の量</span>
+        <button type="button" class="dbg-btn" data-ap-speed="slow" aria-pressed="false">遅く</button>
+        <button type="button" class="dbg-btn" data-ap-speed="normal" aria-pressed="true">ふつう</button>
+        <button type="button" class="dbg-btn" data-ap-speed="fast" aria-pressed="false">速く</button>
+      </div>
       <div class="pp-grid">
         <span>x</span><button type="button" class="dbg-btn" data-ap="x-1" aria-label="x を減らす">−</button><button type="button" class="dbg-btn" data-ap="x1" aria-label="x を増やす">＋</button>
         <span>y</span><button type="button" class="dbg-btn" data-ap="y-1" aria-label="y を下げる">−</button><button type="button" class="dbg-btn" data-ap="y1" aria-label="y を上げる">＋</button>
         <span>z</span><button type="button" class="dbg-btn" data-ap="z-1" aria-label="z を減らす">−</button><button type="button" class="dbg-btn" data-ap="z1" aria-label="z を増やす">＋</button>
       </div>
-      <div class="pp-hint">1回 <span id="ap-step">0.1</span> m(移動の速さ: 遅く 0.01 / ふつう 0.1 / 速く 1)</div>
+      <div class="pp-hint">1回 <span id="ap-step">0.1</span> m · 長押しで続けて動く(毎秒 <span id="ap-rate">1</span> m)</div>
       <div class="pp-btns">
         <button type="button" class="dbg-btn" id="ap-to-cube">立方体の所へ移す</button>
         <button type="button" class="dbg-btn" id="ap-go">見に行く</button>
       </div>
       <div class="pp-row ap-nums">球の大きさ <input id="ap-radius" type="number" min="0.05" max="5" step="0.05" aria-label="球の大きさ(m)"> m　開く距離 <input id="ap-dist" type="number" min="1" max="500" step="1" aria-label="パネルを開く距離(m)"> m</div>
-      <div class="pp-btns"><button type="button" class="dbg-btn warn" id="ap-del">このアノテーションを削除</button></div>
+      <div class="pp-btns">
+        <button type="button" class="dbg-btn" id="ap-revert-one">この1件を元データの値に戻す</button>
+        <button type="button" class="dbg-btn warn" id="ap-del">このアノテーションを削除</button>
+      </div>
     </div>
     <div class="pp-sec">このモデルのアノテーション</div>
     <div class="pp-hint">編集するとすぐ、この端末に一時保存します(この端末ではすぐ使われます)。</div>
@@ -9736,7 +10173,7 @@ const PICK_CSS = 21;
 let _pickRT = null, _pickOut = null, _pickQuadScene = null, _pickQuadMat = null, _pickBuf = null;
 function pickHideObjects() {
   // 補助表示(グリッド・説明パネル・計測の線・注視点の印)は拾わない
-  return [grid, annotationGroup, window.__measureGroup, navPivotMarker].filter(Boolean);
+  return [grid, annotationGroup, window.__measureGroup, navPivotMarker, sliceFrame, structGroup].filter(Boolean);
 }
 function ensurePickTargets(n) {
   if (_pickRT && _pickRT.width === n) return;
@@ -9798,7 +10235,9 @@ function pickAt(cx, cy) {
     renderer.autoClear = true;
     renderer.setRenderTarget(_pickRT);
     renderer.clear(true, true, true);
+    const _po = pickOpaqueBegin();
     renderer.render(scene, pc);
+    pickOpaqueEnd(_po);
     _pickQuadMat.uniforms.tDepth.value = _pickRT.depthTexture;
     renderer.setRenderTarget(_pickOut);
     renderer.render(_pickQuadScene, _pickCam);
@@ -9939,7 +10378,9 @@ function tickNearDistance(dt) {
 // 移動の速さ(m/秒): 周囲までの距離に比例。「遅く/ふつう/速く」ボタンの倍率を掛ける
 const NAV_SPEED_PER_DIST = 0.6;
 function navMoveSpeed() {
-  return Math.max(0.4, Math.min(5000, navState.near * NAV_SPEED_PER_DIST)) * boostLevel;
+  // 遅く/ふつう/速く は「歩く」(と VR)の時だけ。回す・真上の PC キーは常に ふつう
+  const k = (navState.mode === 'walk' || renderer.xr.isPresenting) ? boostLevel : 1;
+  return Math.max(0.4, Math.min(5000, navState.near * NAV_SPEED_PER_DIST)) * k;
 }
 
 // ── その地点へ移動(アニメーション) ──
@@ -9978,6 +10419,14 @@ function navDoubleAt(cx, cy) {
   if (gate.active || renderer.xr.isPresenting) return;
   const hit = pickAt(cx, cy);
   if (!hit) { showToast('そこには点群がありません'); return; }
+  if (topdownState.active && topdownState.view === 'face') {
+    // 正対: その地点を中心にして少し拡大
+    topdownState.center.copy(hit.point);
+    placeTopdownCamera();
+    setTopdownRange(topdownState.rangeM * 0.6);
+    syncTopdownRangeUi();
+    return;
+  }
   if (topdownState.active) {
     // 真俯瞰: その地点を中心にして少し拡大
     const v = hit.point.clone().sub(topdownState.center);
@@ -10325,20 +10774,42 @@ function gestState() {
 
 // ── 歩く/回る の切替・速さボタン ──
 // 視点モードのボタン(歩く/回る/真上)・画面の表示を今の状態にそろえる
+// 真上・正対のバーの案内(端末別)
+function tdbHintText() {
+  const face = topdownState.view === 'face';
+  if (isTouchDevice) return face ? 'なぞる: 移動 · ピンチ: 拡大縮小 · ダブルタップ: 寄る' : 'なぞる: 移動 · 2本指: 拡大縮小・回転 · ダブルタップ: 寄る';
+  return face ? 'ドラッグ/W A S D: 移動 · ホイール: 拡大縮小 · ダブルクリック: 寄る'
+    : 'ドラッグ/W A S D: 移動 · ホイール: 拡大縮小 · 右ドラッグ/← →: 回転 · ダブルクリック: 寄る';
+}
 function syncNavUi() {
-  const m = topdownState.active ? 'top' : navState.mode;
+  const face = topdownState.active && topdownState.view === 'face';
+  const m = topdownState.active ? (face ? 'face' : 'top') : navState.mode;
   document.querySelectorAll('[data-nav-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.navMode === m ? 'true' : 'false'));
   document.body.classList.toggle('nav-orbit', !topdownState.active && navState.mode === 'orbit');
+  document.body.classList.toggle('nav-walk', !topdownState.active && navState.mode === 'walk');
   document.body.classList.toggle('topdown-open', topdownState.active);
+  document.body.classList.toggle('face-open', face);
   const hint = document.getElementById('stick-hint');
   if (hint) hint.hidden = navState.mode !== 'walk' || topdownState.active;
   const bar = document.getElementById('topdown-bar');
-  if (bar) bar.hidden = !topdownState.active;
+  if (bar) {
+    bar.hidden = !topdownState.active;
+    bar.setAttribute('aria-label', face ? '正対(断面図)' : '真俯瞰図');
+    const t = bar.querySelector('.tdb-title');
+    if (t) t.textContent = face ? '正対(断面図)' : '真俯瞰図';
+    const h = document.getElementById('tdb-hint');
+    if (h) h.textContent = tdbHintText();
+    for (const id of ['td-north', 'slice-toggle']) { const b = document.getElementById(id); if (b) b.hidden = face; }
+    const cp = document.getElementById('topdown-compass');
+    if (cp) cp.hidden = !topdownState.active || face;
+  }
+  if (window.__sliceReady) { updateSlicePanel(); sliceSyncUi(); }
   layoutTopdownBar();
 }
 // 歩く・回る は一人称の移動の仕方、真上 は真俯瞰図(抜けると直前の 歩く/回る に戻る)
 function setNavMode(mode) {
   if (mode === 'top') {
+    if (topdownState.active && topdownState.view === 'face') exitTopdown(); // 正対 → 真上
     if (!topdownState.active) {
       if (renderer.xr.isPresenting) { showToast('VR 中は真俯瞰図は使えません'); syncNavUi(); return; }
       enterTopdown();
@@ -10353,7 +10824,7 @@ function setNavMode(mode) {
 document.querySelectorAll('[data-nav-mode]').forEach(b => b.addEventListener('click', () => {
   setNavMode(b.dataset.navMode);
   if (b.dataset.navMode !== 'top') saveSetting('navModeUser', navState.mode); // 自分で選んだ操作は次回も
-  showToast(topdownState.active ? '真上: 真上から見下ろします。表示範囲・断面・画像保存は下のバーで'
+  showToast(topdownState.active ? '真上: モデル全体が入るように真上から見下ろします。表示範囲・全体・断面・画像保存は下のバーで'
     : navState.mode === 'orbit' ? '回す: なぞると触った所を中心にモデルを回します' : '歩く: 一人称で移動します');
 }));
 setNavMode(navState.mode);
@@ -10370,7 +10841,7 @@ function setSpeedStep(key) {
   if (cyc) { cyc.textContent = SPEED_LABEL[speedStepKey]; cyc.setAttribute('aria-pressed', speedStepKey !== 'normal' ? 'true' : 'false'); }
 }
 document.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click', () => setSpeedStep(b.dataset.speed)));
-// スマホ・タブレット: 左下はスティックを出す場所なので、速さは右の道具の1つのボタンで切り替える(遅く→ふつう→速く)
+// 速さは右端の列の1つのボタンで切り替える(遅く→ふつう→速く。PC・スマホ共通)
 document.getElementById('speed-cycle')?.addEventListener('click', () => {
   const order = ['slow', 'normal', 'fast'];
   setSpeedStep(order[(order.indexOf(speedStepKey) + 1) % 3]);
@@ -10386,7 +10857,7 @@ function renderSpeedReadout() {
   _speedUiAt = now;
   if (!_speedEls) _speedEls = [document.getElementById('speed-readout'), ...document.querySelectorAll('.speed-readout')].filter(Boolean);
   if (!_speedEls.length) return;
-  const v = topdownState.active ? topdownState.rangeM * 0.5 * boostLevel : navMoveSpeed();
+  const v = topdownState.active ? topdownState.rangeM * 0.5 : navMoveSpeed();
   const txt = v >= 100 ? `${Math.round(v)} m/秒` : `${v.toFixed(v >= 10 ? 0 : 1)} m/秒`;
   for (const el of _speedEls) if (el.textContent !== txt) el.textContent = txt;
 }
@@ -10401,61 +10872,123 @@ function showToast(text, ms = 2200) {
   _navToastTimer = setTimeout(() => { t.hidden = true; }, ms);
 }
 
-// ── 左下の操作説明(PC): たためる ──
-(function setupHelpCollapse() {
-  const h = document.getElementById('vr-help'), b = document.getElementById('vr-help-toggle');
-  if (!h || !b) return;
-  const apply = (c) => { h.classList.toggle('collapsed', c); b.textContent = c ? '操作の説明を表示' : 'たたむ'; };
-  apply(!!savedSettings.helpCollapsed);
-  b.addEventListener('click', () => { const c = !h.classList.contains('collapsed'); apply(c); saveSetting('helpCollapsed', c); });
-})();
 
 // ── 操作ガイド(? ボタン / ? キー) ──
 (function setupHelp() {
   const ov = document.getElementById('help-overlay');
   if (!ov) return;
   const body = document.getElementById('help-body');
+  // 並び: 画面のボタン → 回す(最初はこちら) → 歩く → 真上 → 計測 → 断面 → 移動の速さ → 表示とデータ → 作業用(作業モード中) → VR(VR 対応端末)
+  const btnHtml = () => `
+    <p class="help-lead">右端の列のボタンで操作を切り替えます。迷ったら ⌂(初期位置)で最初の場所に戻れます。</p>
+    <h3>画面のボタン</h3>
+    <dl><dt>⌂ 初期位置</dt><dd>最初に見る場所と向きに戻る</dd>
+    <dt>水平</dt><dd>見上げ・見下ろしている時だけ出る。目線を水平に戻す${isTouchDevice ? '' : '(H キーでも)'}</dd>
+    <dt>データ名 ▼</dt><dd>データの一覧(切り替え・保存・重ねて表示・CSV の読み込みと書き出し)</dd>
+    <dt>★</dt><dd>視点のブックマーク。今の視点(断面も)を記録して、すぐ戻れる</dd>
+    <dt>⚙</dt><dd>設定(表示レベル・色分け・点のサイズ・表示するもの など)を開く・閉じる</dd>
+    <dt>回す / 歩く / 真上</dt><dd>操作の種類(下の説明)。最初は「回す」</dd>
+    <dt>計測</dt><dd>座標・距離・水平・高さ・勾配・面積・角度を測る</dd>
+    <dt>断面</dt><dd>モデルを面で切って中を見る(下の説明)</dd>
+    <dt>自動</dt><dd>決まった経路で視点を自動で動かす(下の説明)</dd>
+    <dt>?</dt><dd>この操作ガイド${isTouchDevice ? '' : '(? キー・F1 でも開閉。Esc で閉じる)'}</dd>
+    <dt>遅く / ふつう / 速く</dt><dd>「歩く」の時だけ、列の一番下に出る。移動の速さを押すごとに切り替える</dd></dl>`;
+  const cutHtml = (tap) => `
+    <h3>断面</h3>
+    <dl><dt>断面ボタン</dt><dd>断面のパネルを開く(最初は切った状態)。パネルを閉じても断面は残る</dd>
+    <dt>向き</dt><dd>水平 / 東西の面 / 南北の面 / 今の向き(今見ている方向の縦の面)</dd>
+    <dt>見せ方</dt><dd>片側を消す(反転で残す側を入れ替え) / 薄く切る(厚さだけ残す)</dd>
+    <dt>位置</dt><dd>スライダー・−/＋(長押しで続けて)・「自動で往復」(モデルの端から端)</dd>
+    <dt>外枠を表示</dt><dd>断面の外枠(黄色い線)を表示する・しない</dd>
+    <dt>切り口を強調</dt><dd>断面のすぐ近くの点を明るい色にする</dd>
+    <dt>正対して見る</dt><dd>縦の断面を真正面から遠近なしで表示(${tap}で計測・画像保存も)。水平なら「真上から見る」</dd></dl>`;
+  const autoHtml = (touch) => `
+    <h3>自動(視点を自動で動かす)</h3>
+    <dl><dt>自動ボタン</dt><dd>パネルを開く。▶ 再生で動き出す(パネルを閉じても動き続ける)。■ 止めるで終わる</dd>
+    <dt>経路</dt><dd>楕円(モデルの周り) / 螺旋(回りながら上下) / 寄りながら回る(寄る⇄離れる) / 円弧の往復(今の向きの左右) / ★の巡回(★を順に)</dd>
+    <dt>視線</dt><dd>モデル中央 / 進行方向 / 水平(モデル中央の方を見上げ・見下ろしなしで) / ★の向き(★の巡回だけ)</dd>
+    <dt>速さ</dt><dd>一定 / 緩急(面の正面・折り返し・★の所でゆっくり)。スライダーで遅く〜速く</dd>
+    <dt>大きさ・高さ</dt><dd>モデルの外形に合わせた経路を広げる・狭める、上げる・下げる(螺旋は巻き数、円弧の往復は角度も)</dd>
+    <dt>操作すると</dt><dd>${touch ? 'なぞる・ピンチ' : 'ドラッグ・ホイール・キー'}で一時停止。▶ 再生で今の視点から滑らかに経路へ戻って続きを動く</dd></dl>`;
   const pcHtml = `
+    <h3>回す(最初はこちら)</h3>
+    <dl><dt>左ドラッグ</dt><dd>つかんだ所を中心にモデルを回す</dd>
+    <dt>ホイール</dt><dd>カーソルの所へ寄る・離れる</dd>
+    <dt>右ドラッグ</dt><dd>平行移動(つかんで動かす)</dd>
+    <dt>ダブルクリック</dt><dd>そこを中心にして近づく</dd>
+    <dt>W A S D / ↑ ↓ / ← →</dt><dd>前後左右に移動 / 上昇・下降 / 向きを変える</dd></dl>
     <h3>歩く(一人称)</h3>
-    <dl><dt>W A S D</dt><dd>前後左右に移動</dd><dt>左ドラッグ / ← →</dt><dd>見回す</dd>
-    <dt>↑ ↓</dt><dd>上昇・下降</dd><dt>ホイール</dt><dd>カーソルの所へ前進・後退</dd>
-    <dt>右ドラッグ</dt><dd>平行移動(つかんで動かす)</dd><dt>ダブルクリック</dt><dd>その地点へ移動</dd>
-    <dt>Shift</dt><dd>押している間ゆっくり</dd></dl>
-    <h3>回す</h3>
-    <dl><dt>左ドラッグ</dt><dd>つかんだ所を中心にモデルを回す</dd><dt>ホイール</dt><dd>カーソルの所へ寄る・離れる</dd>
-    <dt>右ドラッグ</dt><dd>平行移動</dd><dt>ダブルクリック</dt><dd>そこを中心にして近づく</dd></dl>
+    <dl><dt>W A S D</dt><dd>前後左右に移動</dd>
+    <dt>↑ ↓</dt><dd>上昇・下降</dd>
+    <dt>左ドラッグ / ← →</dt><dd>見回す</dd>
+    <dt>ホイール</dt><dd>カーソルの所へ前進・後退</dd>
+    <dt>右ドラッグ</dt><dd>平行移動(つかんで動かす)</dd>
+    <dt>ダブルクリック</dt><dd>その地点へ移動</dd></dl>
     <h3>真上(真俯瞰図)</h3>
-    <dl><dt>左ドラッグ / W A S D</dt><dd>地図を動かす</dd><dt>ホイール</dt><dd>拡大・縮小</dd>
-    <dt>右ドラッグ / ← →</dt><dd>向きを回す</dd><dt>ダブルクリック</dt><dd>その地点を中心に拡大</dd>
-    <dt>↑ ↓</dt><dd>断面の高さ(断面が ON の時)</dd></dl>`;
+    <dl><dt>切り替えた時</dt><dd>モデル全体が入るように表示(下のバーの「全体」でいつでも戻せる)</dd>
+    <dt>左ドラッグ / W A S D</dt><dd>地図を動かす</dd>
+    <dt>ホイール</dt><dd>拡大・縮小</dd>
+    <dt>右ドラッグ / ← →</dt><dd>向きを回す</dd>
+    <dt>ダブルクリック</dt><dd>その地点を中心に拡大</dd>
+    <dt>↑ ↓</dt><dd>水平の断面の高さ(断面が ON の時)</dd>
+    <dt>画面下のバー</dt><dd>表示範囲・断面・画像の保存</dd></dl>
+    <h3>計測</h3>
+    <dl><dt>計測ボタン</dt><dd>種類(座標・距離・水平・高さ・勾配・面積・角度)を選び、点をクリック</dd>
+    <dt>ダブルクリック / Enter</dt><dd>距離・面積を確定(「完了」でも)</dd></dl>` + cutHtml('クリック') + autoHtml(false);
   const touchHtml = `
+    <h3>回す(最初はこちら)</h3>
+    <dl><dt>1本指でなぞる</dt><dd>触った所を中心にモデルを回す</dd>
+    <dt>ピンチ</dt><dd>指の間の所へ寄る・離れる</dd>
+    <dt>2本指でなぞる</dt><dd>平行移動</dd>
+    <dt>2本指をひねる</dt><dd>回転</dd>
+    <dt>ダブルタップ</dt><dd>そこを中心にして近づく</dd></dl>
     <h3>歩く(一人称)</h3>
-    <dl><dt>左側をなぞる</dt><dd>触った所にスティックが出て、その向きに移動</dd><dt>右側をなぞる</dt><dd>見回す</dd>
-    <dt>2本指 ピンチ</dt><dd>指の間の所へ前進・後退</dd><dt>2本指でなぞる</dt><dd>平行移動(上下にも)</dd>
-    <dt>2本指をひねる</dt><dd>向きを変える</dd><dt>▲ ▼</dt><dd>上昇・下降(歩くモードの時、右のボタン列の横に出ます)</dd><dt>ダブルタップ</dt><dd>その地点へ移動</dd></dl>
-    <h3>回す</h3>
-    <dl><dt>1本指でなぞる</dt><dd>触った所を中心にモデルを回す</dd><dt>ピンチ</dt><dd>寄る・離れる</dd>
-    <dt>2本指でなぞる / ひねる</dt><dd>平行移動 / 回転</dd><dt>ダブルタップ</dt><dd>そこを中心にして近づく</dd></dl>
+    <dl><dt>左側をなぞる</dt><dd>触った所にスティックが出て、その向きに移動</dd>
+    <dt>右側をなぞる</dt><dd>見回す</dd>
+    <dt>ピンチ</dt><dd>指の間の所へ前進・後退</dd>
+    <dt>2本指でなぞる</dt><dd>平行移動(上下にも)</dd>
+    <dt>2本指をひねる</dt><dd>向きを変える</dd>
+    <dt>ダブルタップ</dt><dd>その地点へ移動</dd></dl>
     <h3>真上(真俯瞰図)</h3>
-    <dl><dt>なぞる</dt><dd>地図を動かす</dd><dt>ピンチ / ひねる</dt><dd>拡大・縮小 / 向きを回す</dd>
-    <dt>ダブルタップ</dt><dd>その地点を中心に拡大</dd></dl>`;
-  const commonHtml = `
-    <h3>共通</h3>
-    <dl><dt>移動の速さ</dt><dd>周りの点群までの距離に合わせて自動で変わります(近くはゆっくり、ひらけた所や上空は速く)。
-      「遅く・ふつう・速く」で全体の倍率を変えられます</dd>
-    <dt>計測</dt><dd>左の道具から 座標・距離・高さ・面積・角度 を選び、点をクリック(タップ)。距離・面積はダブルクリック(ダブルタップ)か「完了」で確定</dd>
-    <dt>表示レベル</dt><dd>1(軽い)〜10(きれい)。「自動」は動きの滑らかさを見て調整します</dd>
-    <dt>⌂</dt><dd>初期位置に戻る</dd><dt>上のデータ名</dt><dd>データの一覧(切り替え・ダウンロード時間・保存・近くのデータを重ねて表示)</dd>
-    <dt>レベルNで保存 / 完全保存</dt><dd>データの一覧で、そのレベルで見る分 / すべてのタイルを端末に保存します(完全保存はオフラインでも全部見られます)。保存中もデータを開けます</dd>` +
-    (isTouchDevice ? '<dt>⚙</dt><dd>設定(表示レベル・点のサイズ・表示するもの など)</dd>'
-                   : '<dt>⚙ 設定</dt><dd>右上の見出しを押すと、設定パネル(表示レベル・点のサイズ・表示するもの など)をたたむ・ひらく</dd>') + `</dl>`;
-  const vrHtml = `
+    <dl><dt>切り替えた時</dt><dd>モデル全体が入るように表示(下のバーの「全体」でいつでも戻せる)</dd>
+    <dt>なぞる</dt><dd>地図を動かす</dd>
+    <dt>ピンチ</dt><dd>拡大・縮小</dd>
+    <dt>ひねる</dt><dd>向きを回す</dd>
+    <dt>ダブルタップ</dt><dd>その地点を中心に拡大</dd>
+    <dt>画面下のバー</dt><dd>表示範囲・断面・画像の保存</dd></dl>
+    <h3>計測</h3>
+    <dl><dt>計測ボタン</dt><dd>種類(座標・距離・水平・高さ・勾配・面積・角度)を選び、点をタップ</dd>
+    <dt>ダブルタップ</dt><dd>距離・面積を確定(「完了」でも)</dd></dl>` + cutHtml('タップ') + autoHtml(true);
+  const commonHtml = () => `
+    <h3>移動の速さ</h3>
+    <dl><dt>自動</dt><dd>周りの点群までの距離に合わせて変わる(近くはゆっくり、ひらけた所や上空は速く)</dd>
+    <dt>遅く / ふつう / 速く</dt><dd>「歩く」の時だけ。その全体を 0.3倍 / 1倍 / 3倍 にする(列の一番下の速さボタン、設定の「移動・視点」)</dd>` +
+    (isTouchDevice ? '' : '<dt>Shift</dt><dd>押している間ゆっくり</dd>') + `</dl>
+    <h3>表示とデータ</h3>
+    <dl><dt>表示レベル</dt><dd>1(軽い)〜10(きれい)。「自動」は動きの滑らかさを見て調整します(設定 ⚙ の「表示」)</dd>
+    <dt>レベルNで保存 / 完全保存</dt><dd>データの一覧で、そのレベルで見る分 / すべてのタイルを端末に保存(完全保存はオフラインでも全部見られる)。保存中もデータを開けます</dd>
+    <dt>色分け</dt><dd>設定の「表示」で、元の色 / 高さ / 白色</dd>
+    <dt>外形の枠・目盛り</dt><dd>設定の「表示するもの」で、モデルの外形の枠と寸法、高さの目盛りと格子</dd>
+    <dt>設定の上のボタン</dt><dd>すべて開く(項目と「個別に調整」をまとめて)・ⓘ(説明)をすべて開く</dd></dl>`;
+  const workHtml = () => (!devModes.place && !devModes.annotate) ? '' : `
+    <h3>作業用(作業モード中)</h3>
+    <dl><dt>−/＋ を長押し</dt><dd>押している間、続けて動かす(1回の量は各パネルの 遅く / ふつう / 速く)</dd>` +
+    (isTouchDevice ? '' : `<dt>R</dt><dd>配置の調整: 最初に見る場所と向き(初期位置)へ</dd>
+    <dt>A</dt><dd>アノテーション配置: 黄色い立方体の所に追加</dd>
+    <dt>I J K L</dt><dd>アノテーション配置: 押している間、立方体の周りを回る</dd>`) + `</dl>`;
+  const vrHtml = () => !document.body.classList.contains('vr-ok') ? '' : `
     <h3>VR</h3>
-    <dl><dt>左スティック</dt><dd>向いている方向に移動(速さは周囲までの距離に合わせて自動)</dd><dt>右スティック ← →</dt><dd>向きを変える</dd>
-    <dt>A / B</dt><dd>下降 / 上昇</dd><dt>X / Y</dt><dd>点を小さく / 大きく</dd><dt>右グリップ</dt><dd>押すほど速く(最大5倍)</dd>
-    <dt>左グリップ + X / Y</dt><dd>点を疎に / 密に</dd></dl>`;
-  body.innerHTML = (isTouchDevice ? touchHtml : pcHtml) + commonHtml + vrHtml;
-  const open = () => { ov.hidden = false; };
+    <dl><dt>左スティック</dt><dd>向いている方向に移動(速さは周りまでの距離に合わせて自動)</dd>
+    <dt>右スティック ← →</dt><dd>向きを変える</dd>
+    <dt>A / B</dt><dd>下降 / 上昇</dd>
+    <dt>X / Y</dt><dd>点を小さく / 大きく</dd>
+    <dt>右グリップ</dt><dd>握るほど速く(最大5倍)</dd>
+    <dt>左グリップ + X / Y</dt><dd>描く点の上限を下げる / 上げる</dd>
+    <dt>右スティックを押し込む</dt><dd>自動の視点移動の再生 / 一時停止(VR 中は位置だけ動き、向きは自由)</dd></dl>`;
+  // 開く時に作る(作業モード中かどうか・VR 対応かで中身が変わる)
+  const build = () => { body.innerHTML = btnHtml() + (isTouchDevice ? touchHtml : pcHtml) + commonHtml() + workHtml() + vrHtml(); };
+  build();
+  const open = () => { build(); ov.hidden = false; };
   const close = () => { ov.hidden = true; };
   document.querySelectorAll('[data-open-help]').forEach(b => b.addEventListener('click', open));
   document.getElementById('help-close')?.addEventListener('click', close);
@@ -10474,11 +11007,18 @@ function showToast(text, ms = 2200) {
 const MEASURE_TOOLS = {
   point:  { label: '座標', need: 1, hint: '測りたい点をクリック(タップ)' },
   distance: { label: '距離', need: 0, hint: '点を順にクリック。ダブルクリック・Enter・「完了」で確定' },
-  height: { label: '高さ', need: 2, hint: '2点をクリック(高さの差を測る)' },
+  height: { label: '高さ', need: 2, hint: '2点をクリック(高さを測る。3D距離・水平距離・勾配も)' },
+  horizontal: { label: '水平', need: 2, hint: '2点をクリック(水平距離を測る。3D距離・高さ・勾配も)' },
+  slope: { label: '勾配', need: 2, hint: '2点をクリック(勾配を測る。3D距離・水平距離・高さも)' },
   area:   { label: '面積', need: 0, hint: '囲む点を順にクリック(3点以上)。ダブルクリック・Enter・「完了」で確定' },
   angle:  { label: '角度', need: 3, hint: '3点をクリック(2点目が角の頂点)' },
 };
-const MEASURE_COLORS = { point: 0xffd24a, distance: 0x00e0ff, height: 0x7dff6a, area: 0xff8ad8, angle: 0xffa040 };
+// 勾配: 角度と %(水平距離が 0 なら垂直)
+function slopeText(dh, hd) {
+  if (hd < 1e-6) return '90°(垂直)';
+  return `${(Math.atan2(dh, hd) * 180 / Math.PI).toFixed(1)}°(${(dh / hd * 100).toFixed(1)}%)`;
+}
+const MEASURE_COLORS = { point: 0xffd24a, distance: 0x00e0ff, height: 0x7dff6a, horizontal: 0xb48cff, slope: 0x66ffcc, area: 0xff8ad8, angle: 0xffa040 };
 const measureState = { tool: null, items: [], cur: null, seq: 0 };
 const measureGroup = new THREE.Group();
 measureGroup.name = 'measure';
@@ -10541,6 +11081,12 @@ function measureRebuild(it) {
     const [lo, hi] = P[0].y <= P[1].y ? [P[0], P[1]] : [P[1], P[0]];
     linePts = [lo, new THREE.Vector3(lo.x, hi.y, lo.z), hi, lo];
   }
+  else if (it.type === 'horizontal' && P.length === 2) linePts = [P[0], new THREE.Vector3(P[1].x, P[0].y, P[1].z), P[1]];
+  else if (it.type === 'slope' && P.length === 2) {
+    // 勾配: 低い点から水平に、高い点の真下へ → 高い点 → 低い点(斜辺)
+    const [lo, hi] = P[0].y <= P[1].y ? [P[0], P[1]] : [P[1], P[0]];
+    linePts = [lo, new THREE.Vector3(hi.x, lo.y, hi.z), hi, lo];
+  }
   it.line.geometry.dispose();
   it.line.geometry = new THREE.BufferGeometry().setFromPoints(linePts.length >= 2 ? linePts : []);
   // 値とラベル
@@ -10571,16 +11117,34 @@ function measureRebuild(it) {
       const lb = measureLabel(it, fmtM(d), 'small');
       lb.pos.copy(P[i]).add(P[i - 1]).multiplyScalar(0.5);
     }
-    it.value = `合計 ${fmtM(total)}`;
-    it.detail.push(`3D距離 ${fmtM(total)} / 水平距離 ${fmtM(horiz)} / 高さの差 ${fmtM(P[P.length - 1].y - P[0].y)}(${P.length - 1}区間)`);
+    // 3D距離を強調。高さ・勾配は始点と終点の差で(勾配 = 高さ ÷ 水平距離の合計)
+    const dhEnd = Math.abs(P[P.length - 1].y - P[0].y);
+    it.value = `3D距離 ${fmtM(total)}`;
+    it.detail.push(`水平距離 ${fmtM(horiz)} / 高さ ${fmtM(dhEnd)} / 勾配 ${slopeText(dhEnd, horiz)}`);
     if (P.length > 2) { const lb = measureLabel(it, `合計 ${fmtM(total)}`); lb.pos.copy(P[P.length - 1]); }
   } else if (it.type === 'height' && P.length === 2) {
+    // 点群の中には高さだけ。パネルは高さを強調し、3D距離・水平距離・勾配
     const dh = Math.abs(P[1].y - P[0].y), hd = Math.hypot(P[1].x - P[0].x, P[1].z - P[0].z);
     it.value = `高さ ${fmtM(dh)}`;
-    it.detail.push(`高さの差 ${fmtM(dh)} / 水平距離 ${fmtM(hd)} / 斜距離 ${fmtM(P[0].distanceTo(P[1]))} / 勾配 ${(Math.atan2(dh, hd) * 180 / Math.PI).toFixed(1)}°`);
+    it.detail.push(`3D距離 ${fmtM(P[0].distanceTo(P[1]))} / 水平距離 ${fmtM(hd)} / 勾配 ${slopeText(dh, hd)}`);
     const [lo, hi] = P[0].y <= P[1].y ? [P[0], P[1]] : [P[1], P[0]];
     const lb = measureLabel(it, `↕ ${fmtM(dh)}`);
     lb.pos.set(lo.x, (lo.y + hi.y) / 2, lo.z);
+  } else if (it.type === 'horizontal' && P.length === 2) {
+    // 点群の中には水平距離だけ。パネルは水平距離を強調し、3D距離・高さ・勾配
+    const hd = Math.hypot(P[1].x - P[0].x, P[1].z - P[0].z), dh = Math.abs(P[1].y - P[0].y);
+    it.value = `水平距離 ${fmtM(hd)}`;
+    it.detail.push(`3D距離 ${fmtM(P[0].distanceTo(P[1]))} / 高さ ${fmtM(dh)} / 勾配 ${slopeText(dh, hd)}`);
+    const lb = measureLabel(it, `↔ ${fmtM(hd)}`);
+    lb.pos.set((P[0].x + P[1].x) / 2, P[0].y, (P[0].z + P[1].z) / 2);
+  } else if (it.type === 'slope' && P.length === 2) {
+    // 点群の中には勾配だけ。パネルは勾配を強調し、3D距離 / 水平距離 / 高さ
+    const [lo, hi] = P[0].y <= P[1].y ? [P[0], P[1]] : [P[1], P[0]];
+    const dh = hi.y - lo.y, hd = Math.hypot(hi.x - lo.x, hi.z - lo.z);
+    it.value = `勾配 ${slopeText(dh, hd)}`;
+    it.detail.push(`3D距離 ${fmtM(lo.distanceTo(hi))} / 水平距離 ${fmtM(hd)} / 高さ ${fmtM(dh)}`);
+    const lb = measureLabel(it, `∠ ${slopeText(dh, hd)}`);
+    lb.pos.copy(lo).add(hi).multiplyScalar(0.5);
   } else if (it.type === 'area' && P.length >= 3) {
     let plan = 0, per = 0;
     const n = new THREE.Vector3();
@@ -10720,13 +11284,19 @@ function renderMeasurePanel() {
     const b = document.createElement('b');
     b.textContent = `${MEASURE_TOOLS[it.type].label} #${it.id}` + (it.done ? '' : '(計測中)');
     const v = document.createElement('span');
+    v.className = 'm-main'; // 求めた値は強調
     v.textContent = it.value || `${it.pts.length}点`;
     const del = document.createElement('button');
     del.type = 'button'; del.className = 'm-del'; del.textContent = '×'; del.title = 'この計測を消す';
     del.addEventListener('click', () => { if (measureState.cur === it) measureState.cur = null; measureRemove(it); renderMeasurePanel(); });
     head.append(b, v, del);
     row.appendChild(head);
-    for (const d of it.detail) { const x = document.createElement('div'); x.className = 'm-detail'; x.textContent = d; row.appendChild(x); }
+    for (const d of it.detail) {
+      // 「/」で区切った値は途中で折り返さない(折り返すのは「/」の所だけ)
+      const x = document.createElement('div'); x.className = 'm-detail';
+      d.split(' / ').forEach((t, i) => { if (i) x.appendChild(document.createTextNode(' / ')); const sp = document.createElement('span'); sp.className = 'm-seg'; sp.textContent = t; x.appendChild(sp); });
+      row.appendChild(x);
+    }
     list.appendChild(row);
   }
   const cur = measureState.cur && !measureState.cur.done;
@@ -10928,7 +11498,7 @@ function renderChooser() {
       card.innerHTML = `<div class="ch-main"><div class="ch-name"></div><div class="ch-info"></div></div>
         <div class="ch-actions">
           <button type="button" class="ch-btn primary" data-act="open">開く</button>
-          <button type="button" class="ch-btn" data-act="vr" title="VR に入って、このデータを見ます(表示中なら読み直さずに入ります)">VRで開く</button>
+          <button type="button" class="ch-btn" data-act="vr" title="VR に入って、このデータを見ます(表示中なら読み直さずに入ります)">VR</button>
           <button type="button" class="ch-btn" data-act="overlay" hidden title="今のデータに重ねて一緒に表示します">重ねる</button>
           <button type="button" class="ch-btn" data-act="save-level" disabled title="今の表示レベルで見るのに必要なタイル(離れて見る分)を、この端末に保存します">レベル5で保存</button>
           <button type="button" class="ch-btn" data-act="save-full" disabled title="すべてのタイルをこの端末に保存します(保存後はオフラインでも全部見られます)">完全保存</button>
@@ -11548,60 +12118,102 @@ function layoutBottomUi() {
     const overlapX = crRect && c.width && crRect.right > c.left - 4;
     document.documentElement.style.setProperty('--ctl-gap', overlapX ? `${Math.round(window.innerHeight - crRect.top + 8)}px` : '16px');
   }
-  const wp = document.getElementById('work-panels'), mp = document.getElementById('measure-panel');
-  if (wp && mp) {
-    const shown = [...wp.children].some(c => !c.hidden && getComputedStyle(c).display !== 'none');
-    if (isTouchDevice && shown && !mp.hidden) mp.style.top = `${Math.round(wp.getBoundingClientRect().bottom + 6)}px`;
-    else mp.style.top = '';
-  }
+  layoutToolPanelsTouch();
   layoutWorkPanels();
 }
-// PC: 作業モードのパネルは、左のボタン列と右の設定パネルの間に置く(幅 320〜540px)。
-// 間が狭すぎる時は、左のボタン列の右から幅を確保する(設定パネルの上に重なる。設定は「たたむ」で閉じられる)
+// PC: 作業モードのパネルは左上(⌂ 初期位置・データ名の下)に「配置の調整」「アノテーション配置」の順で縦に並べる。
+// 幅は右の設定パネル(閉じている時は右端の列)まで(最大 540px)、高さは画面に合わせ、はみ出す分はスクロール。
+// 計測パネルが開いている時は、その右隣に置く
+// (監視しているパネルの style は、変わる時だけ書き換える)
+function setStyleIfChanged(el, prop, v) { if (el.style[prop] !== v) el.style[prop] = v; }
 function layoutWorkPanels() {
   const wp = document.getElementById('work-panels');
+  const tp = document.getElementById('tool-panels');
   if (!wp || isTouchDevice) return;
-  const vw = window.innerWidth;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const vis = (el) => !el.hidden && getComputedStyle(el).display !== 'none';
+  let top = 16;
+  for (const id of ['reset-view-btn', 'dataset-switch', 'level-btn']) {
+    const el = document.getElementById(id);
+    const r = el && !el.hidden ? el.getBoundingClientRect() : null;
+    if (r && r.height) top = Math.max(top, Math.round(r.bottom + 8));
+  }
   const rail = document.getElementById('tool-rail');
   const rr = rail ? rail.getBoundingClientRect() : null;
-  const railRight = rr && rr.width ? Math.round(rr.right + 8) : 76;
-  // 計測パネル(左上)が開いている時は、その右から
-  const mp = document.getElementById('measure-panel');
-  const mr = mp && !mp.hidden ? mp.getBoundingClientRect() : null;
-  let leftMin = mr && mr.width ? Math.max(railRight, Math.round(mr.right + 8)) : railRight;
+  let rightEdge = rr && rr.width ? Math.round(rr.left - 8) : vw - 76;
   const ctl = document.getElementById('controls');
   const c = ctl ? ctl.getBoundingClientRect() : null;
-  const rightEdge = c && c.width ? Math.round(c.left - 8) : vw - 16;
-  if (rightEdge - leftMin < 320) leftMin = railRight; // 狭い時は計測パネルに重ねてでも幅を取る
-  const avail = rightEdge - leftMin;
-  let width, left;
-  if (avail >= 320) {
-    width = Math.min(540, avail);
-    left = Math.max(leftMin, Math.min(rightEdge - width, Math.round(vw / 2 - width / 2)));
-  } else {
-    width = Math.max(240, Math.min(540, vw - railRight - 16));
-    left = railRight;
-  }
+  if (c && c.width) rightEdge = Math.min(rightEdge, Math.round(c.left - 8));
+  const left = 16;
+  const shown = [...wp.children].some(vis);
+  const toolOpen = !!(tp && [...tp.children].some(vis));
+  const mw = 300;
+  let width = Math.min(540, rightEdge - left);
+  if (shown && toolOpen) width = Math.min(width, rightEdge - left - mw - 8);
+  width = Math.max(240, width);
+  // 下の限り: クレジットの上(真上・正対の時はバーの上)
+  const crH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--credit-h')) || 34;
+  let bottom = vh - crH - 4;
+  const bar = document.getElementById('topdown-bar');
+  if (bar && !bar.hidden && topdownState.active) { const br = bar.getBoundingClientRect(); if (br.height) bottom = Math.min(bottom, br.top - 8); }
+  const maxH = `${Math.max(160, Math.round(bottom - top))}px`;
   wp.style.left = `${left}px`;
-  wp.style.width = `${width}px`;
+  wp.style.top = `${top}px`;
   wp.style.right = 'auto';
+  wp.style.width = `${width}px`;
+  wp.style.maxHeight = maxH;
+  // 描画中の表示(下の中央): 作業パネルが出ている時は、作業パネル(と道具のパネル)と設定パネルの間の中央へ
+  const lp = document.getElementById('load-progress');
+  if (lp) {
+    const gapL = left + width + 8 + (toolOpen ? mw + 8 : 0), gapW = Math.max(160, rightEdge - gapL);
+    setStyleIfChanged(lp, 'left', shown ? `${Math.round(gapL + gapW / 2)}px` : '');
+    setStyleIfChanged(lp, 'maxWidth', shown ? `${gapW}px` : '');
+    setStyleIfChanged(lp, 'minWidth', shown ? `${Math.min(240, gapW)}px` : '');
+  }
+  // 道具のパネル(計測・断面): 作業パネルが出ていればその右隣、無ければ左上
+  if (tp) {
+    let tl = shown ? left + width + 8 : left;
+    if (shown && tl + mw > rightEdge) tl = Math.max(left, rightEdge - mw);
+    setStyleIfChanged(tp, 'left', `${tl}px`);
+    setStyleIfChanged(tp, 'top', `${top}px`);
+    setStyleIfChanged(tp, 'maxHeight', maxH);
+  }
+}
+// スマホ: 道具のパネル(計測・断面)は上の帯の下。作業パネルが出ていればその下、真上・正対の時はバーの上まで
+function layoutToolPanelsTouch() {
+  const tp = document.getElementById('tool-panels'), wp = document.getElementById('work-panels');
+  if (!tp || !isTouchDevice) return;
+  const shown = wp && [...wp.children].some(c => !c.hidden && getComputedStyle(c).display !== 'none');
+  setStyleIfChanged(tp, 'top', shown ? `${Math.round(wp.getBoundingClientRect().bottom + 6)}px` : '');
+  const bar = document.getElementById('topdown-bar');
+  let mh = '';
+  if (bar && !bar.hidden && topdownState.active) {
+    const bt = bar.getBoundingClientRect().top, tt = tp.getBoundingClientRect().top;
+    mh = `${Math.max(120, Math.round(bt - tt - 8))}px`;
+  }
+  setStyleIfChanged(tp, 'maxHeight', mh);
 }
 (function setupLayout10() {
   const wp = document.getElementById('work-panels');
-  const dp = document.getElementById('dbg-panel');
-  if (wp && dp && dp.parentNode !== wp) wp.insertBefore(dp, wp.firstChild);
+  // 並び: 配置の調整 → アノテーション配置
   const ha = document.getElementById('place-panel');
   if (wp && ha && ha.parentNode !== wp) wp.appendChild(ha);
+  const dp = document.getElementById('dbg-panel');
+  if (wp && dp) wp.appendChild(dp);
+  // 道具のパネル: 計測 → 断面
+  const tp = document.getElementById('tool-panels');
+  for (const id of ['measure-panel', 'cut-panel', 'auto-panel']) { const el = document.getElementById(id); if (tp && el) tp.appendChild(el); }
+  window.__layoutReady = true;
   layoutBottomUi();
   window.addEventListener('resize', layoutBottomUi);
   if ('ResizeObserver' in window) {
     const ro = new ResizeObserver(layoutBottomUi);
-    for (const id of ['credit', 'work-panels', 'controls']) { const el = document.getElementById(id); if (el) ro.observe(el); }
+    for (const id of ['credit', 'work-panels', 'controls', 'tool-rail', 'dataset-switch', 'tool-panels']) { const el = document.getElementById(id); if (el) ro.observe(el); }
   }
   const mo = new MutationObserver(layoutBottomUi);
-  for (const id of ['measure-panel', 'place-panel', 'dbg-panel']) {
+  for (const id of ['measure-panel', 'place-panel', 'dbg-panel', 'controls', 'cut-panel', 'auto-panel', 'level-btn']) {
     const el = document.getElementById(id);
-    if (el) mo.observe(el, { attributes: true, attributeFilter: ['hidden', 'style'] });
+    if (el) mo.observe(el, { attributes: true, attributeFilter: ['hidden', 'style', 'class'] });
   }
 })();
 // 真俯瞰図のバーの上端(描画中の表示をその上に置く)
@@ -11716,6 +12328,29 @@ document.addEventListener('click', (e) => {
   // スマホ展開時、ⓘで高さが伸びても #controls 本体側の max-height + overflow-y で吸収される。
   // top は #dataset-switch 真下に固定で再計算不要。
 });
+
+// ── 設定の上部「ⓘ すべて開く / すべて閉じる」(この設定パネルの中の ⓘ をまとめて) ──
+(function setupInfoAll() {
+  const btn = document.getElementById('info-all-btn');
+  const ctl = document.getElementById('controls');
+  if (!btn || !ctl) return;
+  const pairs = () => [...ctl.querySelectorAll('.ctrl-info[aria-controls]')]
+    .map(b => [b, document.getElementById(b.getAttribute('aria-controls'))]).filter(([, t]) => t);
+  const sync = () => {
+    const p = pairs();
+    const all = p.length > 0 && p.every(([, t]) => !t.hidden);
+    const txt = all ? 'ⓘ すべて閉じる' : 'ⓘ すべて開く';
+    if (btn.textContent !== txt) btn.textContent = txt;
+    btn.setAttribute('aria-pressed', all ? 'true' : 'false');
+  };
+  btn.addEventListener('click', () => {
+    const open = btn.getAttribute('aria-pressed') !== 'true';
+    for (const [b, t] of pairs()) { t.hidden = !open; b.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+    sync();
+  });
+  document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('.ctrl-info')) setTimeout(sync, 0); });
+  sync();
+})();
 
 // ═══════════════ データの一覧: Web 上のデータを追加・外したデータ・作業中の変更(tiles_013) ═══════════════
 function renderChooserEdit() {
@@ -12162,14 +12797,1357 @@ function openExportInChooser() {
 }
 document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('[data-open-export]')) openExportInChooser(); });
 
+// ═══════════════ 作業パネルの −/＋(tiles_015) ═══════════════
+// 押すと1回、長押しで続けて動かす(0.4秒後から毎秒10回)。1回の量はパネルごとの「遅く・ふつう・速く」(移動の速さとは別)
+const NUDGE_STEPS = { slow: 0.01, normal: 0.1, fast: 1 };
+const NUDGE_DELAY_MS = 400, NUDGE_REPEAT_MS = 100;
+let placeNudgeKey = NUDGE_STEPS[savedSettings.placeNudge] ? savedSettings.placeNudge : 'normal';
+let annNudgeKey = NUDGE_STEPS[savedSettings.annNudge] ? savedSettings.annNudge : 'normal';
+// 長押しの時の速さ(m/秒)
+const nudgeRateText = (step) => String(Number((step * 1000 / NUDGE_REPEAT_MS).toFixed(2)));
+function syncNudgeButtons(attr, key) {
+  document.querySelectorAll(`[${attr}]`).forEach(b => b.setAttribute('aria-pressed', b.getAttribute(attr) === key ? 'true' : 'false'));
+}
+function setPlaceNudge(key) {
+  placeNudgeKey = NUDGE_STEPS[key] ? key : 'normal';
+  saveSetting('placeNudge', placeNudgeKey);
+  syncNudgeButtons('data-pp-speed', placeNudgeKey);
+  if (window.__placeRefresh) window.__placeRefresh();
+}
+function setAnnNudge(key) {
+  annNudgeKey = NUDGE_STEPS[key] ? key : 'normal';
+  saveSetting('annNudge', annNudgeKey);
+  syncNudgeButtons('data-ap-speed', annNudgeKey);
+  if (window.__annRefresh) window.__annRefresh();
+}
+// root の中の [attr] ボタン: 押した時に1回、押し続けると続けて onStep(attr の値) を呼ぶ。
+// 指(タッチ)の時は、離した時に1回・長押しで連続(指を動かしたらパネルのスクロールとして何もしない)
+function setupNudgeButtons(root, attr, onStep) {
+  let delay = null, timer = null, active = null, pendingTap = null;
+  const stop = () => {
+    clearTimeout(delay); clearInterval(timer); delay = timer = null;
+    if (active) { active.classList.remove('held'); active = null; }
+  };
+  const repeat = (b, v) => {
+    timer = setInterval(() => {
+      // パネルが閉じた・ボタンが使えなくなった時は止める
+      if (!b.isConnected || b.disabled || b.offsetParent === null) { stop(); return; }
+      onStep(v);
+    }, NUDGE_REPEAT_MS);
+  };
+  root.addEventListener('pointerdown', (e) => {
+    const b = e.target.closest && e.target.closest(`[${attr}]`);
+    if (!b || b.disabled || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    stop();
+    active = b; b.classList.add('held');
+    const v = b.getAttribute(attr);
+    if (e.pointerType === 'touch') {
+      pendingTap = { b, v };
+      delay = setTimeout(() => { pendingTap = null; onStep(v); repeat(b, v); }, NUDGE_DELAY_MS);
+      return;
+    }
+    e.preventDefault(); // 長押しで文字の選択やメニューを出さない
+    onStep(v);
+    delay = setTimeout(() => repeat(b, v), NUDGE_DELAY_MS);
+    try { b.setPointerCapture(e.pointerId); } catch { /* 取れない環境 */ }
+  });
+  // 指を離した時: 長押しになる前ならタップとして1回
+  root.addEventListener('pointerup', (e) => {
+    if (e.pointerType !== 'touch' || !pendingTap) return;
+    const { b, v } = pendingTap; pendingTap = null;
+    if (!b.disabled && b.offsetParent !== null) onStep(v);
+  });
+  // スクロールなどで指の操作が取り消された時は何もしない
+  root.addEventListener('pointercancel', () => { pendingTap = null; });
+  window.addEventListener('pointerup', stop, true);
+  window.addEventListener('pointercancel', stop, true);
+  window.addEventListener('blur', stop);
+  root.addEventListener('lostpointercapture', stop);
+  root.addEventListener('contextmenu', (e) => { if (e.target.closest && e.target.closest(`[${attr}]`)) e.preventDefault(); });
+  // キーボード(Enter・Space)で押した時は1回
+  root.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest(`[${attr}]`);
+    if (b && e.detail === 0) onStep(b.getAttribute(attr));
+  });
+}
+// 作業パネルに出す「元データ」の短い説明(サーバーの CSV / 読み込んだ CSV)
+const _csvSrcShortMemo = {};
+function csvSourceShort(kind) {
+  const used = csvSourceUsed[kind];
+  const key = `${kind}:${used}`;
+  if (_csvSrcShortMemo[key]) return _csvSrcShortMemo[key];
+  let t;
+  if (used === 'local') { const f = csvSrcLoad().local[kind]; t = `読み込んだ CSV「${(f && f.name) || kind + '.csv'}」`; }
+  else if (used === 'fallback') t = '組み込みのデータ(サーバーの CSV が読めませんでした)';
+  else if (used === 'none') t = 'なし(サーバーの CSV が読めませんでした)';
+  else t = 'サーバーの CSV';
+  return (_csvSrcShortMemo[key] = t);
+}
+
+// ═══════════════ 断面(tiles_016) ═══════════════
+// モデルを1枚の面で切る。向きは 水平 / 東西の面(南北に動かす) / 南北の面(東西に動かす) / 今の向きの縦の面(前後に動かす)。
+// 見せ方は「片側を消す」(反転で残す側を入れ替え)と「薄く切る」(面の前後の厚さだけ残す)。
+// 位置はスライダー・−/＋(長押しで連続)・自動(モデルの端から端を往復)。回す・歩く・真上・正対・VR のどれでも効く。
+// 面はデータセット座標(W系)で持ち、毎フレーム ワールド座標に直してシェーダ(点群)とクリップ面(メッシュ)へ渡す。
+const SLICE_DIR_LABEL = { h: '水平', ew: '東西の面', ns: '南北の面', view: '今の向き' };
+const SLICE_AXIS = { h: ['高さ', '下端から'], ew: ['南北', '南端から'], ns: ['東西', '西端から'], view: ['前後', '手前の端から'] };
+const SLICE_AUTO_SEC = { slow: 30, normal: 15, fast: 6 }; // 端から端までの秒数
+const _sliceSaved = savedSettings.slice || {};
+const sliceState = {
+  on: false,
+  dir: SLICE_DIR_LABEL[_sliceSaved.dir] ? _sliceSaved.dir : 'h',
+  mode: _sliceSaved.mode === 'slab' ? 'slab' : 'cut',
+  flip: false,
+  thick: Number.isFinite(_sliceSaved.thick) ? Math.max(0.05, Math.min(5, _sliceSaved.thick)) : 0.5,
+  pos: 0,                       // 面の位置(W系で、法線方向の座標)
+  viewYaw: 0,                   // 「今の向き」で決めた向き(dolly の yaw)
+  auto: false, autoDir: 1,
+  autoSpeed: SLICE_AUTO_SEC[_sliceSaved.autoSpeed] ? _sliceSaved.autoSpeed : 'normal',
+  edge: !!_sliceSaved.edge,     // 切り口を強調
+  frame: _sliceSaved.frame !== false, // 外枠(黄色い線)を表示(最初は表示)
+  movedAt: 0,                   // 最後に動かした時刻(枠を出す)
+};
+function sliceSavePrefs() {
+  saveSetting('slice', { dir: sliceState.dir, mode: sliceState.mode, thick: sliceState.thick, autoSpeed: sliceState.autoSpeed, edge: sliceState.edge, frame: sliceState.frame });
+}
+// 向きごとの法線(W系。ワールドと同じ向き)。片側を消す時は、既定で法線の向いている側を消す
+const _sliceN = new THREE.Vector3();
+function sliceNormal(dir = sliceState.dir, out = _sliceN) {
+  const ny = topdownState.northYaw || 0;
+  if (dir === 'ew') return out.set(-Math.sin(ny), 0, -Math.cos(ny));      // 北向き(東西に伸びる面)
+  if (dir === 'ns') return out.set(Math.cos(ny), 0, -Math.sin(ny));       // 東向き(南北に伸びる面)
+  if (dir === 'view') return out.set(-Math.sin(sliceState.viewYaw), 0, -Math.cos(sliceState.viewYaw)); // 前向き
+  return out.set(0, 1, 0);                                                 // 上向き(水平)
+}
+// 既定で消す側: 水平=上 / 東西の面=北 / 南北の面=東 / 今の向き=手前
+const sliceDefaultFlip = (dir) => dir === 'view';
+// W系の点 ⇔ ワールド: world = datasetFrame.position + worldScale * W
+const _sliceBox = new THREE.Box3(), _sliceC = new THREE.Vector3();
+function sliceRange(dir = sliceState.dir) {
+  const box = modelWorldBox(_sliceBox);
+  if (box.isEmpty()) return { min: 0, max: 1, ok: false };
+  const n = sliceNormal(dir, new THREE.Vector3());
+  const s = worldScale || 1, o = datasetFrame.position;
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < 8; i++) {
+    _sliceC.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).sub(o).multiplyScalar(1 / s);
+    const v = n.dot(_sliceC);
+    lo = Math.min(lo, v); hi = Math.max(hi, v);
+  }
+  return { min: lo, max: hi, ok: true };
+}
+// 今の断面(ワールド): n は消す側を向く単位ベクトル、d は位置(n·x = d が面)
+const _slicePl = { n: new THREE.Vector3(0, 1, 0), d: 0 };
+function sliceWorldPlane() {
+  const n = sliceNormal();
+  const sg = sliceState.mode === 'cut' && sliceState.flip ? -1 : 1;
+  const s = worldScale || 1;
+  _slicePl.n.copy(n).multiplyScalar(sg);
+  _slicePl.d = sg * sliceState.pos * s + _slicePl.n.dot(datasetFrame.position);
+  return _slicePl;
+}
+// メッシュ(端末の3Dデータのモデルなど)用のクリップ面。three.js は「負の側を消す」ので、残す側が正になるように置く
+const SLICE_CLIP = [new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e9), new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e9)];
+renderer.localClippingEnabled = true;
+function sliceEdgeWidthW() {
+  const r = sliceRange();
+  return Math.max(0.03, Math.min(0.3, (r.max - r.min) / 300));
+}
+// 断面の状態を uniform・クリップ面・画面にそろえる(毎フレームも呼ぶ。ワールド座標は表示倍率で変わるため)
+function sliceApply() {
+  const u = cubeUniforms;
+  if (!sliceState.on) {
+    u.uSliceMode.value = 0;
+    SLICE_CLIP[0].set(_Y_UP, 1e9); SLICE_CLIP[1].set(_Y_UP, 1e9);
+    return;
+  }
+  const pl = sliceWorldPlane();
+  const s = worldScale || 1;
+  u.uSliceMode.value = sliceState.mode === 'slab' ? 2 : 1;
+  u.uSlicePlane.value.set(pl.n.x, pl.n.y, pl.n.z, pl.d);
+  u.uSliceHalf.value = sliceState.thick * 0.5 * s;
+  u.uSliceEdgeW.value = sliceState.edge ? (sliceState.mode === 'slab' ? Math.min(sliceEdgeWidthW(), sliceState.thick * 0.3) : sliceEdgeWidthW()) * s : 0;
+  if (sliceState.mode === 'slab') {
+    const h = sliceState.thick * 0.5 * s;
+    SLICE_CLIP[0].normal.copy(pl.n); SLICE_CLIP[0].constant = -pl.d + h;
+    SLICE_CLIP[1].normal.copy(pl.n).negate(); SLICE_CLIP[1].constant = pl.d + h;
+  } else {
+    SLICE_CLIP[0].normal.copy(pl.n).negate(); SLICE_CLIP[0].constant = pl.d;
+    SLICE_CLIP[1].set(_Y_UP, 1e9);
+  }
+}
+// メッシュの材質にクリップ面を付ける・外す(ON/OFF の時と、ON の間は1秒おきに新しいメッシュへ)
+let _sliceMeshAt = 0;
+function sliceApplyMeshClipping(force) {
+  const now = performance.now();
+  if (!force && now - _sliceMeshAt < 1000) return;
+  _sliceMeshAt = now;
+  const want = sliceState.on ? SLICE_CLIP : null;
+  const roots = [];
+  for (const inst of localInstances.values()) if (inst.root) roots.push(inst.root);
+  if (tiles && tiles.group) roots.push(tiles.group);
+  for (const r of roots) r.traverse(o => {
+    if (!o.isMesh || !o.material) return;
+    for (const m of [].concat(o.material)) {
+      if (m === sharedCubeMaterial || m.clippingPlanes === want) continue;
+      if (!want && !m.clippingPlanes) continue;
+      m.clippingPlanes = want; m.needsUpdate = true;
+    }
+  });
+}
+// 断面の外枠(黄色い線)。断面パネルの「外枠を表示」が ON の間は常に出す(薄く切る時は2枚)
+const sliceFrame = new THREE.Group();
+sliceFrame.name = 'slice-frame';
+sliceFrame.visible = false;
+{
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.9, depthTest: false });
+  for (let i = 0; i < 2; i++) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(15), 3));
+    const ln = new THREE.Line(g, lineMat); ln.frustumCulled = false; ln.renderOrder = 997;
+    sliceFrame.add(ln);
+  }
+}
+scene.add(sliceFrame);
+const _sfU = new THREE.Vector3(), _sfV = new THREE.Vector3(), _sfP = new THREE.Vector3();
+function sliceFrameUpdate() {
+  const show = sliceState.on && sliceState.frame && !(topdownState.active && topdownState.view === 'face');
+  sliceFrame.visible = show;
+  if (!show) return;
+  const box = modelWorldBox(_sliceBox);
+  if (box.isEmpty()) { sliceFrame.visible = false; return; }
+  const pl = sliceWorldPlane();
+  // 面の上の2つの向き(u: 横、v: 縦か北)
+  if (Math.abs(pl.n.y) > 0.9) { _sfU.set(1, 0, 0); _sfV.set(0, 0, 1); } else { _sfU.set(-pl.n.z, 0, pl.n.x).normalize(); _sfV.set(0, 1, 0); }
+  box.getCenter(_sfP);
+  const e = boxExtentOn(box, _sfP, _sfU, _sfV);
+  const c = _sfP.clone().addScaledVector(_sfU, e.rc).addScaledVector(_sfV, e.uc);
+  const offs = sliceState.mode === 'slab' ? [-sliceState.thick * 0.5 * (worldScale || 1), sliceState.thick * 0.5 * (worldScale || 1)] : [0, null];
+  const hw = e.w * 0.52, hh = e.h * 0.52;
+  sliceFrame.children.forEach((ch, i) => {
+    const o = offs[i];
+    ch.visible = o != null;
+    if (o == null) return;
+    const p0 = c.clone().addScaledVector(pl.n, pl.d - pl.n.dot(c) + o);
+    const a = ch.geometry.attributes.position;
+    const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]];
+    pts.forEach(([su, sv], k) => {
+      _sfP.copy(p0).addScaledVector(_sfU, su * hw).addScaledVector(_sfV, sv * hh);
+      a.setXYZ(k, _sfP.x, _sfP.y, _sfP.z);
+    });
+    a.needsUpdate = true;
+  });
+}
+// 位置を決める(範囲に収める)
+function sliceSetPos(v, moved = true) {
+  const r = sliceRange();
+  sliceState.pos = Math.max(r.min, Math.min(r.max, v));
+  if (moved) sliceState.movedAt = performance.now();
+  sliceApply();
+  sliceSyncUi();
+}
+// ON にした時・向きを変えた時の最初の位置: 水平で「歩く」中は目の高さの少し上、それ以外はモデルの真ん中
+function sliceInitialPos() {
+  const r = sliceRange();
+  if (sliceState.dir === 'h' && (topdownState.active ? true : navState.mode === 'walk')) {
+    const eye = topdownState.active ? topdownState.eyeY : dolly.position.y;
+    const w = (eye - datasetFrame.position.y) / (worldScale || 1) + (topdownState.active ? 0 : 0.3);
+    if (w > r.min && w < r.max) return w;
+  }
+  return (r.min + r.max) / 2;
+}
+function sliceSetOn(on) {
+  on = !!on;
+  if (on && !sliceRange().ok) { showToast('断面: 表示中のモデルの範囲が分かりません'); on = false; }
+  if (sliceState.on === on) { sliceSyncUi(); return; }
+  sliceState.on = on;
+  if (on) {
+    if (sliceState.dir === 'view') sliceState.viewYaw = topdownState.active ? topdownState.heading : dolly.rotation.y;
+    sliceState.flip = sliceDefaultFlip(sliceState.dir);
+    sliceState.pos = sliceInitialPos();
+    sliceState.movedAt = performance.now();
+  } else {
+    sliceState.auto = false;
+    if (topdownState.active && topdownState.view === 'face') setNavMode(navState.mode); // 正対は断面がある時だけ
+  }
+  sliceApply();
+  sliceApplyMeshClipping(true);
+  sliceSyncUi();
+  updateSlicePanel();
+  layoutTopdownBar();
+}
+function sliceSetDir(dir) {
+  if (!SLICE_DIR_LABEL[dir]) return;
+  const wasFace = topdownState.active && topdownState.view === 'face';
+  sliceState.dir = dir;
+  if (dir === 'view') sliceState.viewYaw = topdownState.active && !wasFace ? topdownState.heading : dolly.rotation.y;
+  sliceState.flip = sliceDefaultFlip(dir);
+  sliceSavePrefs();
+  if (wasFace) setNavMode(navState.mode); // 向きを変えたら正対は終える
+  if (!sliceState.on) { sliceSetOn(true); return; }
+  sliceState.pos = sliceInitialPos();
+  sliceState.movedAt = performance.now();
+  sliceApply(); sliceSyncUi(); updateSlicePanel();
+}
+// 位置の −/＋ の1回の量: モデルの範囲の約1/100 を切りのよい値に
+function sliceStep() {
+  const r = sliceRange();
+  const raw = Math.max(0.01, (r.max - r.min) / 100);
+  const p = Math.pow(10, Math.floor(Math.log10(raw)));
+  return [1, 2, 5, 10].map(k => k * p).find(v => v >= raw * 0.75) || raw;
+}
+// 毎フレーム: 自動で往復・枠・メッシュのクリップ面
+function sliceTick(dt) {
+  if (sliceState.on) {
+    if (sliceState.auto && dt > 0) {
+      const r = sliceRange();
+      const span = Math.max(1e-6, r.max - r.min);
+      let p = sliceState.pos + sliceState.autoDir * span / SLICE_AUTO_SEC[sliceState.autoSpeed] * dt;
+      if (p >= r.max) { p = r.max; sliceState.autoDir = -1; }
+      if (p <= r.min) { p = r.min; sliceState.autoDir = 1; }
+      sliceState.pos = p;
+      sliceSyncUiSoon();
+    }
+    sliceApply();
+    sliceApplyMeshClipping(false);
+  }
+  sliceFrameUpdate();
+}
+// データを切り替える時: 断面は切る(向き・見せ方などの好みは残す)
+function sliceReset() {
+  sliceState.on = false; sliceState.auto = false;
+  sliceApply();
+  sliceSyncUi();
+  updateSlicePanel();
+}
+// ── 断面パネル ──
+let _sliceUiAt = 0;
+function sliceSyncUiSoon() { const now = performance.now(); if (now - _sliceUiAt > 120) { _sliceUiAt = now; sliceSyncUi(); updateSlicePanel(); } }
+function sliceSyncUi() {
+  const $ = (id) => document.getElementById(id);
+  const panel = $('cut-panel');
+  const railBtn = $('cut-btn');
+  if (railBtn) {
+    railBtn.classList.toggle('on', sliceState.on);
+    railBtn.setAttribute('aria-pressed', panel && !panel.hidden ? 'true' : 'false');
+  }
+  if (!panel) return;
+  const on = sliceState.on;
+  const onBtn = $('cut-on');
+  onBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  onBtn.textContent = on ? '切っている' : '切っていない';
+  panel.querySelectorAll('[data-cut-dir]').forEach(b => b.setAttribute('aria-pressed', b.dataset.cutDir === sliceState.dir ? 'true' : 'false'));
+  panel.querySelectorAll('[data-cut-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.cutMode === sliceState.mode ? 'true' : 'false'));
+  panel.querySelectorAll('[data-cut-auto-speed]').forEach(b => b.setAttribute('aria-pressed', b.dataset.cutAutoSpeed === sliceState.autoSpeed ? 'true' : 'false'));
+  $('cut-flip').disabled = !on || sliceState.mode !== 'cut';
+  $('cut-thick-row').hidden = sliceState.mode !== 'slab';
+  const tv = (Math.log(sliceState.thick / 0.05) / Math.log(100)) * 1000;
+  if (document.activeElement !== $('cut-thick')) $('cut-thick').value = String(Math.round(tv));
+  $('cut-thick-val').textContent = `${sliceState.thick < 1 ? sliceState.thick.toFixed(2) : sliceState.thick.toFixed(1)} m`;
+  const body = $('cut-body');
+  body.classList.toggle('off', !on);
+  const r = sliceRange();
+  const [axis, from] = SLICE_AXIS[sliceState.dir];
+  $('cut-pos-lab').textContent = axis;
+  $('cut-pos-val').textContent = on ? `${(sliceState.pos - r.min).toFixed(2)} m(${from}) / 全体 ${(r.max - r.min).toFixed(1)} m` : '-';
+  if (document.activeElement !== $('cut-pos')) $('cut-pos').value = String(Math.round((sliceState.pos - r.min) / Math.max(1e-6, r.max - r.min) * 1000));
+  const st = sliceStep();
+  $('cut-step').textContent = `1回 ${st < 1 ? st.toFixed(2) : st} m · 長押しで続けて`;
+  const ab = $('cut-auto');
+  ab.setAttribute('aria-pressed', sliceState.auto ? 'true' : 'false');
+  ab.textContent = sliceState.auto ? '往復を止める' : '自動で往復';
+  $('cut-edge').setAttribute('aria-pressed', sliceState.edge ? 'true' : 'false');
+  $('cut-frame').setAttribute('aria-pressed', sliceState.frame ? 'true' : 'false');
+  const face = topdownState.active && topdownState.view === 'face';
+  const fb = $('cut-face');
+  fb.textContent = face ? '正対を終える' : (sliceState.dir === 'h' ? '真上から見る' : '正対して見る');
+  fb.setAttribute('aria-pressed', face ? 'true' : 'false');
+  $('cut-reaim-row').hidden = sliceState.dir !== 'view';
+  [...panel.querySelectorAll('#cut-body button, #cut-body input')].forEach(el => {
+    if (el.id === 'cut-flip') return;
+    el.disabled = !on && !el.hasAttribute('data-cut-dir') && !el.hasAttribute('data-cut-mode');
+  });
+}
+(function setupCutPanel() {
+  const $ = (id) => document.getElementById(id);
+  const panel = $('cut-panel'), railBtn = $('cut-btn');
+  if (!panel || !railBtn) return;
+  // 右端の列の「断面」: パネルを開く(最初は断面も ON に)・閉じる。閉じても断面は残る(列のボタンが光ったまま)
+  railBtn.addEventListener('click', () => {
+    const open = panel.hidden;
+    panel.hidden = !open;
+    if (open && !sliceState.on) sliceSetOn(true);
+    sliceSyncUi();
+    if (open) showToast('断面: 向き・見せ方・位置をパネルで決めます。パネルを閉じても断面は残ります');
+  });
+  $('cut-close').addEventListener('click', () => { panel.hidden = true; sliceSyncUi(); });
+  $('cut-on').addEventListener('click', () => sliceSetOn(!sliceState.on));
+  panel.querySelectorAll('[data-cut-dir]').forEach(b => b.addEventListener('click', () => sliceSetDir(b.dataset.cutDir)));
+  panel.querySelectorAll('[data-cut-mode]').forEach(b => b.addEventListener('click', () => {
+    sliceState.mode = b.dataset.cutMode === 'slab' ? 'slab' : 'cut';
+    sliceSavePrefs();
+    sliceState.movedAt = performance.now();
+    sliceApply(); sliceApplyMeshClipping(true); sliceSyncUi();
+  }));
+  $('cut-flip').addEventListener('click', () => {
+    sliceState.flip = !sliceState.flip;
+    sliceState.movedAt = performance.now();
+    if (topdownState.active && topdownState.view === 'face') { topdownState.faceDir.copy(sliceWorldPlane().n).setY(0).normalize(); placeTopdownCamera(); }
+    sliceApply(); sliceSyncUi();
+  });
+  $('cut-thick').addEventListener('input', (e) => {
+    sliceState.thick = Math.round(0.05 * Math.pow(100, Number(e.target.value) / 1000) * 100) / 100;
+    sliceState.movedAt = performance.now();
+    sliceSavePrefs(); sliceApply(); sliceSyncUi();
+  });
+  $('cut-pos').addEventListener('input', (e) => {
+    sliceState.auto = false;
+    const r = sliceRange();
+    sliceSetPos(r.min + (r.max - r.min) * Number(e.target.value) / 1000);
+  });
+  // −/＋: 押すと1回、長押しで続けて(作業パネルと同じ)
+  setupNudgeButtons(panel, 'data-cut-nudge', (v) => {
+    if (!sliceState.on) return;
+    sliceState.auto = false;
+    sliceSetPos(sliceState.pos + Number(v) * sliceStep());
+  });
+  $('cut-auto').addEventListener('click', () => {
+    sliceState.auto = !sliceState.auto;
+    if (sliceState.auto) { const r = sliceRange(); sliceState.autoDir = sliceState.pos >= r.max - 1e-6 ? -1 : (sliceState.pos <= r.min + 1e-6 ? 1 : sliceState.autoDir); }
+    sliceSyncUi();
+  });
+  panel.querySelectorAll('[data-cut-auto-speed]').forEach(b => b.addEventListener('click', () => {
+    sliceState.autoSpeed = b.dataset.cutAutoSpeed; sliceSavePrefs(); sliceSyncUi();
+  }));
+  $('cut-edge').addEventListener('click', () => { sliceState.edge = !sliceState.edge; sliceSavePrefs(); sliceApply(); sliceSyncUi(); });
+  $('cut-frame').addEventListener('click', () => { sliceState.frame = !sliceState.frame; sliceSavePrefs(); sliceSyncUi(); });
+  $('cut-reaim').addEventListener('click', () => {
+    sliceState.viewYaw = topdownState.active ? topdownState.heading : dolly.rotation.y;
+    sliceState.pos = sliceInitialPos(); sliceState.movedAt = performance.now();
+    sliceApply(); sliceSyncUi();
+  });
+  // 正対して見る(縦の断面を真正面から)。水平の断面なら真上へ
+  $('cut-face').addEventListener('click', () => {
+    if (topdownState.active && topdownState.view === 'face') { setNavMode(navState.mode); sliceSyncUi(); return; }
+    if (!sliceState.on) return;
+    if (sliceState.dir === 'h') { setNavMode('top'); sliceSyncUi(); return; }
+    if (renderer.xr.isPresenting) { showToast('VR 中は正対は使えません'); return; }
+    if (topdownState.active) exitTopdown();
+    enterTopdown('face');
+    sliceSyncUi();
+    showToast('正対: 断面を真正面から見ています(遠近なし)。× で元の視点へ');
+  });
+  sliceSyncUi();
+})();
+
+window.__sliceReady = true;
+
+// ═══════════════ 色分け(tiles_016。tiles_018 で 輪郭の強調と半透明の表示を抹消) ═══════════════
+// 元の色 / 高さ(青→赤) / 白色(くっきりした白い点＋外側に淡い光。加算で重ね、密な所ほど光る)
+const _lookSaved = savedSettings.look || {};
+const lookState = { color: ['orig', 'height', 'glow'].includes(_lookSaved.color) ? _lookSaved.color : 'orig' };
+function lookSave() { saveSetting('look', { color: lookState.color }); }
+// 共有の点群マテリアルの描き方を切り替える(白色だけ加算・深度を書かない)
+function applyLookMaterial() {
+  const m = sharedCubeMaterial;
+  const glow = lookState.color === 'glow';
+  if (m.transparent !== glow || m.depthWrite !== !glow) {
+    m.transparent = glow;
+    m.blending = glow ? THREE.AdditiveBlending : THREE.NormalBlending;
+    m.depthWrite = !glow;
+    m.alphaToCoverage = !glow;
+    m.needsUpdate = true;
+  }
+  cubeUniforms.uColorMode.value = glow ? 2 : (lookState.color === 'height' ? 1 : 0);
+}
+// 高さの範囲(モデルの下端〜上端)。モデルが変わった・動いた時に合わせる
+let _lookRangeAt = 0;
+function lookTick() {
+  const now = performance.now();
+  if (now - _lookRangeAt < 500) return;
+  _lookRangeAt = now;
+  modelContentScan(); // 読み込んだ点群の範囲を足す(断面・真上の全体・枠などで使う)
+  const box = modelWorldBox(new THREE.Box3());
+  if (!box.isEmpty()) cubeUniforms.uHeightRange.value.set(box.min.y, box.max.y);
+}
+// 当たり判定(点の位置の取得)は深度で行うので、白色の間も一時的に深度を書き、外側の光は描かない
+function pickOpaqueBegin() {
+  const m = sharedCubeMaterial;
+  const s = { dw: m.depthWrite, tr: m.transparent, bl: m.blending };
+  m.depthWrite = true; m.transparent = false; m.blending = THREE.NormalBlending;
+  cubeUniforms.uGlowOff.value = 1;
+  return s;
+}
+function pickOpaqueEnd(s) {
+  const m = sharedCubeMaterial;
+  m.depthWrite = s.dw; m.transparent = s.tr; m.blending = s.bl;
+  cubeUniforms.uGlowOff.value = 0;
+}
+// 画面に描く
+function renderScene(cam) { renderer.render(scene, cam); }
+// 設定の「色分け」
+function syncLookUi() {
+  document.querySelectorAll('[data-look-color]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lookColor === lookState.color ? 'true' : 'false'));
+  const legend = document.getElementById('look-legend');
+  if (legend) legend.hidden = lookState.color !== 'height';
+  const lv = document.getElementById('look-legend-val');
+  if (lv) {
+    const r = cubeUniforms.uHeightRange.value, s2 = worldScale || 1;
+    lv.textContent = r.y > r.x ? `下端 → 上端(${((r.y - r.x) / s2).toFixed(1)} m)` : '';
+  }
+}
+(function setupLook() {
+  document.querySelectorAll('[data-look-color]').forEach(b => b.addEventListener('click', () => {
+    lookState.color = b.dataset.lookColor; lookSave(); applyLookMaterial(); _lookRangeAt = 0; lookTick(); syncLookUi();
+  }));
+  applyLookMaterial();
+  syncLookUi();
+})();
+
+// ═══════════════ 外形の枠と寸法・高さの目盛りと格子(tiles_016) ═══════════════
+// 枠: データの範囲(読み込んだ点群の実際の範囲)。辺の長さを「東西・南北・高さ」で表示。
+// 格子: モデルの下端の高さに、切りのよい間隔(太い線は5本おき)の格子。角に高さの目盛り(下端からの高さ)。
+// どちらも設定の「表示するもの」で ON/OFF。文字は画面のラベル(VR では線だけ)。
+const structState = { box: !!savedSettings.structBox, grid: !!savedSettings.structGrid };
+const structGroup = new THREE.Group();
+structGroup.name = 'struct';
+scene.add(structGroup);
+const structBoxLines = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1)),
+  new THREE.LineBasicMaterial({ color: 0x7fe3ff, transparent: true, opacity: 0.85 }));
+structBoxLines.matrixAutoUpdate = false;
+structBoxLines.frustumCulled = false;
+structGroup.add(structBoxLines);
+const structGridMinor = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x3aa0c0, transparent: true, opacity: 0.35, depthWrite: false }));
+const structGridMajor = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x7fe3ff, transparent: true, opacity: 0.7, depthWrite: false }));
+const structRuler = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.95 }));
+for (const o of [structGridMinor, structGridMajor, structRuler]) { o.frustumCulled = false; structGroup.add(o); }
+const structLabelsEl = document.createElement('div');
+structLabelsEl.id = 'struct-labels';
+structLabelsEl.setAttribute('aria-hidden', 'true');
+document.body.appendChild(structLabelsEl);
+let structLabels = []; // { el, pos(Vector3 ワールド) }
+let _structKey = '';
+const niceStep = (raw) => {
+  const p = Math.pow(10, Math.floor(Math.log10(Math.max(1e-6, raw))));
+  return [1, 2, 5, 10].map(k => k * p).find(v => v >= raw) || raw;
+};
+const fmtLen = (m) => (m >= 100 ? m.toFixed(0) : m >= 10 ? m.toFixed(1) : m.toFixed(2)) + ' m';
+// 枠にする箱: 読み込んだ点群の実際の範囲(ワールドの軸に沿った箱)。まだ点が無ければタイルセットの外枠(向きがあればその向き)
+function structModelObb() {
+  const wb = modelWorldBox(new THREE.Box3());
+  const content = !tiles || (_mbox.tiles === tiles && !_mbox.rel.isEmpty());
+  if (!wb.isEmpty() && content) return { box: wb, matrix: new THREE.Matrix4() };
+  if (tiles && tiles.getOrientedBoundingBox) {
+    const b = new THREE.Box3(), m = new THREE.Matrix4();
+    try {
+      if (tiles.getOrientedBoundingBox(b, m) && !b.isEmpty()) {
+        tiles.group.updateMatrixWorld(true);
+        return { box: b, matrix: new THREE.Matrix4().multiplyMatrices(tiles.group.matrixWorld, m) };
+      }
+    } catch (e) { /* 取れない形式 */ }
+  }
+  return wb.isEmpty() ? null : { box: wb, matrix: new THREE.Matrix4() };
+}
+function structClearLabels() { structLabels = []; structLabelsEl.textContent = ''; }
+function structAddLabel(text, pos, cls = '') {
+  const el = document.createElement('div');
+  el.className = 'm-label small st-label' + (cls ? ' ' + cls : '');
+  el.textContent = text;
+  structLabelsEl.appendChild(el);
+  structLabels.push({ el, pos: pos.clone() });
+}
+// 作り直し(モデル・表示倍率・位置が変わった時だけ)
+function structRebuild() {
+  structClearLabels();
+  structBoxLines.visible = false; structGridMinor.visible = false; structGridMajor.visible = false; structRuler.visible = false;
+  const s = worldScale || 1;
+  if (structState.box) {
+    const ob = structModelObb();
+    if (ob) {
+      const size = ob.box.getSize(new THREE.Vector3()), c = ob.box.getCenter(new THREE.Vector3());
+      structBoxLines.matrix.copy(ob.matrix).multiply(new THREE.Matrix4().compose(c, new THREE.Quaternion(), size));
+      structBoxLines.matrixWorld.copy(structBoxLines.matrix);
+      structBoxLines.visible = true;
+      // 3つの辺: ワールドでの向きを見て「高さ・東西・南北」に名前を付ける
+      const ny = topdownState.northYaw || 0;
+      const north = new THREE.Vector3(-Math.sin(ny), 0, -Math.cos(ny)), east = new THREE.Vector3(Math.cos(ny), 0, -Math.sin(ny));
+      const geo = !!topdownState.hasGeoNorth;
+      const m3 = new THREE.Matrix3().setFromMatrix4(ob.matrix);
+      const min = ob.box.min, max = ob.box.max;
+      for (let ax = 0; ax < 3; ax++) {
+        const dir = new THREE.Vector3(ax === 0 ? 1 : 0, ax === 1 ? 1 : 0, ax === 2 ? 1 : 0).applyMatrix3(m3);
+        const len = dir.length() * (max.getComponent(ax) - min.getComponent(ax)) / s;
+        dir.normalize();
+        let name;
+        if (Math.abs(dir.y) > 0.7) name = '高さ';
+        else name = Math.abs(dir.dot(east)) >= Math.abs(dir.dot(north)) ? (geo ? '東西' : 'X') : (geo ? '南北' : 'Z');
+        // ラベルは下の辺(高さは縦の辺)の真ん中
+        const p = new THREE.Vector3(min.x, min.y, min.z);
+        p.setComponent(ax, (min.getComponent(ax) + max.getComponent(ax)) / 2);
+        structAddLabel(`${name} ${fmtLen(len)}`, p.applyMatrix4(ob.matrix), 'st-dim');
+      }
+    }
+  }
+  if (structState.grid) {
+    const wb = modelWorldBox(new THREE.Box3());
+    if (!wb.isEmpty()) {
+      const span = Math.max(wb.max.x - wb.min.x, wb.max.z - wb.min.z) / s; // m
+      const step = niceStep(span / 24) * s;  // ワールド
+      const major = step * 5;
+      const x0 = Math.floor((wb.min.x - step) / major) * major, x1 = Math.ceil((wb.max.x + step) / major) * major;
+      const z0 = Math.floor((wb.min.z - step) / major) * major, z1 = Math.ceil((wb.max.z + step) / major) * major;
+      const y = wb.min.y;
+      const mi = [], ma = [];
+      const nx = Math.round((x1 - x0) / step), nz = Math.round((z1 - z0) / step);
+      for (let i = 0; i <= nx; i++) { const x = x0 + i * step; (i % 5 === 0 ? ma : mi).push(x, y, z0, x, y, z1); }
+      for (let j = 0; j <= nz; j++) { const z = z0 + j * step; (j % 5 === 0 ? ma : mi).push(x0, y, z, x1, y, z); }
+      structGridMinor.geometry.dispose(); structGridMajor.geometry.dispose();
+      structGridMinor.geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(mi, 3));
+      structGridMajor.geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(ma, 3));
+      structGridMinor.visible = structGridMajor.visible = true;
+      structAddLabel(`格子 ${fmtLen(step / s)}(太線 ${fmtLen(major / s)})`, new THREE.Vector3(x0, y, z1), 'st-grid');
+      // 高さの目盛り(モデルの角に縦の線と目盛り)
+      const hgt = (wb.max.y - wb.min.y) / s;
+      const hs = niceStep(hgt / 8) * s;
+      const rx = wb.min.x, rz = wb.min.z, tick = step * 0.6;
+      const rl = [rx, wb.min.y, rz, rx, wb.max.y, rz];
+      for (let k = 0, yy = wb.min.y; yy <= wb.max.y + 1e-6; k++, yy = wb.min.y + k * hs) {
+        rl.push(rx, yy, rz, rx + tick, yy, rz);
+        structAddLabel(`${fmtLen(k * hs / s)}`, new THREE.Vector3(rx + tick, yy, rz), 'st-tick');
+      }
+      structRuler.geometry.dispose();
+      structRuler.geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(rl, 3));
+      structRuler.visible = true;
+    }
+  }
+}
+// 毎フレーム: 変わったら作り直し、ラベルを画面の位置へ
+const _stV = new THREE.Vector3();
+function structTick(cam) {
+  const any = structState.box || structState.grid;
+  structGroup.visible = any;
+  structLabelsEl.hidden = !any || renderer.xr.isPresenting;
+  if (!any) { if (structLabels.length) structClearLabels(); _structKey = ''; return; }
+  const box = modelWorldBox(new THREE.Box3());
+  const key = [structState.box, structState.grid, worldScale, topdownState.northYaw, ...box.min.toArray(), ...box.max.toArray()].map(v => (typeof v === 'number' ? v.toFixed(3) : v)).join(',');
+  if (key !== _structKey) { _structKey = key; structRebuild(); }
+  if (renderer.xr.isPresenting) return;
+  const W = window.innerWidth, H = window.innerHeight;
+  for (const l of structLabels) {
+    _stV.copy(l.pos).project(cam);
+    const vis = _stV.z > -1 && _stV.z < 1 && Math.abs(_stV.x) < 1.1 && Math.abs(_stV.y) < 1.1;
+    l.el.style.display = vis ? '' : 'none';
+    if (vis) l.el.style.transform = `translate(${Math.round((_stV.x + 1) / 2 * W)}px, ${Math.round((1 - _stV.y) / 2 * H)}px) translate(-50%, -120%)`;
+  }
+}
+function syncStructUi() {
+  for (const [id, on] of [['struct-box-toggle', structState.box], ['struct-grid-toggle', structState.grid]]) {
+    const b = document.getElementById(id);
+    if (b) { b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.textContent = on ? '表示中' : '非表示'; }
+  }
+}
+(function setupStruct() {
+  document.getElementById('struct-box-toggle')?.addEventListener('click', () => { structState.box = !structState.box; saveSetting('structBox', structState.box); _structKey = ''; syncStructUi(); });
+  document.getElementById('struct-grid-toggle')?.addEventListener('click', () => { structState.grid = !structState.grid; saveSetting('structGrid', structState.grid); _structKey = ''; syncStructUi(); });
+  syncStructUi();
+})();
+
+// ═══════════════ 目線を水平に戻す(tiles_016) ═══════════════
+// 見上げ・見下ろしが3°を超えた時だけ、左上の「初期位置」の隣に「水平」を出す(1°未満で消す)。押すと なめらかに 0° へ。
+// 位置と左右の向きはそのまま。真上・正対・VR では出さない。PC は H キーでも。
+let _levelShown = false;
+function levelNow() {
+  if (topdownState.active || renderer.xr.isPresenting) return;
+  navState.anim = null;
+  pitchTarget = 0; pitchActive = false;
+}
+function levelTick() {
+  const can = !topdownState.active && !renderer.xr.isPresenting && !gate.active;
+  const a = Math.abs(pitchTarget);
+  const show = can && (_levelShown ? a > 0.017 : a > 0.052);
+  if (show !== _levelShown) {
+    _levelShown = show;
+    const b = document.getElementById('level-btn');
+    if (b) b.hidden = !show;
+    document.body.classList.toggle('tilted', show);
+    layoutBottomUi();
+  }
+}
+(function setupLevel() {
+  document.getElementById('level-btn')?.addEventListener('click', () => { levelNow(); showToast('目線を水平に戻しました'); });
+  window.addEventListener('keydown', (e) => {
+    if (e.code !== 'KeyH' || e.repeat || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (gate.active || isTypingTarget(e.target)) return;
+    if (topdownState.active || Math.abs(pitchTarget) < 0.001) return;
+    levelNow();
+  });
+})();
+
+// ═══════════════ 視点のブックマーク(tiles_016) ═══════════════
+// データ名の隣の ★ から。データごとにこの端末へ保存し、視点(位置・向き・見上げ・回す/歩く/真上/正対)と断面の設定を一緒に覚える。
+const BM_KEY = 'tilesViewer.bookmarks.v1';
+function bmLoad() { const s = lsGet(BM_KEY); return s && typeof s === 'object' ? s : {}; }
+function bmSave(s) { lsSet(BM_KEY, s); }
+const bmCurId = () => currentDataset || localStandaloneId || null;
+function bmList(id = bmCurId()) { const s = bmLoad(); return id && Array.isArray(s[id]) ? s[id] : []; }
+function bmSetList(list, id = bmCurId()) { if (!id) return; const s = bmLoad(); if (list.length) s[id] = list; else delete s[id]; bmSave(s); }
+// 今の視点を記録
+function bmCapture(name) {
+  const face = topdownState.active && topdownState.view === 'face';
+  return {
+    name, at: Date.now(),
+    nav: topdownState.active ? (face ? 'face' : 'top') : navState.mode,
+    pos: dolly.position.toArray().map(v => Math.round(v * 1000) / 1000),
+    yaw: Math.round(dolly.rotation.y * 10000) / 10000,
+    pitch: Math.round(pitchTarget * 10000) / 10000,
+    scale: worldScale,
+    top: topdownState.active ? { center: topdownState.center.toArray(), range: topdownState.rangeM, heading: topdownState.heading, northUp: topdownState.northUp } : null,
+    slice: sliceState.on ? { dir: sliceState.dir, mode: sliceState.mode, flip: sliceState.flip, thick: sliceState.thick, pos: sliceState.pos, viewYaw: sliceState.viewYaw, edge: sliceState.edge } : null,
+  };
+}
+// 記録した視点へ戻る
+function bmGo(b) {
+  if (!b) return;
+  // 断面
+  if (b.slice) {
+    Object.assign(sliceState, { dir: b.slice.dir, mode: b.slice.mode, flip: !!b.slice.flip, thick: b.slice.thick, viewYaw: b.slice.viewYaw || 0, edge: !!b.slice.edge, auto: false });
+    sliceState.on = true;
+    sliceState.pos = b.slice.pos;
+    sliceApply(); sliceApplyMeshClipping(true);
+  } else if (sliceState.on) {
+    sliceSetOn(false);
+  }
+  sliceSyncUi(); updateSlicePanel();
+  if (topdownState.active) exitTopdown();
+  navState.mode = b.nav === 'walk' ? 'walk' : (b.nav === 'orbit' ? 'orbit' : navState.mode);
+  // 位置と向き(なめらかに)
+  const to = new THREE.Vector3().fromArray(b.pos);
+  let dy = ((b.yaw - dolly.rotation.y) % (Math.PI * 2));
+  if (dy > Math.PI) dy -= Math.PI * 2;
+  if (dy < -Math.PI) dy += Math.PI * 2;
+  if (b.nav === 'top' || b.nav === 'face') {
+    dolly.position.copy(to); dolly.rotation.y = b.yaw; pitchTarget = 0;
+    if (b.nav === 'face' && b.slice && b.slice.dir !== 'h') enterTopdown('face'); else enterTopdown('top');
+    if (b.top) {
+      topdownState.center.fromArray(b.top.center);
+      if (b.nav === 'top') { topdownState.heading = b.top.heading; topdownState.northUp = !!b.top.northUp; document.getElementById('td-north')?.setAttribute('aria-pressed', topdownState.northUp ? 'true' : 'false'); }
+      setTopdownRange(b.top.range);
+      placeTopdownCamera(); updateCompass(); syncTopdownRangeUi();
+    }
+    syncNavUi(); sliceSyncUi();
+    return;
+  }
+  navState.anim = {
+    t0: performance.now(), dur: 900, from: dolly.position.clone(), to, yaw0: dolly.rotation.y, dyaw: dy,
+    pitch0: pitchTarget, pitch1: Math.max(-PITCH_MAX + 0.02, Math.min(PITCH_MAX - 0.02, b.pitch || 0)),
+  };
+  navState.wheelMove.set(0, 0, 0);
+  syncNavUi();
+}
+const BM_NAV_LABEL = { orbit: '回す', walk: '歩く', top: '真上', face: '正対' };
+function bmRender() {
+  const pop = document.getElementById('bm-pop');
+  if (!pop || pop.hidden) return;
+  const list = bmList();
+  const id = bmCurId();
+  document.getElementById('bm-add').disabled = !id;
+  const el = document.getElementById('bm-list');
+  el.innerHTML = !id ? '<div class="m-empty">データを開くと使えます</div>' : (list.length ? list.map((b, i) => `
+    <div class="bm-item" data-i="${i}">
+      <button type="button" class="bm-go" data-bm-go="${i}" title="この視点へ">${escapeHtml(b.name)}<span class="bm-sub">${BM_NAV_LABEL[b.nav] || ''}${b.slice ? ' · 断面' : ''}</span></button>
+      <button type="button" class="bm-ic" data-bm-ren="${i}" title="名前を変える" aria-label="名前を変える">✎</button>
+      <button type="button" class="bm-ic warn" data-bm-del="${i}" title="削除(2回押し)" aria-label="削除">×</button>
+    </div>`).join('') : '<div class="m-empty">まだありません。「＋ 今の視点を追加」で記録できます</div>');
+}
+function bmPlace() {
+  const pop = document.getElementById('bm-pop'), b = document.getElementById('bm-btn');
+  if (!pop || !b || pop.hidden) return;
+  const r = b.getBoundingClientRect();
+  const w = Math.min(320, window.innerWidth - 16);
+  pop.style.width = `${w}px`;
+  pop.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, r.left))}px`;
+  pop.style.top = `${Math.round(r.bottom + 6)}px`;
+}
+function bmOpen(open) {
+  const pop = document.getElementById('bm-pop'), b = document.getElementById('bm-btn');
+  if (!pop) return;
+  pop.hidden = !open;
+  if (b) b.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) { bmRender(); bmPlace(); }
+}
+// データ名の隣に ★ を置く(データ名のボタンを作り直す時に呼ぶ)
+function addBookmarkButton() {
+  if (document.getElementById('bm-btn')) { datasetSwitch.appendChild(document.getElementById('bm-btn')); return; }
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.id = 'bm-btn';
+  b.className = 'dataset-btn bm-btn';
+  b.title = '視点のブックマーク(今の視点を記録・戻る)';
+  b.setAttribute('aria-label', '視点のブックマーク');
+  b.setAttribute('aria-expanded', 'false');
+  b.textContent = '★';
+  b.addEventListener('click', (e) => { e.stopPropagation(); bmOpen(document.getElementById('bm-pop').hidden); });
+  datasetSwitch.appendChild(b);
+}
+(function setupBookmarks() {
+  const pop = document.getElementById('bm-pop');
+  if (!pop) return;
+  document.getElementById('bm-close').addEventListener('click', () => bmOpen(false));
+  document.getElementById('bm-add').addEventListener('click', () => {
+    const list = bmList();
+    const name = `視点 ${list.length + 1}`;
+    list.push(bmCapture(name));
+    bmSetList(list);
+    bmRender();
+    showToast(`「${name}」を記録しました(✎ で名前を変えられます)`);
+  });
+  pop.addEventListener('click', (e) => {
+    const go = e.target.closest('[data-bm-go]');
+    if (go) { bmGo(bmList()[Number(go.dataset.bmGo)]); if (isTouchDevice) bmOpen(false); return; }
+    const ren = e.target.closest('[data-bm-ren]');
+    if (ren) {
+      const i = Number(ren.dataset.bmRen);
+      const row = ren.closest('.bm-item');
+      const list = bmList();
+      row.innerHTML = `<input type="text" class="bm-input" maxlength="40" value="${escapeHtml(list[i].name)}" aria-label="名前">` +
+        '<button type="button" class="bm-ic" data-bm-ok title="決める" aria-label="決める">✓</button>';
+      const inp = row.querySelector('input');
+      inp.focus(); inp.select();
+      const ok = () => {
+        const l2 = bmList();
+        if (l2[i]) { l2[i].name = inp.value.trim() || l2[i].name; bmSetList(l2); }
+        bmRender();
+      };
+      row.querySelector('[data-bm-ok]').addEventListener('click', ok);
+      inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); ok(); } if (ev.key === 'Escape') { ev.stopPropagation(); bmRender(); } });
+      return;
+    }
+    const del = e.target.closest('[data-bm-del]');
+    if (del) {
+      if (del.dataset.armed !== '1') {
+        del.dataset.armed = '1'; del.textContent = '削除?';
+        clearTimeout(del._t); del._t = setTimeout(() => { del.dataset.armed = ''; del.textContent = '×'; }, 3000);
+        return;
+      }
+      const list = bmList();
+      list.splice(Number(del.dataset.bmDel), 1);
+      bmSetList(list);
+      bmRender();
+    }
+  });
+  document.addEventListener('pointerdown', (e) => {
+    if (pop.hidden) return;
+    if (pop.contains(e.target) || e.target.closest('#bm-btn')) return;
+    bmOpen(false);
+  }, true);
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) bmOpen(false); });
+  window.addEventListener('resize', bmPlace);
+})();
+
+// ── 設定の上部: 「すべて開く / すべてたたむ」(項目と「個別に調整」をまとめて。ⓘ は setupInfoAll) ──
+(function setupPanelToolbar() {
+  const btn = document.getElementById('sec-all-btn');
+  const more = document.getElementById('lv-more'), adv = document.getElementById('lv-advanced');
+  if (!btn) return;
+  const heads = () => [...document.querySelectorAll('#controls-body .cp-sec > .cp-head')]
+    .filter(h => !h.closest('.cp-sec').hidden && getComputedStyle(h.closest('.cp-sec')).display !== 'none');
+  const allOpen = () => {
+    const hs = heads();
+    return hs.length > 0 && hs.every(h => h.getAttribute('aria-expanded') === 'true') && (!adv || !adv.hidden);
+  };
+  const sync = () => {
+    const all = allOpen();
+    const t = all ? 'すべてたたむ' : 'すべて開く';
+    if (btn.textContent !== t) btn.textContent = t;
+    btn.setAttribute('aria-pressed', all ? 'true' : 'false');
+  };
+  btn.addEventListener('click', () => {
+    const open = btn.getAttribute('aria-pressed') !== 'true';
+    for (const h of heads()) if ((h.getAttribute('aria-expanded') === 'true') !== open) h.click();
+    if (more && adv && adv.hidden === open) more.click(); // 個別に調整も一緒に
+    sync();
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest('#controls-body .cp-head, #lv-more')) setTimeout(sync, 0);
+  });
+  sync();
+})();
+
+// ═══════════════ 自動の視点移動(tiles_019) ═══════════════
+// 経路 × 視線 × 速さ で視点を自動で動かす。経路の大きさ・高さはモデルの外形に合わせ、パネルのスライダーで調整する。
+//   経路: 楕円(周回) / 螺旋(回りながら上下に往復) / 寄りながら回る(寄る⇄離れる) / 円弧の往復(今の向きの左右) / ★の巡回(★を順に周回)
+//   視線: モデル中央 / 進行方向(滑らかに追う) / 水平(モデル中央の方を水平に) / ★の向き(★の巡回だけ)
+//   速さ: 一定(経路の上を同じ速さ) / 緩急(楕円は面の正面で、往復は折り返しで、★の巡回は★の所でゆっくり)
+// 操作(ドラッグ・ホイール・キー・なぞる・ピンチ)すると一時停止。▶ 再生で、今の視点から滑らかに経路へ戻って続きを動く。
+// VR 中は位置だけ動かす(向きは頭・右スティックで自由)。右スティックの押し込みで再生 / 一時停止。
+const AUTO_PATHS = { ellipse: '楕円', spiral: '螺旋', approach: '寄りながら回る', arc: '円弧の往復', tour: '★の巡回' };
+const AUTO_LOOKS = { center: 'モデル中央', ahead: '進行方向', level: '水平', bm: '★の向き' };
+const _autoSaved = savedSettings.autoCam || {};
+function autoNum(v, lo, hi, def) { v = Number(v); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : def; }
+const autoState = {
+  path: AUTO_PATHS[_autoSaved.path] ? _autoSaved.path : 'ellipse',
+  look: AUTO_LOOKS[_autoSaved.look] ? _autoSaved.look : 'center',
+  ease: _autoSaved.ease === true,               // 緩急
+  speed: autoNum(_autoSaved.speed, 1, 9, 5),     // 1(遅く)〜9(速く)
+  size: autoNum(_autoSaved.size, 0.6, 4, 1.5),   // 経路の大きさ(1 = 外形の四隅を通る楕円)
+  height: autoNum(_autoSaved.height, 0, 3, 1.3), // 経路の高さ(モデルの下端から。モデルの高さ(低い時は幅)の何倍か)
+  turns: autoNum(_autoSaved.turns, 1, 6, 3),     // 螺旋・寄りながら回る: 片道の巻き数
+  arc: autoNum(_autoSaved.arc, 15, 90, 60),      // 円弧の往復: 片側の角度(度)
+  dir: _autoSaved.dir === -1 ? -1 : 1,           // 1 = 左回り(上から見て反時計回り)
+  status: 'idle',   // idle / play / pause
+  pausedBy: '',     // 一時停止の理由(user / button / vr / blocked / nogeo)
+  geo: null,        // 経路の形(autoBuild)
+  th: 0, q: 0, thC: 0, seg: 0, segF: 0, // 経路の上の位置(楕円の角度・往復の位相・円弧の中心・★の区間と区間内の進み)
+  blend: null,      // 今の視点 → 経路 の乗り移り
+  last: null,       // 最後に置いた視点(ほかの操作で動いたかを調べる)
+  aheadYaw: null, aheadPitch: 0, tyPrev: 0, tpPrev: 0, // 進行方向を見る時の滑らかな向き(と前のフレームの進む向き)
+};
+if (autoState.look === 'bm' && autoState.path !== 'tour') autoState.look = 'center';
+function autoSave() {
+  const s = autoState;
+  saveSetting('autoCam', { path: s.path, look: s.look, ease: s.ease, speed: s.speed, size: s.size, height: s.height, turns: s.turns, arc: s.arc, dir: s.dir });
+}
+function autoWrap(a) { a = (a + Math.PI) % (Math.PI * 2); if (a < 0) a += Math.PI * 2; return a - Math.PI; }
+function autoClampPitch(p) { return Math.max(-PITCH_MAX + 0.03, Math.min(PITCH_MAX - 0.03, p)); }
+const autoTri = (q) => (q <= 1 ? q : 2 - q);                                       // 0→1→0 の往復
+const autoE = (u) => (autoState.ease ? (1 - Math.cos(Math.PI * u)) / 2 : u);        // 緩急: 端でゆっくり
+const autoEd = (u) => (autoState.ease ? Math.PI / 2 * Math.sin(Math.PI * u) : 1);   // その傾き
+const autoEinv = (u) => (autoState.ease ? Math.acos(1 - 2 * Math.max(0, Math.min(1, u))) / Math.PI : Math.max(0, Math.min(1, u)));
+
+// モデルの外形(シーン座標)
+function autoModelGeo() {
+  const box = modelWorldBox(new THREE.Box3());
+  if (box.isEmpty()) return null;
+  const c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+  const U = Math.max(sz.x / 2, sz.z / 2, 1e-3);
+  return { box, c, U, hx: Math.max(sz.x / 2, 0.4 * U), hz: Math.max(sz.z / 2, 0.4 * U), sy: sz.y, hUnit: Math.max(sz.y, 0.6 * U) };
+}
+// ★ → 経路の点(真上の★は、その範囲が入る高さから真下を見る)
+function autoTourPoints() {
+  const fovH = THREE.MathUtils.degToRad(camera.fov) / 2;
+  return bmList().map(b => {
+    let pos = new THREE.Vector3().fromArray(b.pos || []), yaw = b.yaw || 0, pitch = b.pitch || 0;
+    if (b.nav === 'top' && b.top && Array.isArray(b.top.center)) {
+      pos = new THREE.Vector3().fromArray(b.top.center);
+      pos.y += (b.top.range / 2) / Math.tan(fovH);
+      yaw = b.top.northUp ? topdownState.northYaw : (b.top.heading || 0);
+      pitch = -(PITCH_MAX - 0.03);
+    }
+    return { pos, yaw, pitch: autoClampPitch(pitch), name: b.name };
+  }).filter(p => [p.pos.x, p.pos.y, p.pos.z, p.yaw, p.pitch].every(Number.isFinite));
+}
+// 経路の形を作る(再生・設定の変更のたびに。モデルの外形・★はその時のもの)
+function autoBuild() {
+  const s = autoState, m = autoModelGeo();
+  if (s.path === 'tour') {
+    const pts = autoTourPoints();
+    if (pts.length < 2) return null;
+    const curve = new THREE.CatmullRomCurve3(pts.map(p => p.pos), true, 'centripetal');
+    const n = pts.length, PER = 48, D = n * PER;
+    const lengths = curve.getLengths(D);
+    const segLen = [];
+    for (let i = 0; i < n; i++) segLen.push(Math.max(0, lengths[(i + 1) * PER] - lengths[i * PER]));
+    const bb = new THREE.Box3().setFromPoints(pts.map(p => p.pos));
+    const U = m ? m.U : Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z, 2e-3) / 2;
+    return { kind: 'tour', m, U, center: m ? m.c.clone() : bb.getCenter(new THREE.Vector3()), pts, curve, n, PER, D, lengths, segLen };
+  }
+  if (!m) return null;
+  const g = { kind: s.path, m, U: m.U, center: m.c.clone(), cx: m.c.x, cz: m.c.z,
+    a: m.hx * Math.SQRT2 * s.size, b: m.hz * Math.SQRT2 * s.size, y: m.box.min.y + s.height * m.hUnit };
+  if (s.path === 'spiral') {
+    const base = m.box.min.y + 0.1 * m.sy;
+    g.y0 = Math.min(g.y, base); g.y1 = Math.max(g.y, base + 0.2 * m.hUnit);
+  }
+  // 寄りながら回る: いちばん近い時も外形の四隅を通る楕円(大きさ 1)より内には入らない(大きさが 1 未満ならそのまま)
+  if (s.path === 'approach') g.sNear = Math.max(0.55 * s.size, Math.min(s.size, 1.0)) / s.size;
+  if (s.path === 'arc') g.alpha = s.arc * Math.PI / 180;
+  return g;
+}
+// 経路の上を進む速さ(シーンの単位/秒)。モデルの大きさに合わせる(ふつう=大きさ 1.5 の楕円を約40秒で1周)
+function autoSpeedOf(g) { return g.U * 0.33 * Math.pow(1.6, autoState.speed - 5); }
+const autoEllR = (g, th) => Math.hypot(g.a * Math.sin(th), g.b * Math.cos(th)); // 楕円の 角度あたりの長さ
+function autoArcTheta(g) { const s = autoState; return s.thC + s.dir * g.alpha * (2 * autoE(autoTri(s.q)) - 1); }
+function autoApproachScale(g) { return 1 + (g.sNear - 1) * autoE(autoTri(autoState.q)); }
+function autoTourSegT(g, i, v) { return Math.max(0.6, g.segLen[i] / Math.max(v, 1e-9)); }
+// 区間 i の中で、長さの割合 f の所の曲線の t
+function autoTourT(g, i, f) {
+  const target = g.lengths[i * g.PER] + f * g.segLen[i];
+  let lo = i * g.PER, hi = (i + 1) * g.PER;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (g.lengths[mid] <= target) lo = mid; else hi = mid; }
+  const span = g.lengths[hi] - g.lengths[lo];
+  return (lo + (span > 1e-12 ? Math.max(0, Math.min(1, (target - g.lengths[lo]) / span)) : 0)) / g.D;
+}
+// 進める(k: 乗り移りの間はゆっくり)
+function autoAdvance(g, dt, k) {
+  const s = autoState, v = autoSpeedOf(g) * k;
+  if (g.kind === 'tour') {
+    s.segF += dt / autoTourSegT(g, s.seg, v);
+    let guard = 0;
+    while (s.segF >= 1 && guard++ < g.n) { s.segF -= 1; s.seg = (s.seg + 1) % g.n; }
+    if (s.segF >= 1) s.segF = 0;
+    return;
+  }
+  if (g.kind === 'arc') {
+    // 円弧の長さ(中央の半径で)を往復の片道とする
+    const R = Math.max(autoEllR(g, s.thC), 1e-9);
+    s.q = (s.q + v * dt / (2 * g.alpha * R)) % 2;
+    return;
+  }
+  const sc = g.kind === 'approach' ? autoApproachScale(g) : 1;
+  const m = s.ease ? 1 - 0.6 * Math.cos(4 * s.th) : 1; // 緩急: 楕円の軸の所(面の正面)でゆっくり、斜めで速く
+  const dth = v * m * dt / (Math.max(autoEllR(g, s.th), 1e-9) * sc);
+  s.th = (s.th + s.dir * dth) % (Math.PI * 2);
+  if (g.kind === 'spiral' || g.kind === 'approach') s.q = (s.q + dth / (Math.PI * 2 * s.turns)) % 2;
+}
+// 今の経路の上の位置・進む向き(と★の向き)
+const _autoPose = { pos: new THREE.Vector3(), tan: new THREE.Vector3(), bmYaw: 0, bmPitch: 0 };
+function autoPose(g, out = _autoPose) {
+  const s = autoState;
+  if (g.kind === 'tour') {
+    const f = autoE(s.segF), t = autoTourT(g, s.seg, f);
+    g.curve.getPoint(t, out.pos);
+    g.curve.getTangent(t, out.tan);
+    const A = g.pts[s.seg], B = g.pts[(s.seg + 1) % g.n];
+    const sm = s.segF * s.segF * (3 - 2 * s.segF); // ★の向きは ★ の所で止まるように滑らかに
+    out.bmYaw = A.yaw + autoWrap(B.yaw - A.yaw) * sm;
+    out.bmPitch = A.pitch + (B.pitch - A.pitch) * sm;
+    return out;
+  }
+  if (g.kind === 'arc') {
+    const th = autoArcTheta(g);
+    out.pos.set(g.cx + g.a * Math.cos(th), g.y, g.cz - g.b * Math.sin(th));
+    const sgn = s.dir * (s.q < 1 ? 1 : -1);
+    out.tan.set(-g.a * Math.sin(th), 0, -g.b * Math.cos(th)).multiplyScalar(sgn).normalize();
+    return out;
+  }
+  const th = s.th, u = autoTri(s.q), du = (s.q < 1 ? 1 : -1) / (Math.PI * 2 * s.turns); // du/dθ
+  let sc = 1, dsc = 0, y = g.y, dy = 0;
+  if (g.kind === 'spiral') { y = g.y0 + (g.y1 - g.y0) * autoE(u); dy = (g.y1 - g.y0) * autoEd(u) * du; }
+  if (g.kind === 'approach') {
+    sc = autoApproachScale(g); dsc = (g.sNear - 1) * autoEd(u) * du;
+    y = g.m.c.y + (g.y - g.m.c.y) * sc; dy = (g.y - g.m.c.y) * dsc;
+  }
+  out.pos.set(g.cx + g.a * sc * Math.cos(th), y, g.cz - g.b * sc * Math.sin(th));
+  // 進む向き: θ が dir の向きに進む時の変化
+  out.tan.set(dsc * g.a * Math.cos(th) - sc * g.a * Math.sin(th) * s.dir, dy, -(dsc * g.b * Math.sin(th) + sc * g.b * Math.cos(th) * s.dir));
+  if (out.tan.lengthSq() < 1e-18) out.tan.set(0, 0, -1); else out.tan.normalize();
+  return out;
+}
+// 視線(向き・見上げ)
+function autoLookOf(g, P, dt) {
+  const s = autoState;
+  if (s.look === 'bm' && g.kind === 'tour') return { yaw: P.bmYaw, pitch: autoClampPitch(P.bmPitch) };
+  if (s.look === 'ahead') {
+    const t = P.tan, ty = Math.atan2(-t.x, -t.z), tp = Math.atan2(t.y, Math.max(1e-9, Math.hypot(t.x, t.z)));
+    if (s.aheadYaw == null) { s.aheadYaw = ty; s.aheadPitch = tp; } else {
+      // 曲がり続ける間は遅れずに追い(向きの変わる速さを先に足す)、折り返しなどの急な変わり目だけ滑らかにする
+      const k = 1 - Math.exp(-3 * dt);
+      const dy = autoWrap(ty - s.tyPrev), dp = tp - s.tpPrev;
+      s.aheadYaw += Math.abs(dy) < 0.3 ? dy : 0; s.aheadYaw += autoWrap(ty - s.aheadYaw) * k;
+      s.aheadPitch += Math.abs(dp) < 0.3 ? dp : 0; s.aheadPitch += (tp - s.aheadPitch) * k;
+    }
+    s.tyPrev = ty; s.tpPrev = tp;
+    return { yaw: s.aheadYaw, pitch: autoClampPitch(s.aheadPitch) };
+  }
+  const r = lookYawPitch(P.pos, g.center);
+  return { yaw: r.yaw, pitch: s.look === 'level' ? 0 : autoClampPitch(r.pitch) };
+}
+// 経路の上のどこから始めるか(今の視点に近い所)
+function autoInitParams(g) {
+  const s = autoState, p = dolly.position;
+  s.aheadYaw = null;
+  if (g.kind === 'tour') {
+    let best = 0, bd = Infinity;
+    g.pts.forEach((q, i) => { const d = q.pos.distanceToSquared(p); if (d < bd) { bd = d; best = i; } });
+    s.seg = best; s.segF = 0;
+    return;
+  }
+  const th = Math.atan2(-(p.z - g.cz) / g.b, (p.x - g.cx) / g.a);
+  s.th = th; s.thC = th;
+  if (g.kind === 'arc') s.q = 0.5;
+  else if (g.kind === 'spiral') s.q = autoEinv((p.y - g.y0) / Math.max(1e-9, g.y1 - g.y0));
+  else s.q = 0;
+}
+// 今の視点 → 経路 へ滑らかに乗り移る
+function autoBeginBlend(minDur = 1.0) {
+  const s = autoState, g = s.geo;
+  const P = autoPose(g);
+  const d = dolly.position.distanceTo(P.pos);
+  s.blend = { t: 0, dur: Math.max(minDur, Math.min(3.2, 0.8 + 1.2 * Math.log2(1 + d / g.U))),
+    pos: dolly.position.clone(), yaw: dolly.rotation.y, pitch: pitchTarget };
+  s.aheadYaw = null;
+}
+function autoPlay() {
+  const s = autoState;
+  if (renderer.xr.isPresenting && topdownState.active) return false;
+  if (topdownState.active) setNavMode(navState.mode); // 真上・正対は終える(遠近のある視点で動かす)
+  const g = autoBuild();
+  if (!g) {
+    showToast(s.path === 'tour' ? '★の巡回: このデータの★が2件以上必要です(データ名の隣の ★ で今の視点を追加)' : '自動: モデルの読み込みを待っています');
+    autoSyncUi();
+    return false;
+  }
+  const fresh = s.status === 'idle' || !s.geo || s.geo.kind !== g.kind || (g.kind === 'tour' && s.geo.n !== g.n);
+  s.geo = g;
+  if (fresh) autoInitParams(g);
+  navState.anim = null; navState.wheelMove.set(0, 0, 0);
+  autoBeginBlend();
+  s.status = 'play'; s.pausedBy = ''; s.last = null;
+  autoSyncUi();
+  return true;
+}
+function autoPause(reason) {
+  const s = autoState;
+  if (s.status !== 'play') return;
+  s.status = 'pause'; s.pausedBy = reason || 'button'; s.blend = null; s.last = null;
+  if (reason === 'user') showToast('自動: 操作したので一時停止しました(▶ 再生で続きから)');
+  autoSyncUi();
+}
+function autoStop() {
+  const s = autoState;
+  s.status = 'idle'; s.pausedBy = ''; s.blend = null; s.last = null; s.geo = null;
+  autoSyncUi();
+}
+// 再生中に経路・視線・大きさなどを変えた: 作り直して、今の視点から滑らかに乗り移る
+function autoRefresh() {
+  const s = autoState;
+  autoSave();
+  if (s.status === 'play') {
+    const g = autoBuild();
+    if (!g) { autoPause('nogeo'); return; }
+    if (!s.geo || s.geo.kind !== g.kind || (g.kind === 'tour' && s.geo.n !== g.n)) autoInitParams(g);
+    s.geo = g;
+    autoBeginBlend(0.6);
+  }
+  autoSyncUi();
+}
+// ほかの操作で視点が動いたか(VR は向きを自由にしているので位置だけ)
+function autoUserMoved(xr) {
+  const L = autoState.last;
+  if (!L) return false;
+  const tol = Math.max(1e-7, (autoState.geo ? autoState.geo.U : 1) * 1e-6);
+  if (dolly.position.distanceTo(L.pos) > tol) return true;
+  if (xr) return false;
+  return Math.abs(autoWrap(dolly.rotation.y - L.yaw)) > 1e-6 || Math.abs(pitchTarget - L.pitch) > 1e-6;
+}
+// 毎フレーム(再生中)
+function autoFrame(dt) {
+  const s = autoState, xr = renderer.xr.isPresenting;
+  // 操作の入力: 移動・回転があれば一時停止(VR の右スティックの左右は向きなので止めない)
+  targetVel.set(0, 0, 0); targetYawVel = 0;
+  if (xr) handleVRInput(dt); else if (isTouchDevice) handleTouchInput(dt); else handlePCInput(dt);
+  const moved = targetVel.lengthSq() > 1e-12 || (!xr && Math.abs(targetYawVel) > 1e-9) || autoUserMoved(xr);
+  velocity.set(0, 0, 0); targetVel.set(0, 0, 0);
+  if (xr) {
+    const t = 1 - Math.exp(-SMOOTH * dt);
+    yawVel += (targetYawVel - yawVel) * t;
+    dolly.rotation.y += yawVel * dt;
+  } else { yawVel = 0; targetYawVel = 0; }
+  if (moved) { autoPause('user'); return; }
+  const g = s.geo;
+  if (!g) { autoPause('nogeo'); return; }
+  // 進める(乗り移りの間は動き出しをゆっくり)
+  let kE = 1;
+  if (s.blend) { s.blend.t += dt; const u = Math.min(1, s.blend.t / s.blend.dur); kE = u * u * (3 - 2 * u); }
+  autoAdvance(g, dt, s.blend ? Math.max(0.12, kE) : 1);
+  const P = autoPose(g);
+  const L = autoLookOf(g, P, dt);
+  let yaw = L.yaw, pitch = L.pitch;
+  const pos = _autoTmpPos.copy(P.pos);
+  if (s.blend) {
+    const b = s.blend;
+    pos.lerpVectors(b.pos, P.pos, kE);
+    yaw = b.yaw + autoWrap(yaw - b.yaw) * kE;
+    pitch = b.pitch + (pitch - b.pitch) * kE;
+    if (b.t >= b.dur) s.blend = null;
+  }
+  dolly.position.copy(pos);
+  if (!xr) {
+    dolly.rotation.y += autoWrap(yaw - dolly.rotation.y);
+    pitchTarget = autoClampPitch(pitch);
+  }
+  s.last = { pos: dolly.position.clone(), yaw: dolly.rotation.y, pitch: pitchTarget };
+  if (s.blend == null && s._wasBlend) autoSyncUi();
+  s._wasBlend = !!s.blend;
+}
+const _autoTmpPos = new THREE.Vector3();
+// VR: 右スティックの押し込みで再生 / 一時停止
+let _autoVrBtn = false;
+function autoVrButtons() {
+  const session = renderer.xr.getSession();
+  if (!session) return;
+  let pressed = false, src = null;
+  for (const source of session.inputSources) {
+    if (source.handedness !== 'right' || !source.gamepad) continue;
+    const b = source.gamepad.buttons[3];
+    if (b && b.pressed) { pressed = true; src = source; }
+  }
+  if (pressed && !_autoVrBtn) {
+    if (autoState.status === 'play') autoPause('vr'); else autoPlay();
+    try { src.gamepad.hapticActuators?.[0]?.pulse?.(0.4, 60); } catch { /* 振動できない機器 */ }
+  }
+  _autoVrBtn = pressed;
+}
+// 目安の時間
+function autoFmtSec(sec) {
+  if (!Number.isFinite(sec)) return '-';
+  if (sec < 60) return `約${Math.max(1, Math.round(sec))}秒`;
+  const m = Math.floor(sec / 60), r = Math.round(sec - m * 60);
+  return r ? `約${m}分${r}秒` : `約${m}分`;
+}
+function autoEllPerimeter(a, b) { return Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b))); }
+function autoTimeText(g) {
+  if (!g) return '-';
+  const v = autoSpeedOf(g), s = autoState;
+  if (g.kind === 'tour') {
+    let T = 0;
+    for (let i = 0; i < g.n; i++) T += autoTourSegT(g, i, v);
+    return `1巡 ${autoFmtSec(T)}(★ ${g.n}件)`;
+  }
+  if (g.kind === 'arc') return `片道 ${autoFmtSec(2 * g.alpha * autoEllR(g, s.thC || 0) / v)}`;
+  const lap = autoEllPerimeter(g.a, g.b) / v;
+  if (g.kind === 'spiral') return `1周 ${autoFmtSec(lap)} · 上下の片道 ${autoFmtSec(lap * s.turns)}`;
+  if (g.kind === 'approach') return `1周 ${autoFmtSec(lap)}(遠い時) · 寄るまで 約${s.turns}周`;
+  return `1周 ${autoFmtSec(lap)}`;
+}
+// パネルの表示を今の状態に合わせる
+function autoSyncUi() {
+  const $ = (id) => document.getElementById(id);
+  const panel = $('auto-panel'), rail = $('auto-btn');
+  const s = autoState;
+  if (rail) {
+    rail.classList.toggle('on', s.status === 'play');
+    rail.setAttribute('aria-pressed', panel && !panel.hidden ? 'true' : 'false');
+  }
+  if (!panel) return;
+  const tour = s.path === 'tour';
+  panel.querySelectorAll('[data-auto-path]').forEach(b => b.setAttribute('aria-pressed', b.dataset.autoPath === s.path ? 'true' : 'false'));
+  panel.querySelectorAll('[data-auto-look]').forEach(b => {
+    b.setAttribute('aria-pressed', b.dataset.autoLook === s.look ? 'true' : 'false');
+    if (b.dataset.autoLook === 'bm') b.hidden = !tour;
+  });
+  panel.querySelectorAll('[data-auto-ease]').forEach(b => b.setAttribute('aria-pressed', (b.dataset.autoEase === '1') === s.ease ? 'true' : 'false'));
+  panel.querySelectorAll('[data-auto-dir]').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.autoDir) === s.dir ? 'true' : 'false'));
+  $('auto-size-row').hidden = tour;
+  $('auto-height-row').hidden = tour;
+  $('auto-dir-row').hidden = tour;
+  $('auto-turns-row').hidden = !(s.path === 'spiral' || s.path === 'approach');
+  $('auto-arc-row').hidden = s.path !== 'arc';
+  $('auto-tour-row').hidden = !tour;
+  const setV = (id, v) => { const el = $(id); if (el && document.activeElement !== el) el.value = String(v); };
+  setV('auto-speed', s.speed); setV('auto-size', s.size); setV('auto-height', s.height); setV('auto-turns', s.turns); setV('auto-arc', s.arc);
+  const g = s.status === 'play' && s.geo ? s.geo : autoBuild();
+  $('auto-speed-val').textContent = autoTimeText(g);
+  $('auto-size-val').textContent = `×${s.size.toFixed(2)}`;
+  const m = g && g.m ? g.m : autoModelGeo();
+  $('auto-height-val').textContent = m ? `下端から ${(s.height * m.hUnit / (worldScale || 1)).toFixed(1)} m` : '-';
+  $('auto-turns-val').textContent = `片道 ${s.turns}周`;
+  $('auto-arc-val').textContent = `±${s.arc}°`;
+  const nBm = tour ? autoTourPoints().length : 0;
+  if (tour) {
+    $('auto-tour-info').textContent = nBm >= 2 ? `このデータの★ ${nBm}件を、今いる所に近い★から順に巡ります(最後の★の次は最初の★へ)`
+      : `★が2件以上必要です(いま ${nBm}件)。データ名の隣の ★ で、今の視点を追加できます`;
+  }
+  const play = $('auto-play');
+  play.textContent = s.status === 'play' ? '❚❚ 一時停止' : '▶ 再生';
+  play.setAttribute('aria-pressed', s.status === 'play' ? 'true' : 'false');
+  play.disabled = s.status !== 'play' && tour && nBm < 2;
+  $('auto-stop').disabled = s.status === 'idle';
+  const st = $('auto-status');
+  st.className = `auto-status ${s.status}`;
+  st.textContent = s.status === 'play' ? (s.blend ? `経路へ移っています · ${AUTO_PATHS[s.path]}` : `再生中 · ${AUTO_PATHS[s.path]} · ${AUTO_LOOKS[s.look]}`)
+    : s.status === 'pause' ? ({ user: '一時停止中(操作したため)。▶ 再生で今の視点から続きへ', blocked: '一時停止中(移動・真上・読み込みのため)。▶ 再生で続きから',
+      nogeo: '一時停止中(経路を作れません)', vr: '一時停止中(VR で止めました)。▶ 再生で続きから' }[s.pausedBy] || '一時停止中。▶ 再生で続きから')
+    : '止まっています。▶ 再生で動き出します';
+}
+(function setupAutoPanel() {
+  const $ = (id) => document.getElementById(id);
+  const panel = $('auto-panel'), rail = $('auto-btn');
+  if (!panel || !rail) return;
+  rail.addEventListener('click', () => {
+    const open = panel.hidden;
+    panel.hidden = !open;
+    autoSyncUi();
+    if (open && autoState.status === 'idle') showToast('自動: 経路・視線・速さを選んで ▶ 再生。パネルを閉じても動き続けます');
+  });
+  $('auto-close').addEventListener('click', () => { panel.hidden = true; autoSyncUi(); });
+  $('auto-play').addEventListener('click', () => { if (autoState.status === 'play') autoPause('button'); else autoPlay(); });
+  $('auto-stop').addEventListener('click', autoStop);
+  panel.querySelectorAll('[data-auto-path]').forEach(b => b.addEventListener('click', () => {
+    const s = autoState, p = b.dataset.autoPath;
+    if (s.path === p) return;
+    s.path = p;
+    if (p === 'tour') s.look = 'bm';                  // ★の巡回は ★の向き から
+    else if (s.look === 'bm') s.look = 'center';
+    autoRefresh();
+  }));
+  panel.querySelectorAll('[data-auto-look]').forEach(b => b.addEventListener('click', () => { autoState.look = b.dataset.autoLook; autoRefresh(); }));
+  panel.querySelectorAll('[data-auto-ease]').forEach(b => b.addEventListener('click', () => { autoState.ease = b.dataset.autoEase === '1'; autoRefresh(); }));
+  panel.querySelectorAll('[data-auto-dir]').forEach(b => b.addEventListener('click', () => { autoState.dir = Number(b.dataset.autoDir) === -1 ? -1 : 1; autoRefresh(); }));
+  $('auto-speed').addEventListener('input', (e) => { autoState.speed = autoNum(e.target.value, 1, 9, 5); autoSave(); autoSyncUi(); });
+  for (const [id, key, lo, hi, def] of [['auto-size', 'size', 0.6, 4, 1.5], ['auto-height', 'height', 0, 3, 1.3], ['auto-turns', 'turns', 1, 6, 3], ['auto-arc', 'arc', 15, 90, 60]]) {
+    $(id).addEventListener('input', (e) => { autoState[key] = autoNum(e.target.value, lo, hi, def); autoRefresh(); });
+  }
+  // パネルを開いている間は、★の件数・モデルの大きさの変化を表示に反映
+  setInterval(() => { if (!panel.hidden) autoSyncUi(); }, 1000);
+  autoSyncUi();
+})();
+window.__v19 = { autoState, autoPlay, autoPause, autoStop, autoBuild, autoPose, autoAdvance, autoSpeedOf, autoModelGeo, autoTourPoints, autoTimeText };
+
+// ═══════════════ スマホ: ページが拡大されたままにならないように(tiles_016) ═══════════════
+// ・入力欄の文字は 16px(iPhone は 16px 未満の入力欄に触ると自動で拡大する)。CSS で指定
+// ・それでも拡大された時(入力の後・触り損ねたダブルタップやピンチ)は、入力していない時に 1倍へ戻す
+//   (viewport の設定を一度書き換えて戻すと、iPhone も 1倍に戻る)
+// ・長押しで文章が選ばれた状態になったら外す(入力欄・計測の詳細は除く)
+(function setupZoomGuard() {
+  if (!isTouchDevice) return;
+  const vp = document.querySelector('meta[name="viewport"]');
+  const base = vp ? vp.getAttribute('content') : '';
+  let resetting = false;
+  const zoomed = () => !!(window.visualViewport && window.visualViewport.scale > 1.01);
+  const typing = () => { const a = document.activeElement; return !!(a && a.matches && a.matches('input, textarea, select, [contenteditable="true"]')); };
+  function resetZoom() {
+    if (resetting) return;
+    resetting = true;
+    if (vp) vp.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover');
+    window.scrollTo(0, 0);
+    setTimeout(() => { if (vp) vp.setAttribute('content', base); window.scrollTo(0, 0); resetting = false; }, 350);
+  }
+  window.__resetZoom = resetZoom;
+  document.addEventListener('focusout', (e) => {
+    if (!e.target.matches || !e.target.matches('input, textarea, select')) return;
+    setTimeout(() => {
+      if (typing()) return;
+      if (zoomed()) resetZoom();
+      else if (window.scrollX || window.scrollY) window.scrollTo(0, 0); // キーボードで押し上げられた画面を戻す
+    }, 200);
+  });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      if (!zoomed() || typing()) return;
+      setTimeout(() => { if (zoomed() && !typing()) resetZoom(); }, 300);
+    });
+  }
+  // iPhone の Safari: ページそのもののピンチ拡大を止める(3D の操作は pointer イベントなので影響しない)
+  for (const t of ['gesturestart', 'gesturechange']) document.addEventListener(t, (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('selectionchange', () => {
+    if (typing()) return;
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) return;
+    const n = sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement);
+    if (n && n.closest && n.closest('.m-detail, [data-selectable]')) return;
+    sel.removeAllRanges();
+  });
+})();
+
 (function setupPlacePanel() {
   const panel = document.getElementById('place-panel');
   if (!panel) return;
   const $ = (id) => document.getElementById(id);
   const curDs = () => { const id = currentDataset ?? loadingDataset; return id != null ? getDataset(id) : null; };
   const isLocalDs = (ds) => !!ds && LOCAL_DATASETS.has(ds.id);
-  // 1回の量: 移動の速さ 遅く 0.01 / ふつう 0.1 / 速く 1 m。Shift で 0.01
-  const stepNow = (fine) => (fine ? 0.01 : (boostLevel >= 3 ? 1 : (boostLevel < 1 ? 0.01 : 0.1)));
+  // 1回の量: このパネルの 遅く 0.01 / ふつう 0.1 / 速く 1 m(移動の速さとは別)
+  const stepNow = () => NUDGE_STEPS[placeNudgeKey];
   const r2 = (v) => Math.round(v * 100) / 100;
   const f2 = (v) => (Number(v) || 0).toFixed(2);
   const f1 = (v) => `${(Number(v) || 0).toFixed(1)}°`;
@@ -12186,6 +14164,8 @@ document.addEventListener('click', (e) => { if (e.target.closest && e.target.clo
     const ds = curDs();
     const local = isLocalDs(ds);
     $('pp-id').textContent = ds ? ds.id : '-';
+    const srcT = csvSourceShort('datasets');
+    if ($('pp-src').textContent !== srcT) $('pp-src').textContent = srcT;
     $('pp-local-note').hidden = !local;
     $('pp-main').hidden = !ds || local;
     const stEl = $('pp-state');
@@ -12208,14 +14188,15 @@ document.addEventListener('click', (e) => { if (e.target.closest && e.target.clo
     const rv = $('pp-revert');
     if (rv.dataset.armed !== '1') rv.textContent = ds._added ? 'この追加を取り消す' : '元データの値に戻す';
     rv.disabled = !dirty && !unsaved;
-    $('pp-step').textContent = String(stepNow(false));
+    $('pp-step').textContent = String(stepNow());
+    $('pp-rate').textContent = nudgeRateText(stepNow());
     $('pp-scale-warn').hidden = Math.abs(worldScale - 1) < 1e-6;
   }
   // モデルを動かす(いまの位置だけ。「今の位置を初期位置にする」で一時保存)
-  function nudge(axis, dir, fine) {
+  function nudge(axis, dir) {
     const ds = curDs();
     if (!ds || isLocalDs(ds)) return;
-    const step = stepNow(fine) * dir;
+    const step = stepNow() * dir;
     if (axis === 'x') currentXAdjust = r2(currentXAdjust + step);
     else if (axis === 'y') currentHeightAdjust = r2(currentHeightAdjust + step);
     else currentZAdjust = r2(currentZAdjust + step);
@@ -12236,12 +14217,10 @@ document.addEventListener('click', (e) => { if (e.target.closest && e.target.clo
     applyWorldScale();
     refresh();
   }
-  panel.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-pp]');
-    if (!b) return;
-    const s = b.dataset.pp;
-    nudge(s[0], Number(s.slice(1)), false);
-  });
+  // −/＋: 押すと1回、長押しで続けて
+  setupNudgeButtons(panel, 'data-pp', (v) => nudge(v[0], Number(v.slice(1))));
+  panel.querySelectorAll('[data-pp-speed]').forEach(b => b.addEventListener('click', () => setPlaceNudge(b.dataset.ppSpeed)));
+  syncNudgeButtons('data-pp-speed', placeNudgeKey);
   $('pp-set-model').addEventListener('click', (e) => {
     const ds = curDs();
     if (!ds || isLocalDs(ds)) return;
@@ -12306,21 +14285,13 @@ document.addEventListener('click', (e) => { if (e.target.closest && e.target.clo
     updateDatasetButtons();
     showToast('元データの値に戻しました');
   });
-  // PC のキー: [ ] = 高さ Y、; : = 東西 X、, . = 南北 Z(Shift で 0.01)、R = 初期位置へ
+  // PC のキー: R = 初期位置へ(モデルを動かすキーは無し。−/＋ の長押しで)
   window.addEventListener('keydown', (e) => {
     if (!devModes.place) return;
-    if (localAlign.active) return; // 端末の3Dデータの位置合わせ中([ ] を共用)
+    if (localAlign.active) return; // 端末の3Dデータの位置合わせ中
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (gate.active || isTypingTarget(e.target)) return;
-    const k = e.key;
-    const is = (ch, code) => k === ch || (k === '' && e.code === code);
-    if (is('[', 'BracketLeft')) nudge('y', -1, e.shiftKey);
-    else if (is(']', 'BracketRight')) nudge('y', 1, e.shiftKey);
-    else if (is(';', 'Semicolon')) nudge('x', -1, e.shiftKey);
-    else if (is(':', 'Quote')) nudge('x', 1, e.shiftKey);
-    else if (k === ',' || k === '<' || (k === '' && e.code === 'Comma')) nudge('z', -1, e.shiftKey);
-    else if (k === '.' || k === '>' || (k === '' && e.code === 'Period')) nudge('z', 1, e.shiftKey);
-    else if (e.code === 'KeyR' && !e.repeat) goPose();
+    if (e.code === 'KeyR' && !e.repeat) goPose();
   });
   function applyVisibility() {
     panel.hidden = !devModes.place;
@@ -12345,9 +14316,31 @@ function annLoadStore() {
 }
 function annSaveStore(s) { lsSet(ANN_KEY, s); }
 const annPick = (a) => Object.fromEntries(ANN_FIELDS.map(f => [f, a[f]]));
+const annFieldSame = (x, y) => (typeof x === 'number' ? placeSame(x, y) : String(x ?? '') === String(y ?? ''));
 function annSameList(a, b) {
   if (a.length !== b.length) return false;
-  return a.every((p, i) => ANN_FIELDS.every(f => (typeof p[f] === 'number' ? placeSame(p[f], b[i][f]) : String(p[f] ?? '') === String(b[i][f] ?? ''))));
+  return a.every((p, i) => ANN_FIELDS.every(f => annFieldSame(p[f], b[i][f])));
+}
+// 1件ごとの元データ(a._src = このモデルの元データの何件目か。追加したものは null)
+function annOrig(a) { return a && a._src != null ? (annCsvList(a.datasetId)[a._src] || null) : null; }
+function annItemDirty(a) { const o = annOrig(a); return !!o && !ANN_FIELDS.every(f => annFieldSame(o[f], a[f])); }
+// 削除した元データ(今の一覧に無い元データの件)
+function annDeletedOrig(id) {
+  const used = new Set(annList(id).map(a => a._src).filter(k => k != null));
+  return annCsvList(id).map((a, k) => ({ a, k })).filter(({ k }) => !used.has(k));
+}
+// tiles_014 以前に一時保存した内容(何件目かの記録が無い): 同じ内容 → 同じタイトル → 同じ並びの順で元データと対応させる
+function annInferSrc(id, items) {
+  const csv = annCsvList(id), used = new Set(), src = items.map(() => null);
+  const pass = (match) => items.forEach((a, i) => {
+    if (src[i] != null) return;
+    const k = csv.findIndex((c, j) => !used.has(j) && match(c, a, i, j));
+    if (k >= 0) { src[i] = k; used.add(k); }
+  });
+  pass((c, a) => ANN_FIELDS.every(f => annFieldSame(c[f], a[f])));
+  pass((c, a) => String(c.title ?? '') === String(a.title ?? ''));
+  pass((c, a, i, j) => i === j);
+  return src;
 }
 const annList = (id) => ANNOTATIONS.filter(a => a.datasetId === id);
 const annCsvList = (id) => ANNOTATIONS_CSV.filter(a => a.datasetId === id);
@@ -12355,13 +14348,23 @@ function annIsDirty(id) { return !!annLoadStore().models[id]; }
 function annDirtyIds() { return Object.keys(annLoadStore().models); }
 // 起動時(annotations.csv の読込後): 一時保存した内容で置き換える。CSV と同じになったものは消す
 function applyAnnotationEdits() {
+  // 元データの何件目か(_src)を覚える(1件ずつ元データに戻す・削除した1件を戻す時に使う)
+  const seen = {};
+  for (const a of ANNOTATIONS) { const k = seen[a.datasetId] ?? 0; a._src = k; seen[a.datasetId] = k + 1; }
   ANNOTATIONS_CSV = ANNOTATIONS.map(a => ({ ...a }));
   const st = annLoadStore();
   let changed = false;
   for (const [id, list] of Object.entries(st.models)) {
     if (!Array.isArray(list)) { delete st.models[id]; changed = true; continue; }
     const items = list.map(a => ({ datasetId: id, x: Number(a.x) || 0, y: Number(a.y) || 0, z: Number(a.z) || 0,
-      title: String(a.title ?? ''), body: String(a.body ?? ''), radius: Number(a.radius) || 0.25, dist: Number(a.dist) || 10 }));
+      title: String(a.title ?? ''), body: String(a.body ?? ''), radius: Number(a.radius) || 0.25, dist: Number(a.dist) || 10,
+      _src: Number.isInteger(a.src) ? a.src : null }));
+    if (!list.some(a => a && typeof a === 'object' && 'src' in a)) annInferSrc(id, items).forEach((k, i) => { items[i]._src = k; });
+    const nCsv = annCsvList(id).length, usedK = new Set();
+    for (const a of items) {
+      if (a._src == null || a._src < 0 || a._src >= nCsv || usedK.has(a._src)) a._src = null;
+      else usedK.add(a._src);
+    }
     if (annSameList(annCsvList(id), items)) { delete st.models[id]; changed = true; continue; }
     ANNOTATIONS = ANNOTATIONS.filter(a => a.datasetId !== id).concat(items);
   }
@@ -12369,7 +14372,7 @@ function applyAnnotationEdits() {
 }
 // 1つのモデルの今の内容を一時保存する(annotations.csv と同じなら消す)
 function annRecord(id) {
-  const list = annList(id).map(annPick);
+  const list = annList(id).map(a => (a._src != null ? { ...annPick(a), src: a._src } : annPick(a)));
   const st = annLoadStore();
   if (annSameList(annCsvList(id), list)) delete st.models[id]; else st.models[id] = list;
   annSaveStore(st);
@@ -12418,8 +14421,13 @@ function buildAnnotationsCsv() {
   let sel = -1, lastId = null;
   const curId = () => currentDataset ?? loadingDataset;
   const isLocalId = (id) => id != null && LOCAL_DATASETS.has(id);
-  const stepNow = () => (boostLevel >= 3 ? 1 : (boostLevel < 1 ? 0.01 : 0.1));
+  const stepNow = () => NUDGE_STEPS[annNudgeKey]; // このパネルの 遅く/ふつう/速く(移動の速さとは別)
   const r2 = (v) => Math.round(v * 100) / 100;
+  // 一覧の1件(追加したもの・元データから変えたものに印)
+  const itemHtml = (a, i) => {
+    const tag = !annOrig(a) ? '<span class="ap-tag add">追加</span>' : (annItemDirty(a) ? '<span class="ap-tag chg">変更</span>' : '');
+    return `<b>${i + 1}.</b> ${escapeHtml(a.title || '(タイトルなし)')}${tag}<span class="ap-xyz">${a.x.toFixed(2)}, ${a.y.toFixed(2)}, ${a.z.toFixed(2)}</span>`;
+  };
   // 設置点(黄色い立方体)をモデルの座標に(モデルの位置の分を引く)
   function cubeModelPoint() {
     const p = (orbitState.active) ? orbitState.target : annotationPlacePoint();
@@ -12434,9 +14442,14 @@ function buildAnnotationsCsv() {
     const id = curId();
     const l = id != null && !isLocalId(id) ? annList(id) : [];
     listEl.innerHTML = l.length ? l.map((a, i) =>
-      `<button type="button" class="ap-item${i === sel ? ' sel' : ''}" data-i="${i}" role="option" aria-selected="${i === sel}">` +
-      `<b>${i + 1}.</b> ${escapeHtml(a.title || '(タイトルなし)')}<span class="ap-xyz">${a.x.toFixed(2)}, ${a.y.toFixed(2)}, ${a.z.toFixed(2)}</span></button>`).join('')
+      `<button type="button" class="ap-item${i === sel ? ' sel' : ''}" data-i="${i}" role="option" aria-selected="${i === sel}">${itemHtml(a, i)}</button>`).join('')
       : `<div class="pp-hint">${isLocalId(id) ? '端末の3Dデータには置けません' : 'まだありません。「＋ 立方体の所に追加」で置けます'}</div>`;
+    // 削除した元データ(「戻す」で一覧に戻す)
+    const del = id != null && !isLocalId(id) ? annDeletedOrig(id) : [];
+    $('ap-deleted').hidden = !del.length;
+    $('ap-deleted-list').innerHTML = del.map(({ a, k }) =>
+      `<div class="ap-item ap-del-item"><span><b>元データ ${k + 1}件目</b> ${escapeHtml(a.title || '(タイトルなし)')}</span>` +
+      `<button type="button" class="dbg-btn" data-restore-ann="${k}">戻す</button></div>`).join('');
     const a = selA();
     $('ap-edit').hidden = !a;
     if (a) {
@@ -12465,8 +14478,24 @@ function buildAnnotationsCsv() {
       const rv = $('ap-revert'); if (rv.dataset.armed !== '1') rv.disabled = !dirty;
     }
     const a = selA();
-    if (a) { $('ap-x').textContent = a.x.toFixed(2); $('ap-y').textContent = a.y.toFixed(2); $('ap-z').textContent = a.z.toFixed(2); }
+    if (a) {
+      $('ap-x').textContent = a.x.toFixed(2); $('ap-y').textContent = a.y.toFixed(2); $('ap-z').textContent = a.z.toFixed(2);
+      // 選んだ1件: 元データと同じか・変えたか・追加したものか
+      const o = annOrig(a), dirty = annItemDirty(a);
+      const ss = $('ap-sel-state');
+      const t2 = !o ? '追加したもの(元データにない)' : (dirty ? '元データから変更あり' : '元データと同じ');
+      if (ss.textContent !== t2) { ss.textContent = t2; ss.className = 'pp-state ' + (!o || dirty ? 'dirty' : 'clean'); }
+      const r1 = $('ap-revert-one');
+      if (r1.dataset.armed !== '1') {
+        r1.disabled = !dirty;
+        const t3 = !o ? '元データにない(追加したもの)' : 'この1件を元データの値に戻す';
+        if (r1.textContent !== t3) r1.textContent = t3;
+      }
+    }
     $('ap-step').textContent = String(stepNow());
+    $('ap-rate').textContent = nudgeRateText(stepNow());
+    const srcT = csvSourceShort('annotations');
+    if ($('ap-src').textContent !== srcT) $('ap-src').textContent = srcT;
   }
   function select(i) { sel = i; renderList(); }
   // 位置だけ変えた時は作り直さず動かす
@@ -12508,14 +14537,16 @@ function buildAnnotationsCsv() {
   }
   listEl.addEventListener('click', (e) => { const b = e.target.closest('.ap-item'); if (b) select(Number(b.dataset.i)); });
   $('ap-add').addEventListener('click', addAtCube);
-  document.getElementById('dbg-panel').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-ap]');
-    if (!b) return;
+  // −/＋: 押すと1回、長押しで続けて
+  const dpEl = document.getElementById('dbg-panel');
+  setupNudgeButtons(dpEl, 'data-ap', (v) => {
     const a = selA(); if (!a) return;
-    const s = b.dataset.ap, k = s[0];
-    a[k] = r2(a[k] + stepNow() * Number(s.slice(1)));
+    const k = v[0];
+    a[k] = r2(a[k] + stepNow() * Number(v.slice(1)));
     movedSel(curId());
   });
+  dpEl.querySelectorAll('[data-ap-speed]').forEach(b => b.addEventListener('click', () => setAnnNudge(b.dataset.apSpeed)));
+  syncNudgeButtons('data-ap-speed', annNudgeKey);
   $('ap-to-cube').addEventListener('click', () => {
     const a = selA(); if (!a) return;
     Object.assign(a, cubeModelPoint());
@@ -12538,7 +14569,7 @@ function buildAnnotationsCsv() {
     const id = curId(), keep = sel;
     textTimer = setTimeout(() => { annRecord(id); annRebuild(id); sel = keep; renderList(); }, 500);
     const btn = listEl.querySelector(`.ap-item[data-i="${sel}"]`);
-    if (btn) btn.innerHTML = `<b>${sel + 1}.</b> ${escapeHtml(a.title || '(タイトルなし)')}<span class="ap-xyz">${a.x.toFixed(2)}, ${a.y.toFixed(2)}, ${a.z.toFixed(2)}</span>`;
+    if (btn) btn.innerHTML = itemHtml(a, sel);
   };
   $('ap-title').addEventListener('input', onText);
   $('ap-body').addEventListener('input', onText);
@@ -12567,6 +14598,36 @@ function buildAnnotationsCsv() {
     annRecord(id); annRebuild(id);
     sel = -1; renderList();
   }));
+  // 選んだ1件を元データの値に戻す(2回押し)
+  $('ap-revert-one').addEventListener('click', (e) => armed(e.currentTarget, 'もう一度押すと戻します', 'この1件を元データの値に戻す', () => {
+    const a = selA(); if (!a) return;
+    const o = annOrig(a); if (!o) return;
+    const id = curId(), keep = sel;
+    clearTimeout(textTimer); flushRecord();
+    Object.assign(a, annPick(o));
+    annRecord(id); annRebuild(id); sel = keep; renderList();
+    showToast(`${keep + 1}件目を元データの値に戻しました`);
+  }));
+  // 削除した元データの1件を一覧に戻す(元データの並びの位置へ)
+  $('ap-deleted-list').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-restore-ann]'); if (!b) return;
+    const id = curId(); if (id == null || isLocalId(id)) return;
+    clearTimeout(textTimer); flushRecord();
+    const k = Number(b.dataset.restoreAnn);
+    const o = annCsvList(id)[k]; if (!o) return;
+    const item = { datasetId: id, ...annPick(o), _src: k };
+    // 元データで1つ前の件のすぐ後ろへ(無ければ1つ後ろの件の前、それも無ければ先頭)
+    const cur = annList(id);
+    const prev = [...cur].reverse().find(x => x._src != null && x._src < k);
+    const next = cur.find(x => x._src != null && x._src > k);
+    if (prev) ANNOTATIONS.splice(ANNOTATIONS.indexOf(prev) + 1, 0, item);
+    else if (next) ANNOTATIONS.splice(ANNOTATIONS.indexOf(next), 0, item);
+    else if (cur.length) ANNOTATIONS.splice(ANNOTATIONS.indexOf(cur[0]), 0, item);
+    else ANNOTATIONS.push(item);
+    annRecord(id); annRebuild(id);
+    sel = annList(id).indexOf(item); renderList();
+    showToast(`削除した元データ ${k + 1}件目を戻しました`);
+  });
   $('ap-revert').addEventListener('click', (e) => armed(e.currentTarget, 'もう一度押すと戻します', '元データの値に戻す', () => {
     const id = curId(); if (id == null) return;
     clearTimeout(recTimer); recId = null; clearTimeout(textTimer);
@@ -12580,6 +14641,10 @@ function buildAnnotationsCsv() {
   window.__annSelect = select;
 })();
 // 動作確認用
+window.__v17test = { frameKinds: () => sliceFrame.children.map(c => c.type), white: () => ({ blending: sharedCubeMaterial.blending, frag: sharedCubeMaterial.fragmentShader, vert: sharedCubeMaterial.vertexShader }) };
+window.__v16test = { fitNdc: () => { if (!topdownState.active) return null; const box = modelWorldBox(); if (box.isEmpty()) return null; orthoCamera.updateMatrixWorld(true); let m = 0; const v = new THREE.Vector3(); for (let i = 0; i < 8; i++) { v.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).project(orthoCamera); m = Math.max(m, Math.abs(v.x), Math.abs(v.y)); } return m; }, sliceFrameVisible: () => sliceFrame.visible, mat: () => ({ blending: sharedCubeMaterial.blending, transparent: sharedCubeMaterial.transparent, depthWrite: sharedCubeMaterial.depthWrite }), structVisible: () => [structBoxLines.visible, structGridMajor.visible] };
+window.__v16 = { sliceState, sliceRange, sliceSetOn, sliceSetDir, sliceSetPos, sliceWorldPlane, lookState, structState, modelWorldBox, topdown: topdownState, bmList, levelNow, cubeUniforms };
+window.__v15 = { placeNudge: () => placeNudgeKey, annNudge: () => annNudgeKey, NUDGE_STEPS, annOrig, annDeletedOrig };
 window.__v14 = { csvSrcLoad, workChangesCount, csvSourceUsed, vrHudTexts: () => vrLoadHud.texts(), gateActive: () => gate.active, current: () => currentDataset };
 window.__v13 = { buildAnnotationsCsv, buildDatasetsCsv, annLoadStore, placeLoadStore, annList, removed: () => REMOVED_DATASETS, datasets: () => DATASETS };
 window.__v12 = { setBudget: (n) => setPointBudget(n), density: () => pointDensity, pcStats: () => pcVis.stats, placeLoadStore, placeIsDirty, buildDatasetsCsv, datasets: () => DATASETS };
@@ -12706,10 +14771,9 @@ function syncTopdownRangeUi() {
 // バーの位置: 下のクレジット行(と地図の出典)の上。計測パネルはバーにかからない高さまで
 function layoutTopdownBar() {
   const bar = document.getElementById('topdown-bar');
-  const mp = document.getElementById('measure-panel');
   if (!bar) return;
   if (!topdownState.active || bar.hidden) {
-    if (mp) mp.style.maxHeight = '';
+    if (typeof layoutBottomUi === 'function' && window.__layoutReady) layoutBottomUi();
     return;
   }
   let top = window.innerHeight;
@@ -12721,10 +14785,7 @@ function layoutTopdownBar() {
   }
   bar.style.bottom = `${Math.max(8, Math.round(window.innerHeight - top + 6))}px`;
   noteTopdownBarTop();
-  if (mp && !mp.hidden) {
-    const bt = bar.getBoundingClientRect().top, mt = mp.getBoundingClientRect().top;
-    mp.style.maxHeight = `${Math.max(120, Math.round(bt - mt - 8))}px`;
-  }
+  if (window.__layoutReady) layoutBottomUi(); // 道具・作業のパネルをバーの上まで
 }
 
 (function setupTopdown() {
@@ -12734,11 +14795,9 @@ function layoutTopdownBar() {
   const compass = document.getElementById('topdown-compass');
   if (!bar || !slider || !num) return;
 
-  // 操作の案内(端末別)
+  // 操作の案内(端末別。真上と正対で変わる)
   const hint = document.getElementById('tdb-hint');
-  if (hint) hint.textContent = isTouchDevice
-    ? 'なぞる: 移動 · 2本指: 拡大縮小・回転 · ダブルタップ: 寄る'
-    : 'ドラッグ/W A S D: 移動 · ホイール: 拡大縮小 · 右ドラッグ/← →: 回転 · ダブルクリック: 寄る';
+  if (hint) hint.textContent = tdbHintText();
 
   syncTopdownRangeUi();
   slider.addEventListener('input', () => {
@@ -12763,25 +14822,28 @@ function layoutTopdownBar() {
   compass?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); north(); } });
   document.getElementById('td-north')?.addEventListener('click', north);
 
-  // 断面: ON で決めた高さより下だけ表示。高さはスライダー(PC は ↑ ↓ キーでも)
+  // 断面(断面パネルと同じもの): 真上のバーから ON にすると、水平で上を消す(目の高さ)。位置はスライダー(PC は ↑ ↓ キーでも)
   const sliceBtn = document.getElementById('slice-toggle');
   sliceBtn?.addEventListener('click', () => {
-    topdownState.sliceOn = !topdownState.sliceOn;
-    sliceBtn.setAttribute('aria-pressed', topdownState.sliceOn ? 'true' : 'false');
-    if (topdownState.sliceOn) {
-      topdownState.sliceY = Math.max(topdownState.sliceBottomY, Math.min(topdownState.sliceTopY, topdownState.eyeY));
+    if (!sliceState.on) {
+      if (sliceState.dir !== 'h') { sliceState.dir = 'h'; sliceSavePrefs(); }
+      sliceState.mode = 'cut';
+      sliceSetOn(true);
+    } else {
+      sliceSetOn(false);
     }
-    applySliceUniforms();
     updateSlicePanel();
     layoutTopdownBar();
   });
   const sliceSlider = document.getElementById('slice-slider');
   sliceSlider?.addEventListener('input', () => {
-    const span = topdownState.sliceTopY - topdownState.sliceBottomY;
-    topdownState.sliceY = topdownState.sliceBottomY + span * (parseInt(sliceSlider.value, 10) / 1000);
-    applySliceUniforms();
+    const r = sliceRange();
+    sliceState.auto = false;
+    sliceSetPos(r.min + (r.max - r.min) * (parseInt(sliceSlider.value, 10) / 1000));
     updateSlicePanel();
   });
+  // 全体: モデル全体が入るように戻す
+  document.getElementById('td-fit')?.addEventListener('click', () => { if (topdownState.active) topdownFit(); });
 
   // 地図の立体/平面(真俯瞰図の間だけの設定。既定は平面)。地図を表示している時だけ出す
   const tdSolidBtn = document.getElementById('td-gsi-solid-toggle');
@@ -12815,7 +14877,7 @@ function layoutTopdownBar() {
   window.addEventListener('resize', layoutTopdownBar);
   if ('ResizeObserver' in window) new ResizeObserver(layoutTopdownBar).observe(bar);
   const mo = new MutationObserver(layoutTopdownBar);
-  for (const id of ['measure-panel', 'gsi-attribution']) {
+  for (const id of ['measure-panel', 'cut-panel', 'auto-panel', 'gsi-attribution']) {
     const el = document.getElementById(id);
     if (el) mo.observe(el, { attributes: true, attributeFilter: ['hidden'] });
   }
@@ -12875,7 +14937,7 @@ function exportTopdownPNG(factor) {
     const a = document.createElement('a');
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     a.href = url;
-    a.download = `真俯瞰図_${ts}.png`;
+    a.download = `${topdownState.view === 'face' ? '断面図' : '真俯瞰図'}_${ts}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -12918,7 +14980,8 @@ function drawExportOverlays(ctx, W, H, s) {
   ctx.stroke();
   ctx.fillText(label, (barX1 + barX2) / 2, barY - 12 * s);
 
-  // --- 方位(北マーク, 左上) ---
+  // --- 方位(北マーク, 左上)。正対(断面図)では出さない ---
+  if (topdownState.view !== 'face') {
   // 画面上方向 upYaw に対し、北は (northYaw - upYaw) の向き。SVGコンパスと同じ符号。
   const upYaw = topdownState.northUp ? topdownState.northYaw : topdownState.heading;
   const rel = topdownState.northYaw - upYaw;
@@ -12959,6 +15022,7 @@ function drawExportOverlays(ctx, W, H, s) {
   ctx.textBaseline = 'middle';
   ctx.fillText('N', 0, -r * 0.45);
   ctx.restore();
+  }
 
   // --- 出典(左下。地図表示時のみ。規約対応で必須) ---
   if (gsiState.visible) {
@@ -13191,23 +15255,37 @@ function perfTick() {
   const q = (pq) => (pq?.items?.length ?? 0) + (pq?.currJobs ?? 0);
   const mem = renderer.info.memory;
   const st = preloadState.job?.store;
+  // 並びと名前は設定パネルにそろえる(表示 → 移動・視点)。そのあとに読み込みと端末の状態
+  const xr = renderer.xr.isPresenting;
+  const navName = xr ? 'VR' : (topdownState.active ? '真上(真俯瞰図)' : (navState.mode === 'orbit' ? '回す' : '歩く'));
+  const lvName = levelState.custom ? 'カスタム' : `レベル ${levelState.current}`;
+  const lvMode = levelState.auto ? (isMovingRecently() ? '自動・移動中は待つ' : '自動') : '手動';
+  const lru = t ? (t.lruCache?.itemSet?.size ?? 0) : 0;
   const lines = [
-    `FPS      ${fps.toFixed(1)}  (最悪 ${worst.toFixed(1)} ms)`,
-    `描画     ${fmtInt(perf.calls)} calls · ${fmtInt(perf.points)} 点`,
-    t ? `タイル   表示 ${t.visibleTiles?.size ?? 0} · 有効 ${t.activeTiles?.size ?? 0} · 保持 ${t.lruCache?.itemSet?.size ?? 0}` : 'タイル   -',
-    t ? `待機     DL ${q(t.downloadQueue)} · 解析 ${q(t.parseQueue)}` : '待機     -',
-    t ? `展開済   ${formatBytes(lruBytes(t))} / 上限 ${cacheMaxBytesMB} MB(端末の目安 ${CACHE_DEVICE_MB} MB)` : '展開済   -',
-    t ? `保持     ${fmtInt(t.lruCache?.itemSet?.size ?? 0)}件 / 上限 ${fmtInt(t.lruCache?.maxSize ?? 0)}件 · ${Math.round(CACHE_KEEP_RATIO * 100)}%までは捨てない` : '保持     -',
-    `読み直し ${fmtInt(tileLoadStats.reloads)}回 / 読込 ${fmtInt(tileLoadStats.loads)}回(直近1分 ${fmtInt(reloadsLastMinute())}回) · 破棄 ${fmtInt(tileLoadStats.disposes)}回`,
-    `GPU      geo ${mem.geometries} · tex ${mem.textures}`,
-    `JSヒープ ${performance.memory ? formatBytes(performance.memory.usedJSHeapSize) : '(取得不可)'}`,
-    `取得元   保存済み ${st ? st.hits : 0} · ネット ${st ? st.misses : 0}`,
-    `表示管理 転送待ち ${pcVis.stats.pendingNodes} · 予算 ${pcVis.budget ? fmtInt(pcVis.budget) : '無制限'}` +
-      (pcVis.budget ? ` · 非表示 ${pcVis.stats.hiddenTiles}タイル(${fmtInt(pcVis.stats.hiddenPoints)}点)` : ''),
-    ...(localInstances.size ? [(() => { const ls = localStats(); return `ローカル ${ls.count}件 · 表示 ${ls.nodes}ノード ${fmtInt(ls.points)}点 · 読込中 ${ls.loading}${ls.meshes ? ` · モデル ${ls.meshes}` : ''}`; })()] : []),
-    `解像度   ${renderer.xr.isPresenting ? 'XR' : `${renderer.getPixelRatio().toFixed(2)}x (端末 ${NATIVE_DPR.toFixed(2)}x)`}`,
-    `表示     ${renderer.xr.isPresenting ? 'VR' : (topdownState.active ? '真俯瞰' : '通常')} · 画質 ${lodSlider.value} (errorTarget ${lodErrorTarget})`,
-    `レベル   ${levelState.custom ? 'カスタム' : levelState.current}${levelState.auto ? (isMovingRecently() ? ' (自動・移動中は待機)' : ' (自動)') : ''} · 選択 ${levelState.level} · 周囲まで ${navState.near.toFixed(1)}m · 速さ ${navMoveSpeed().toFixed(1)}m/秒`,
+    '― 表示 ―',
+    `表示レベル     ${lvName}(${lvMode}) · 起動画面で選んだレベル ${levelState.level}`,
+    `フレームレート ${fps.toFixed(1)} fps(目標 ${levelTargetFps()} fps · いちばん遅いコマ ${worst.toFixed(1)} ms)`,
+    `読み込む細かさ ${qualityFromErrorTarget(lodErrorTarget)}/20(errorTarget ${lodErrorTarget})`,
+    `描く点の上限   ${fmtPoints(pcVis.budget)} · いま描いた点 ${fmtInt(perf.points)}点 · 描画の回数 ${fmtInt(perf.calls)}`,
+    ...(pcVis.budget ? [`  上限で描かない ${pcVis.stats.hiddenTiles}タイル(${fmtInt(pcVis.stats.hiddenPoints)}点)` +
+      (pointDensity < 1 ? ` · 間引き ${Math.round(pointDensity * 100)}%` : '')] : []),
+    t ? `メモリに残す量 ${formatBytes(lruBytes(t))} / ${cacheMaxBytesMB} MB(端末の目安 ${CACHE_DEVICE_MB} MB)` : 'メモリに残す量 -',
+    ...(t ? [`  残しているタイル ${fmtInt(lru)}件 / 上限 ${fmtInt(t.lruCache?.maxSize ?? 0)}件 · ${Math.round(CACHE_KEEP_RATIO * 100)}%までは捨てない`] : []),
+    `描画解像度     ${xr ? 'VR(VR 機器が決める)' : `${renderer.getPixelRatio().toFixed(2)}倍(端末 ${NATIVE_DPR.toFixed(2)}倍)`}`,
+    `色分け         ${{ orig: '元の色', height: '高さ', glow: '白色' }[lookState.color]}` +
+      (sliceState.on ? ` · 断面 ${SLICE_DIR_LABEL[sliceState.dir]}(${sliceState.mode === 'slab' ? '薄く切る' : '片側'})${sliceState.auto ? ' 往復中' : ''}` : ''),
+    '― 移動・視点 ―',
+    `操作           ${navName}${autoState.status !== 'idle' ? ` · 自動 ${AUTO_PATHS[autoState.path]}(${autoState.status === 'play' ? '再生中' : '一時停止'})` : ''}`,
+    `移動の速さ     ${navMoveSpeed().toFixed(1)} m/秒(${SPEED_LABEL[speedStepKey]}) · 周りまで ${navState.near.toFixed(1)} m`,
+    '― 読み込み ―',
+    t ? `タイル         画面に表示 ${t.visibleTiles?.size ?? 0} · 使用中 ${t.activeTiles?.size ?? 0} · メモリ上 ${fmtInt(lru)}` : 'タイル         -',
+    t ? `読み込み待ち   通信 ${q(t.downloadQueue)} · 変換 ${q(t.parseQueue)} · GPU へ送る順番待ち ${pcVis.stats.pendingNodes}` : '読み込み待ち   -',
+    `読み込んだ回数 ${fmtInt(tileLoadStats.loads)}回(うち読み直し ${fmtInt(tileLoadStats.reloads)}回 · 直近1分 ${fmtInt(reloadsLastMinute())}回) · メモリから捨てた ${fmtInt(tileLoadStats.disposes)}回`,
+    `取得元         端末に保存したデータ ${st ? st.hits : 0} · ネット ${st ? st.misses : 0}`,
+    ...(localInstances.size ? [(() => { const ls = localStats(); return `端末の3Dデータ ${ls.count}件 · 表示 ${ls.nodes}ノード ${fmtInt(ls.points)}点 · 読み込み中 ${ls.loading}${ls.meshes ? ` · モデル ${ls.meshes}` : ''}`; })()] : []),
+    '― 端末 ―',
+    `GPU のデータ   形状 ${mem.geometries} · 画像 ${mem.textures}`,
+    `JS のメモリ    ${performance.memory ? formatBytes(performance.memory.usedJSHeapSize) : '(このブラウザでは分かりません)'}`,
   ];
   const text = lines.join('\n');
   if (perfEl.textContent !== text) perfEl.textContent = text;
@@ -13226,6 +15304,7 @@ renderer.setAnimationLoop(() => {
   }
   if (_renderPausedForChooser) { _renderPausedForChooser = false; levelAutoReset(); }
   const dt = Math.min(clock.getDelta(), 0.1);
+  if (renderer.xr.isPresenting) autoVrButtons(); // VR: 右スティックの押し込みで自動の再生 / 一時停止
 
   // 初期位置リセットアニメ中: dolly を補間で更新し、通常の移動入力は抑制する
   const resetting = navAnimActive() || (window.__isResetAnimating && window.__isResetAnimating());
@@ -13236,6 +15315,9 @@ renderer.setAnimationLoop(() => {
   if (!resetting && !gate.active && window.__tickAnnotateOrbit) {
     orbitActive = window.__tickAnnotateOrbit(dt);
   }
+
+  // 自動の視点移動: その地点へ移動・初期位置・真上・読み込み画面などの間は一時停止
+  if (autoState.status === 'play' && (resetting || orbitActive || topdownState.active || gate.active)) autoPause('blocked');
 
   if (resetting) {
     if (navAnimActive()) navAnimTick(); else window.__tickResetAnimation();
@@ -13249,6 +15331,9 @@ renderer.setAnimationLoop(() => {
     yawVel = 0;
     targetVel.set(0, 0, 0);
     targetYawVel = 0;
+  } else if (autoState.status === 'play') {
+    // 自動の視点移動(操作すると一時停止して、次のフレームから通常の操作に戻る)
+    autoFrame(dt);
   } else if (topdownState.active) {
     // 真俯瞰モード中: WASD/ジョイスティックで中心を地図スクロール、←→/スワイプで向き回転。
     // 一人称の dolly 移動/慣性は止める。
@@ -13257,31 +15342,19 @@ renderer.setAnimationLoop(() => {
     targetVel.set(0, 0, 0);
     targetYawVel = 0;
 
-    // 移動速度を通常の一人称移動(MOVE_SPEED)と同等にする。Shift微調整/高速ボタン適用。
+    // 移動の速さ(遅く/ふつう/速く)は「歩く」だけのもの。真上・正対は表示範囲に合わせた速さ(Shift でゆっくり)
     const fine = keys.fine ? 0.2 : 1.0;
-    const boost = boostLevel;
-    const panSpeed = topdownState.rangeM * 0.5 * fine * boost; // m/秒: 表示範囲の半分/秒(拡大していればゆっくり)
+    const panSpeed = topdownState.rangeM * 0.5 * fine; // m/秒: 表示範囲の半分/秒(拡大していればゆっくり)
     let dx = 0, dy = 0;
-
-    // 断面表示ON時は ↑↓ をクリップ面の上下に使う(前後移動は W/S のみ)。
-    // OFF時は ↑↓ も前後移動(従来どおり)。
-    if (topdownState.sliceOn) {
-      const sliceSpeed = Math.max(0.5, (topdownState.sliceTopY - topdownState.sliceBottomY) * 0.25) * fine * boost; // m/秒
-      let moved = false;
-      if (keys.up)   { topdownState.sliceY += sliceSpeed * dt; moved = true; }
-      if (keys.down) { topdownState.sliceY -= sliceSpeed * dt; moved = true; }
-      if (moved) {
-        // 点群の上下端の範囲にクランプ
-        topdownState.sliceY = Math.max(topdownState.sliceBottomY,
-                              Math.min(topdownState.sliceTopY, topdownState.sliceY));
-        applySliceUniforms();
-        updateSlicePanel();
-      }
-      // W/S は前後移動(↑↓は断面に使うので除外)
+    // 真上で水平の断面がある時は ↑↓ を断面の上下に使う(前後移動は W/S のみ)。正対では ↑↓ も上下に動かす
+    if (topdownState.view !== 'face' && sliceState.on && sliceState.dir === 'h') {
+      const r = sliceRange();
+      const sp = Math.max(0.5, (r.max - r.min) * 0.25) * fine; // m/秒
+      if (keys.up || keys.down) { sliceState.auto = false; sliceSetPos(sliceState.pos + (keys.up ? 1 : -1) * sp * dt); updateSlicePanel(); }
       if (keys.forward) dy += panSpeed * dt;
       if (keys.back)    dy -= panSpeed * dt;
     } else {
-      // WASD と 矢印↑↓ の両方で地図スクロール
+      // WASD と 矢印↑↓ の両方でスクロール
       if (keys.forward || keys.up)   dy += panSpeed * dt; // W/↑=画面上へ
       if (keys.back    || keys.down) dy -= panSpeed * dt; // S/↓=画面下へ
     }
@@ -13452,6 +15525,11 @@ renderer.setAnimationLoop(() => {
   tickPivotMarker();
   tickMeasure();
   updatePointUniforms();
+  // 断面(自動の往復・枠)・色分け(高さの範囲)・水平ボタン・外形の枠と格子
+  sliceTick(dt);
+  lookTick();
+  levelTick();
+  structTick(topdownState.active ? orthoCamera : camera);
 
   // 描画: 真俯瞰モード中は正射カメラ、それ以外は通常の一人称カメラ
   if (topdownState.active) {
@@ -13469,7 +15547,7 @@ renderer.setAnimationLoop(() => {
     overlayTick(orthoCamera);
     if (localInstances.size) { orthoCamera.updateMatrixWorld(true); localUpdate(orthoCamera); }
     pcTick();
-    renderer.render(scene, orthoCamera);
+    renderScene(orthoCamera);
   } else {
     // 真俯瞰から戻った直後、ortho 登録を解除して通常カメラ評価に戻す
     if (_orthoCameraRegistered && tiles) {
@@ -13479,7 +15557,7 @@ renderer.setAnimationLoop(() => {
     }
     if (localInstances.size) localUpdate(camera);
     pcTick();
-    renderer.render(scene, camera);
+    renderScene(camera);
   }
 
   // 性能モニタ(描画直後に renderer.info を読む)

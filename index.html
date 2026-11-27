@@ -413,9 +413,9 @@
     body.touch.touch-wide #controls-body {
       max-height: calc(100vh - 160px);
     }
-    /* 説明文サイズもタブレットでは大きめに(スマホは11pxのまま、タブレットは13pxに) */
+    /* 説明文: タブレットは計測・断面・自動の ⓘ と同じ 11.5px(スマホは 11px のまま) */
     body.touch.touch-wide .ctrl-info-body {
-      font-size: 13px;
+      font-size: 11.5px;
       padding: 10px 12px;
       line-height: 1.55;
     }
@@ -794,7 +794,7 @@
     /* 見出し行の右端(自動・今の速さ等)をスライダーの右端にそろえる */
     #controls .cp-body .ctrl-label { width: 260px; }
     /* 値の行・補足 */
-    .cp-valrow { margin-top: 4px; font-family: monospace; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .cp-valrow { margin-top: 4px; font-family: monospace; font-size: 12px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
     .cp-hint { margin-left: 4px; font-family: sans-serif; font-size: 12px; color: rgba(200,221,232,0.6); }
     .cp-num {
       width: 64px; font-family: monospace; background: rgba(0,0,0,0.4); color: #00c8ff;
@@ -888,11 +888,11 @@
       background: rgba(0,200,255,0.07);
       border-left: 2px solid rgba(0,200,255,0.5);
       border-radius: 3px;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: normal;
       letter-spacing: 0.2px;
       color: rgba(220,235,245,0.92);
-      line-height: 1.65;
+      line-height: 1.6;
     }
     .ctrl-info-body[hidden] {
       display: none;
@@ -1263,7 +1263,7 @@
     .imp-file input { margin-top: 3px; }
     .imp-input, #import-dialog select, #import-dialog input[type="number"] {
       box-sizing: border-box; padding: 5px 6px; background: rgba(0,0,0,0.5); color: #fff;
-      border: 1px solid rgba(0,200,255,0.4); border-radius: 3px; font-size: 13px; font-family: inherit;
+      border: 1px solid rgba(0,200,255,0.4); border-radius: 3px; font-size: 12px; font-family: inherit;
     }
     .imp-input { width: 100%; }
     .imp-grid2 { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; }
@@ -1933,7 +1933,7 @@
     .ch-add { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 4px; }
     .ch-add input {
       flex: 1 1 150px; min-width: 0; background: rgba(255,255,255,0.06); color: #fff;
-      border: 1px solid rgba(0,200,255,0.4); border-radius: 4px; padding: 6px 8px; font: 13px sans-serif;
+      border: 1px solid rgba(0,200,255,0.4); border-radius: 4px; padding: 6px 8px; font: 12px sans-serif;
     }
     .ch-add input#ch-new-id { flex: 0 1 110px; }
     .ch-removed .ch-rm-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 13px; }
@@ -2073,8 +2073,7 @@
     #auto-rec-box, #auto-focus-box { display: flex; flex-direction: column; gap: 6px; }
     #auto-panel .cut-k { min-width: 4.2em; }
     #auto-panel .cut-b[hidden] { display: none; }
-    #auto-time { width: 6em; font: 13px monospace; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(125,255,176,0.5); border-radius: 3px; padding: 3px 4px; }
-    body.touch #auto-time { font-size: 16px; }
+    #auto-time { width: 6em; font: 12px monospace; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(125,255,176,0.5); border-radius: 3px; padding: 3px 4px; }
     .auto-list { display: flex; flex-direction: column; gap: 3px; }
     .auto-li { display: flex; gap: 3px; align-items: center; }
     .auto-li .auto-li-sel { flex: 1 1 auto; text-align: left; display: flex; justify-content: space-between; gap: 6px; overflow: hidden; }
@@ -2117,7 +2116,7 @@
     .bm-sub { margin-left: 8px; color: #9ab; font-size: 11px; }
     .bm-ic { flex: 0 0 auto; min-width: 34px; background: transparent; color: #00c8ff; border: 1px solid rgba(0,200,255,0.4); border-radius: 3px; cursor: pointer; font: 13px sans-serif; touch-action: manipulation; }
     .bm-ic.warn { color: #ff9a9a; border-color: rgba(255,120,120,0.45); }
-    .bm-input { flex: 1 1 auto; min-width: 0; padding: 5px 6px; background: #0b1016; color: #fff; border: 1px solid #00c8ff; border-radius: 3px; font: 14px sans-serif; }
+    .bm-input { flex: 1 1 auto; min-width: 0; padding: 5px 6px; background: #0b1016; color: #fff; border: 1px solid #00c8ff; border-radius: 3px; font: 12px sans-serif; }
     /* 設定の上部: 項目・個別調整・ⓘ をまとめて開閉 */
     #cp-toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 2px 6px 10px; }
     body.touch #cp-toolbar { margin: 6px 12px 10px; }
@@ -2149,9 +2148,9 @@
     /* 計測: 道具が6つ */
     .m-tools { grid-template-columns: repeat(7, 1fr); }
     .m-tools .m-tool { padding-left: 0; padding-right: 0; min-width: 0; }
-    /* スマホ: 入力欄は 16px(iPhone が自動で拡大しないように)。触り損ねで文章が選ばれないように */
-    body.touch input[type="text"], body.touch input[type="number"], body.touch input[type="url"], body.touch input[type="search"],
-    body.touch input:not([type]), body.touch textarea, body.touch select { font-size: 16px !important; }
+    /* 入力欄・選択欄の文字は、ボタンと同じ 12px(画面の拡大は viewport で止めているので、iPhone でも入力時に拡大しない)。
+       触り損ねで文章が選ばれないように */
+    input[type="text"], input[type="number"], input[type="url"], input[type="search"], input:not([type]), textarea, select { font-size: 12px !important; }
     body.touch { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
     body.touch input, body.touch textarea, body.touch select, body.touch .m-detail, body.touch [data-selectable] {
       -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
@@ -3122,6 +3121,7 @@
       <b>降下・上昇</b>: モデルの真上 ⇄ 今いる側の地上の目線(高さ 1.6 m)。着陸のように、下りきる手前で前へ水平に進みます。<b>引き</b>: モデルの正面のすぐ前 ⇄ 後ろの上へ下がって全体。どれも端で折り返します。<br>
       <b>横・奥行き・高さ</b>: 経路の形を、見る人から見た左右・前後(見る人からモデルの中央へ)・上下に伸ばし縮めします(真ん中が ×1)。経路ごとに意味のあるものだけ出ます。<br>
       <b>位置</b>: 経路を、今の向きから見て左右・前後・上下に、モデルの大きさの 5% ずつずらします(再生中も)。「戻す」で元の位置。データを切り替えると戻ります。<br>
+      <b>置き方</b>: 経路は、パネルを開いた時・経路を選んだ時の向き(今いる側・今の方角)で置き、モデルを回して確かめても動きません。▶ 再生はその経路で動きます。「今の向きに合わせ直す」で、今の向きで置き直します。<br>
       <b>★の巡回</b>: ★(視点のブックマーク)を順に巡ります(2件以上)。<b>記録</b>: 自分で動かした視点を記録して、そのまま再生します。<b>断面と一緒</b>: 断面を端から端へ動かしながら正面から見ます。
     </div>
     <div class="psec-b">
@@ -3188,6 +3188,9 @@
       </div>
       <div class="cut-row" id="auto-sy-row" hidden><span class="cut-k">高さ</span>
         <input id="auto-sy" type="range" min="0" max="15" step="1" value="8" aria-label="経路の高さの倍率"><span class="cut-val" id="auto-sy-val">-</span>
+      </div>
+      <div class="cut-row" id="auto-place-row" hidden><span class="cut-k">置き方</span>
+        <button type="button" class="cut-b" id="auto-replace" title="今の向き・今いる側から見た形で、経路を置き直す">今の向きに合わせ直す</button>
       </div>
       <div class="cut-row auto-off-row" id="auto-off-row" hidden><span class="cut-k">位置</span>
         <div class="auto-off">
@@ -5934,6 +5937,7 @@ const CUBE_VERT = /* glsl */`
   uniform float uViewportH;   // 描画バッファの高さ(px)。距離 → 画面上のピクセル数の換算に使う
   uniform float uMaxPx;       // 1点の最大サイズ(描画バッファ px)
   uniform float uRealW;       // 実寸の点: 点の実際の大きさ(ワールド)。0 = 画面で一定
+  uniform float uNearZ;       // カメラの near(実寸の点を、目の前で小さくして消す)
   uniform float uDensity; // 0.0〜1.0 (POINT DENSITY: 描画する点の割合)
   uniform float uOrtho;   // 1.0=正射投影(真俯瞰), 0.0=透視投影
   uniform float uSliceMode;   // 断面: 0=なし / 1=片側を消す / 2=薄く切る
@@ -5944,6 +5948,7 @@ const CUBE_VERT = /* glsl */`
   uniform vec2  uHeightRange; // 色分け「高さ」の 下端・上端(ワールド Y)
   varying vec3 vColor;
   varying float vEdge;        // 切り口の強調(0〜1)
+  varying float vFlat;        // 陰影を弱める割合(0〜1)。画面で大きく描く点ほど 1 に近い
 
   // 高さの色: 青 → 水色 → 緑 → 黄 → 赤
   vec3 heightRamp(float t) {
@@ -6002,8 +6007,11 @@ const CUBE_VERT = /* glsl */`
     if (uRealW > 0.0 && uOrtho < 0.5) {
       float pxPerUnit = uViewportH * 0.5 * projectionMatrix[1][1];
       px = max(px, uRealW * length(viewMatrix[0].xyz) * pxPerUnit / max(-mvPos.z, 1e-4));
+      px *= smoothstep(uNearZ, uNearZ * 3.0, -mvPos.z);
     }
     gl_PointSize = clamp(px, 1.0, uMaxPx);
+    // 画面で 4 px(CSS)までの点は陰影をそのまま、16 px 以上は平らに(点が重ならず並んで見える時に模様が目立たないように)
+    vFlat = smoothstep(4.0, 16.0, gl_PointSize / max(uPxScale, 1e-3));
     gl_Position = projectionMatrix * mvPos;
   }
 `;
@@ -6011,6 +6019,7 @@ const CUBE_VERT = /* glsl */`
 const CUBE_FRAG = /* glsl */`
   varying vec3 vColor;
   varying float vEdge;      // 切り口の強調(0〜1)
+  varying float vFlat;      // 陰影を弱める割合(0〜1)
   uniform float uShape;     // 点の形: 0=立方体 / 1=丸
   uniform float uColorMode; // 0=元の色 / 1=高さ / 2=白色
 
@@ -6026,6 +6035,8 @@ const CUBE_FRAG = /* glsl */`
   const float B_TOP   = 0.35 + 0.75 * max(dot(WS_UP,     LIGHT_DIR_WS), 0.0);
   const float B_LEFT  = 0.35 + 0.75 * max(dot(-WS_RIGHT, LIGHT_DIR_WS), 0.0);
   const float B_RIGHT = 0.35 + 0.75 * max(dot(WS_RIGHT,  LIGHT_DIR_WS), 0.0);
+  // 平らにした時の明るさ: 3面の面積(上 42.5%・左右 28.75% ずつ)で平均
+  const float B_MEAN  = 0.425 * B_TOP + 0.2875 * (B_LEFT + B_RIGHT);
 
   void main() {
     vec2 uv = gl_PointCoord * 2.0 - 1.0; // -1〜1（y下向き正）
@@ -6044,6 +6055,7 @@ const CUBE_FRAG = /* glsl */`
       if (a <= 0.01) discard;
       vec3 n = vec3(uv.x, -uv.y, sqrt(max(0.0, 1.0 - r * r)));
       float b = 0.5 + 0.6 * max(dot(n, normalize(vec3(-0.35, 0.6, 0.7))), 0.0);
+      b = mix(b, 0.92, vFlat);
       gl_FragColor = vec4(base * b, a);
       return;
     }
@@ -6057,6 +6069,7 @@ const CUBE_FRAG = /* glsl */`
     float ey = abs(uv.y + 0.15);
     float edge = step(0.90, max(ex, ey));
     brightness *= mix(1.0, 0.55, edge);
+    brightness = mix(brightness, B_MEAN, vFlat);
 
     gl_FragColor = vec4(base * brightness, 1.0);
   }
@@ -6069,6 +6082,7 @@ const cubeUniforms = {
   uViewportH: { value: 1000 },// 描画バッファの高さ(毎フレーム設定)
   uMaxPx:   { value: 128.0 }, // 1点の最大サイズ
   uRealW:   { value: 0.0 },   // 実寸の点の大きさ(ワールド。0 = 画面で一定)
+  uNearZ:   { value: 0.1 },   // カメラの near
   uDensity: { value: 1.0 },
   uOrtho:   { value: 0.0 },   // 真俯瞰(正射)中は1.0に
   uSliceMode:   { value: 0 },   // 断面(0=なし / 1=片側 / 2=薄く切る)
@@ -6126,7 +6140,8 @@ function estimatePointSpacing(geometry) {
   const area = dx * dy + dy * dz + dz * dx;
   return area > 0 ? Math.sqrt(area / n) : 0;
 }
-// いちばん細かく出ている点の間隔: 表示中の点群の間隔(ワールド)の細かい方から1割の所。急に変わらないよう半分ずつ寄せる
+// いちばん細かく出ている点の間隔: 表示中の点群の間隔(ワールド)の細かい方から1割の所。
+// 細かくなる時は半分ずつ、粗くなる時は 1割ずつ寄せる(タイルが出入りするたびに点の大きさが揺れないように)
 const _vpScale = new THREE.Vector3(), _vpObjs = [], _vpSp = [];
 function vrPtsScan() {
   _vpObjs.length = 0; _vpSp.length = 0;
@@ -6138,7 +6153,7 @@ function vrPtsScan() {
   if (!_vpSp.length) return;
   _vpSp.sort((a, b) => a - b);
   const v = _vpSp[Math.floor(_vpSp.length * 0.1)];
-  vrPts.spacingW = vrPts.spacingW > 0 ? vrPts.spacingW + (v - vrPts.spacingW) * 0.5 : v;
+  vrPts.spacingW = vrPts.spacingW > 0 ? vrPts.spacingW + (v - vrPts.spacingW) * (v < vrPts.spacingW ? 0.5 : 0.1) : v;
 }
 const _pointDbSize = new THREE.Vector2();
 // 毎フレーム描画の前に呼ぶ(解像度・VR に合わせて uniform を更新)
@@ -6163,6 +6178,7 @@ function updatePointUniforms() {
   if (on && now - vrPts.lastScan > 300) { vrPts.lastScan = now; vrPtsScan(); }
   const rw = on ? vrPts.spacingW * vrPts.k : 0;
   if (cubeUniforms.uRealW.value !== rw) cubeUniforms.uRealW.value = rw;
+  if (cubeUniforms.uNearZ.value !== camera.near) cubeUniforms.uNearZ.value = camera.near;
 }
 // タイル読込時(load-model)に呼ぶ: タイルの点群を覚えておく(周りまでの距離の計算用)・読み直しの計測
 function registerTileSpacing(tileScene, tile) {
@@ -6347,8 +6363,9 @@ function pcApplyBudget() {
     const n = tile.engineData && tile.engineData.scene;
     if (n && n.parent) { _pcList.push(tile); total += n.userData.pointCount || 0; }
   }
-  // ① 均一に間引く割合
-  if (total > 0) setAutoDensity(pcVis.budget / total); else setAutoDensity(1, true);
+  // ① 均一に間引く割合(実寸の間は間引かず、遠いタイルから省く)
+  if (vrPts.nearOn) setAutoDensity(1, true);
+  else if (total > 0) setAutoDensity(pcVis.budget / total); else setAutoDensity(1, true);
   // ② 間引いても超える分は、粗い階層 → 画面上の誤差が大きい順に並べ、細かいタイルから省く(間引く前の点数で比べる)
   const limit = pcVis.budget / Math.max(AUTO_DENS_FLOOR, pointDensity);
   if (vrPts.nearOn) {
@@ -6357,7 +6374,8 @@ function pcApplyBudget() {
     const key = (t) => {
       let v = _pcKey.get(t);
       if (v !== undefined) return v;
-      const e = t.traversal.error || 0;
+      const n = t.engineData.scene;
+      const e = (t.traversal.error || 0) * (n.userData.pcBudgetHidden ? 1 : 1.5); // 描いていたタイルを優先
       v = t.parent && _pcSet.has(t.parent) ? Math.min(e, key(t.parent)) : e;
       _pcKey.set(t, v);
       return v;
@@ -6413,13 +6431,18 @@ let _orthoCameraRegistered = false; // 真俯瞰用 orthoCamera を tiles に登
 // ・主データから OVERLAY_MAX_M より遠いものは重ねられない(同時に視界に入らないため)。
 const OVERLAY_MAX_M = 2000;
 const overlayState = { list: [] };
-const VR_NEAR_M = 30, VR_NEAR_BOOST = 3;
+const VR_NEAR_M = 30, VR_NEAR_BOOST = 3, VR_NEAR_HYST = 1.3;
 function vrNearFactor(d) { return d < VR_NEAR_M ? 1 + (VR_NEAR_BOOST - 1) * (1 - d / VR_NEAR_M) : 1; }
 function vrNearWrap(t) {
   const orig = t.calculateTileViewError.bind(t);
   t.calculateTileViewError = (tile, target) => {
     orig(tile, target);
-    if (vrPts.nearOn && target.inView) target.error *= vrNearFactor(target.distanceFromCamera);
+    if (!vrPts.nearOn || !target.inView) return;
+    target.error *= vrNearFactor(target.distanceFromCamera);
+    // 前のフレームで細かくしていたタイルは、誤差が 1/1.3 に下がるまで細かくしたまま(境目で出たり消えたりしないように)
+    const fc = t.frameCount;
+    if (tile.__nrRef === fc - 1) target.error *= VR_NEAR_HYST;
+    if (target.error > t.errorTarget) tile.__nrRef = fc;
   };
 }
 function allTileRenderers() {
@@ -14743,6 +14766,7 @@ const autoState = {
   trav: 0,          // 再生を始めてから進んだ量(1回の終わりを知る)
   rate: 0,          // u の進む速さ(/秒)
   anchor: null,     // 経路の向きの基準(再生を始めた時の視点の方角)
+  place: null,      // 経路を置いた向き(パネルを開いた時・経路を選んだ時・「今の向きに合わせ直す」)。モデルを回しても動かない
   origin: null,     // 再生を始めた時の視点(元の視点に戻る)
   blend: null,      // 今の視点 → 経路 の乗り移り
   last: null,       // 最後に置いた視点(ほかの操作で動いたかを調べる)
@@ -14803,6 +14827,12 @@ function autoAnchorNow(m) {
   const p = dolly.position;
   const A = m.hx * Math.SQRT2 * autoState.size, B = m.hz * Math.SQRT2 * autoState.size;
   return { th0: Math.atan2(-(p.z - m.c.z) / B, (p.x - m.c.x) / A), yaw: dolly.rotation.y };
+}
+// 経路を置いた向き。まだ置いていない・データを切り替えた時は、今の向きで置く
+function autoPlaceAnchor(reset = false) {
+  const s = autoState;
+  if (reset || !s.place || s.place.ds !== currentDataset) s.place = Object.assign(autoAnchorNow(), { ds: currentDataset });
+  return s.place;
 }
 // ★ → 経路の点(真上の★は、その範囲が入る高さから真下を見る)
 function autoTourPoints() {
@@ -15515,7 +15545,7 @@ function autoPlay() {
   if (autoRec.on) autoRecStop();
   if (topdownState.active) setNavMode(navState.mode); // 真上・正対は終える(遠近のある視点で動かす)
   const fresh = s.status === 'idle';
-  if (fresh) { s.anchor = autoAnchorNow(); s.origin = { pos: dolly.position.clone(), yaw: dolly.rotation.y, pitch: pitchTarget }; s.fixedYaw = dolly.rotation.y; s.fixedPitch = pitchTarget; s.focusT = 0; }
+  if (fresh) { s.anchor = autoPlaceAnchor(); s.origin = { pos: dolly.position.clone(), yaw: dolly.rotation.y, pitch: pitchTarget }; s.fixedYaw = dolly.rotation.y; s.fixedPitch = pitchTarget; s.focusT = 0; }
   if (s.path === 'slice' && !sliceState.on) sliceSetOn(true);
   if (s.path === 'slice') sliceState.auto = false; // 断面はこちらで動かす
   const g = autoBuild();
@@ -15582,7 +15612,7 @@ function autoRefresh() {
 function autoScrubTo(frac) {
   const s = autoState;
   if (s.status === 'idle') {
-    s.anchor = autoAnchorNow(); s.origin = { pos: dolly.position.clone(), yaw: dolly.rotation.y, pitch: pitchTarget };
+    s.anchor = autoPlaceAnchor(); s.origin = { pos: dolly.position.clone(), yaw: dolly.rotation.y, pitch: pitchTarget };
     s.fixedYaw = dolly.rotation.y; s.fixedPitch = pitchTarget; s.focusT = 0;
     if (topdownState.active) setNavMode(navState.mode);
     if (s.path === 'slice' && !sliceState.on) sliceSetOn(true);
@@ -15846,6 +15876,8 @@ function autoSyncUi() {
     const axes = autoScaleAxes(P, s.lineDir);
     hide('auto-sx-row', !axes.includes('x')); hide('auto-sz-row', !axes.includes('z')); hide('auto-sy-row', !axes.includes('y'));
     hide('auto-off-row', !axes);
+    hide('auto-place-row', !axes);
+    setDisabledIf($('auto-replace'), s.status !== 'idle');
     for (const [k, id] of [['sx', 'auto-sx'], ['sz', 'auto-sz'], ['sy', 'auto-sy']]) {
       const el = $(id), iv = String(autoMulIndex(s[k]));
       if (el && document.activeElement !== el && el.value !== iv) el.value = iv;
@@ -15871,7 +15903,7 @@ function autoSyncUi() {
   setV('auto-dwell', s.dwell); setV('auto-lead', s.leadSec); setV('auto-focus-sec', s.focusSec); setV('auto-vrcap', s.vrCap);
   // 経路(止まっている時は、今の視点から始めた時の形で)
   let g = s.status !== 'idle' && s.geo ? s.geo : null;
-  if (!g) { g = autoBuild({ preview: true, anchor: autoAnchorNow() }); _autoPreview = g; _autoLineGeo = null; }
+  if (!g) { g = autoBuild({ preview: true, anchor: autoPlaceAnchor() }); _autoPreview = g; _autoLineGeo = null; }
   const m = g && g.m ? g.m : autoModelGeo();
   setTextIf($('auto-speed-val'), autoTimeText(g));
   setTextIf($('auto-time-unit'), `秒で${AUTO_UNIT[P] || '1周'}`);
@@ -15933,6 +15965,7 @@ function autoSyncUi() {
   rail.addEventListener('click', () => {
     const open = panel.hidden;
     panel.hidden = !open;
+    if (open && s.status === 'idle') autoPlaceAnchor(true); // 開いた時の向きで経路を置く
     if (!open) autoFocusArmed = false;
     autoSyncUi();
     if (open && s.status === 'idle') showToast('自動: 経路・視線・速さを選んで ▶ 再生。パネルを閉じても動き続けます');
@@ -15945,6 +15978,7 @@ function autoSyncUi() {
     const p = b.dataset.autoPath;
     if (s.path === p) return;
     s.path = p;
+    if (s.status === 'idle') autoPlaceAnchor(true); // 選んだ時の向きで経路を置く
     const cur = s.lookPreGaze != null ? s.lookPreGaze : s.look;
     let nl = cur;
     if (p === 'tour') nl = 'bm';                     // ★の巡回は ★の向き から
@@ -15975,6 +16009,7 @@ function autoSyncUi() {
   }
   panel.querySelectorAll('[data-auto-nudge]').forEach(b => b.addEventListener('click', () => { const [k, sg] = b.dataset.autoNudge.split(':'); autoNudge(k, Number(sg)); }));
   $('auto-off-reset').addEventListener('click', () => { const o = s.off; o.x = 0; o.y = 0; o.z = 0; autoRefresh(); });
+  $('auto-replace').addEventListener('click', () => { autoPlaceAnchor(true); autoRefresh(); showToast('自動: 今の向きで経路を置き直しました'); });
   const bindTg = (id, key) => $(id).addEventListener('click', () => { s[key] = !s[key]; autoRefresh(); });
   bindTg('auto-reverse', 'reverse'); bindTg('auto-home', 'returnHome'); bindTg('auto-curve', 'curveSlow'); bindTg('auto-dist', 'distSlow');
   // スライダー(形が変わるものは作り直す。速さ・切り替えの秒数などは表示だけ)
@@ -16048,8 +16083,9 @@ function autoSyncUi() {
 testHooks.auto = { autoState, autoPlay, autoPause, autoStop, autoBuild, autoEval, autoRate, autoV, autoModelGeo, autoTourPoints, autoTimeText,
   autoS, autoSOf, autoScrubTo, autoFwdTime, pickDownAt, autoRecStart, autoRecStop, autoRecList, autoRec, autoFocusPts, autoFocusSave, autoLookTarget,
   autoGroundAt, autoLine: () => autoLine, autoIsPP, worldScale: () => worldScale };
+testHooks.autoPlace = { place: () => autoState.place && { ...autoState.place }, reset: () => autoPlaceAnchor(true) };
 testHooks.vrPts = { state: () => ({ ...vrPts }), active: () => vrPtsActive(), realW: () => cubeUniforms.uRealW.value, setRealK: vrSetRealK,
-  nearFactor: vrNearFactor, scan: () => { vrPtsScan(); return vrPts.spacingW; } };
+  nearFactor: vrNearFactor, scan: () => { vrPtsScan(); return vrPts.spacingW; }, setSpacing: (v) => { vrPts.spacingW = v; } };
 testHooks.len = { lenStops, sliceAheadStops, autoLenStops, faceRotate, faceFlipSide, faceDirNow, layoutRail, isPhoneLandscape, sliceSyncLive };
 
 // ═══════════════ スマホ: ページが拡大されたままにならないように ═══════════════

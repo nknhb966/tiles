@@ -2241,7 +2241,7 @@
     .cp-check { display: flex; align-items: flex-start; gap: 6px; margin-top: 8px; font-size: 12px; color: #c8e0ec; cursor: pointer; line-height: 1.4; max-width: 260px; }
     .cp-check input { flex: 0 0 auto; margin: 2px 0 0; }
     .cp-check span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
-    #vr-real-box[hidden] { display: none; }
+      .edl-grid { grid-template-columns: repeat(4, 1fr); }
   </style>
 </head>
 <body>
@@ -2321,10 +2321,11 @@
         <div id="info-quality" class="ctrl-info-body" hidden>
           どの細かさのタイル(点群を分割したブロック)まで読み込むかを決めます。
           上げると近くも遠くもくっきりしますが、通信量とメモリが増えます。
+          どの端末でも、30 m 以内は近いほど細かく(目の前でスマホ・タブレットは 2 倍、PC・VR は 3 倍)、100 m より遠くは少し粗く読みます(真上・正対の間を除く)。
           回線が遅い・通信量を抑えたい時は、まずここを下げると効果的です。
         </div>
       </div>
-      <!-- 描く点の上限(ポイント予算)。超えたら全体を均一に間引き、それでも超える分は細かいタイルから省く -->
+      <!-- 描く点の上限(ポイント予算)。超えたら遠くの細かい段階の点から減らす -->
       <div class="ctrl-group">
         <div class="ctrl-label">
           <span>描く点の上限</span>
@@ -2333,8 +2334,9 @@
         <input id="budget-slider" type="range" min="0" max="10" step="1" value="4" style="width:260px; accent-color:#00c8ff;" aria-label="描く点の上限">
         <div class="cp-valrow"><span id="budget-val">300万点</span><span id="budget-now" class="cp-hint"></span></div>
         <div id="info-budget" class="ctrl-info-body" hidden>
-          1回の描画で描く点の数の上限です(ポイント予算)。見えている点が上限を超えると、まず全体を均一に間引き(最大で半分まで)、
-          それでも超える分は、細かいタイルから一時的に描かないようにします。読み込んだデータは残るので、上限を上げるとすぐ元に戻ります。
+          1回の描画で描く点の数の上限です(ポイント予算)。見えている点が上限を超えると、手前の点は減らさず、
+          遠くにある細かい段階の点ほど多く減らします(点ごとにその点までの距離で減らすので、タイルの境目は目立ちません)。
+          点が残らないタイルは一時的に描きません。読み込んだデータは残るので、上限を上げるとすぐ元に戻ります。
           通信量とメモリは変わらず、描画の重さだけが減ります。表示レベルごとに標準の上限があり、自動の時はレベルに合わせて変わります。
         </div>
       </div>
@@ -2370,14 +2372,14 @@
       </div>
       <div id="look-legend" hidden><div class="lg-bar"></div><span id="look-legend-val"></span></div>
       <div id="info-look" class="ctrl-info-body" hidden>
-        <b>元の色</b>: データの色のまま。点の形は立方体になります。<br>
+        <b>元の色</b>: データの色のまま。点の形は四角になります。<br>
         <b>高さ</b>: 点を高さで 青(下)→赤(上) に塗ります。階・段差・傾きが分かりやすくなります。点の形は丸になります。<br>
-        <b>白色</b>: 点をすべて白にします(陰影は元の色と同じ)。点の形は丸になります。<br>
+        <b>白色</b>: 点をすべて白にします(陰影は「点のサイズ」の「点の陰影」で付きます)。点の形は丸になります。<br>
         切り替えた後の点の形は、「点のサイズ」の「点の形」で変えられます。
       </div>
     </div>
 
-    <!-- 点のサイズ: 大きさ(画面px)・点の形 -->
+    <!-- 点のサイズ: 大きさ(画面px)・点の形・点の陰影 -->
     <div id="size-row" class="ctrl-group">
       <div class="ctrl-label">
         <span>点のサイズ</span>
@@ -2390,33 +2392,26 @@
       </div>
       <div class="cp-sublabel">点の形</div>
       <div class="dbg-grid cp-grid">
-        <button type="button" class="dbg-btn" data-point-shape="cube" aria-pressed="true">立方体</button>
+        <button type="button" class="dbg-btn" data-point-shape="cube" aria-pressed="true">四角</button>
         <button type="button" class="dbg-btn" data-point-shape="round" aria-pressed="false">丸</button>
       </div>
-      <label class="cp-check" style="margin-left:0"><input type="checkbox" id="tile-fill" checked><span>タイルの隙間を埋める</span></label>
-      <div class="cp-sublabel">VR の点の大きさ</div>
-      <div class="dbg-grid cp-grid">
-        <button type="button" class="dbg-btn" data-vr-pts="real" aria-pressed="true">実寸</button>
-        <button type="button" class="dbg-btn" data-vr-pts="screen" aria-pressed="false">画面で一定</button>
-      </div>
-      <div id="vr-real-box">
-        <div class="cp-sublabel">実寸の倍率 <b id="vr-real-val">×1.00</b></div>
-        <input id="vr-real-k" type="range" min="0.5" max="3" step="0.05" value="1" style="width:260px; accent-color:#00c8ff;" aria-label="実寸の倍率">
-        <label class="cp-check"><input type="checkbox" id="vr-on-screen"><span>PC・タブレットでも VR と同じ見え方で表示(試す)</span></label>
+      <div class="cp-sublabel">点の陰影</div>
+      <div class="dbg-grid cp-grid edl-grid">
+        <button type="button" class="dbg-btn" data-edl="off" aria-pressed="false">なし</button>
+        <button type="button" class="dbg-btn" data-edl="weak" aria-pressed="false">弱</button>
+        <button type="button" class="dbg-btn" data-edl="mid" aria-pressed="true">中</button>
+        <button type="button" class="dbg-btn" data-edl="strong" aria-pressed="false">強</button>
       </div>
       <div id="info-size" class="ctrl-info-body" hidden>
-        <b>大きさ</b>: すべての点を、画面上の同じピクセル数で描きます。モデルの大きさや距離に関係なく同じ大きさに見えるので、
-        遠くの点も消えません。点の間に隙間が目立つ時は大きくしてください。<br>
-        <b>点の形</b>: 立方体は陰影で面の向きが分かりやすく、丸はなめらかに見えます。<br>
-        <b>タイルの隙間を埋める</b>: 粗いタイル(その場所でいちばん細かく出ているタイル)の点を、そのタイルの点の間隔まで大きくして、黒い隙間を埋めます(画面で 10 px まで)。
-        タイルごとの細かさの差が目立ちにくくなります(VR の実寸の間は使いません)。<br>
-        <b>VR の点の大きさ</b>: 「実寸」は、VR の中で点を実際の大きさ(いちばん細かく出ている点の間隔)で描きます。
-        近い点ほど大きく、遠い点ほど小さくなり、目の前の隙間が埋まります(遠くは「大きさ」より小さくしません)。
-        あわせて手前ほど細かい階層まで読み込み、描く点の上限に達した時は遠い所から省きます(その分、点の数と通信は増えます)。
-        「画面で一定」は PC と同じ描き方です。<br>
-        <b>実寸の倍率</b>: 実寸の点を大きく・小さくします(×1 で隣の点とちょうど接する大きさ)。<br>
-        <b>PC・タブレットでも VR と同じ見え方で表示</b>: ヘッドセットが無くても、実寸の点と手前を細かく読む様子を画面で確かめられます(真上・正対の間は使いません)。<br>
-        VR では X / Y ボタンで大きさ(実寸の時は実寸の倍率)を変えられます。
+        <b>大きさ</b>: すべての点を、画面上の同じピクセル数で描きます。スマホ・タブレット・PC・VR のどれでも、近くでも遠くでも同じ大きさです。
+        点の間に隙間が目立つ時は大きくしてください(点群のすぐ近くでは、データの点の間隔が画面上で広くなるので隙間が見えます)。<br>
+        <b>点の形</b>: 四角は隙間が出にくく、丸はなめらかに見えます。色分けを切り替えると、元の色は四角、高さ・白色は丸になります。<br>
+        <b>点の陰影</b>: 点は平らな色で描き、手前の点との奥行きの差がある所(輪郭・段差・凹凸)を暗くして立体感を出します。
+        「強」ほど濃くなります。「なし」は陰影を付けず、描く処理が1回で済むので軽くなります(重い時に)。<br>
+        <b>点の細かさ</b>(どの端末でも同じ): 手前ほど細かい段階まで読み込み、遠くほど粗く読みます。
+        細かい段階の点は、その点までの距離に応じて少しずつ減らすので、タイル(データの区切り)の境目で細かさが急に変わりません。
+        描く点の上限を超えた時は、手前は減らさず遠くの点から減らします。真上・正対の図では、図全体を同じ細かさにします。<br>
+        VR では X / Y ボタンで大きさを変えられます。
       </div>
     </div>
 
@@ -5813,21 +5808,15 @@ function handleVRInput(dt) {
         if (densityBtnState.y.pressedAt !== null) handleDensityButton('y', false, 0);
 
         const sizeStep = pointSize * 0.05;
-        if (vrPts.mode === 'real') {
-          // 実寸の時は実寸の倍率(押している間、少しずつ)
-          if (xPressed) vrSetRealK(vrPts.k * 0.99);
-          if (yPressed) vrSetRealK(vrPts.k * 1.01);
-        } else {
-          if (xPressed) {
-            pointSize = Math.max(0.5, pointSize - sizeStep);
-            applyPointSize();
-            updateSizeSlider();
-          }
-          if (yPressed) {
-            pointSize = Math.min(30, pointSize + sizeStep);
-            applyPointSize();
-            updateSizeSlider();
-          }
+        if (xPressed) {
+          pointSize = Math.max(0.5, pointSize - sizeStep);
+          applyPointSize();
+          updateSizeSlider();
+        }
+        if (yPressed) {
+          pointSize = Math.min(30, pointSize + sizeStep);
+          applyPointSize();
+          updateSizeSlider();
         }
       }
     }
@@ -5894,7 +5883,6 @@ function reloadsLastMinute() {
 const DEVICE_MEM_GB = Number(navigator.deviceMemory) || 0;
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
-const VR_REAL_K_MIN = 0.5, VR_REAL_K_MAX = 3; // 実寸の倍率の範囲
 const CACHE_DEVICE_MB = (() => {
   if (isVRBrowser) return DEVICE_MEM_GB ? clampN(DEVICE_MEM_GB * 128, 512, 1024) : 768;
   if (isTouchDevice) return IS_IOS ? 640 : (DEVICE_MEM_GB ? clampN(DEVICE_MEM_GB * 128, 384, 1024) : 512);
@@ -5922,29 +5910,34 @@ function isMovingRecently() { return performance.now() - _motion.last < MOTION_S
 // 点群の点サイズ管理（タイルセット切替後も維持）
 let pointSize = 2.0; // 点の基本サイズ(画面上のピクセル数)
 
-// ── 点群密度(間引き)管理 ─────────────────────────
-// シェーダ側で「位置座標ハッシュ vs しきい値」の比較で空間的に均一に間引く。
-// uniform uDensity (0.0〜1.0) を更新するだけで全 Points に即時反映される。
-let pointDensity = 1.0;  // 0.1〜1.0
+// 点の間引き: シェーダ側で「位置座標ハッシュ vs しきい値」の比較で空間的に均一に間引く(uDensity は常に 1)。
+// 上限を超えた時は、遠くにある細かい段階の点から減らす(pcApplyBudget)。
 
-function applyPointDensity() {
-  cubeUniforms.uDensity.value = pointDensity;
-}
+// ── 点の細かさ(どの端末でも共通) ──
+// ・読み込み: 手前ほど細かい段階まで読み、遠くほど粗く読む(画面上の誤差の見積もりに距離で倍率を掛ける)。
+// ・描き方: 細かい段階(追加型の子)の点は、その点までの距離で少しずつ減らす。親の段階が細かくなる距離で 0、
+//   その少し手前で全部になる。タイルごとではなく点ごとに決めるので、隣り合うタイルの境目で急に細かさが変わらない。
+// ・描く点の上限を超えた時は、この「減らし始める距離」を縮める(手前は減らさず、遠くほど多く減らす)。
+// ・真上・正対(正射)は距離が無いので、図全体を同じ細かさにする。
+const LOD_NEAR_M = 30, LOD_FAR_M = 100, LOD_FAR_MIN = 0.6, LOD_NEAR_HYST = 1.3;
+const LOD_NEAR_BOOST = (isTouchDevice && !isVRBrowser) ? 2 : 3; // 目の前の倍率(スマホ・タブレットは控えめ)
+const LOD_MORPH_K = 2;   // 減らし方の傾き(親が細かくなる距離の 2/3 で全部の点)
+const LOD_S_MIN = 0.001; // 上限で「減らし始める距離」を縮める下限
+// 点だけを描く時のレイヤー(点の陰影は、点を別の画像に描いてから付ける)
+const PT_LAYER = 10;
 
-// ── 立方体点群シェーダ ──
-// 各点をスクリーン空間の正方形スプライトとして描画し、ワールド固定の絶対軸で陰影計算。
-// カメラの位置・向きに関わらず面の向き・明るさが変わらない(ビルボード処理なし)。
+// ── 点群シェーダ ──
+// 各点を画面上の正方形(または丸)として、設定の大きさ(画面上のピクセル数)で平らな色で描く。
+// 陰影は描いた後に画面全体で付ける(手前の点との奥行きの差がある所を暗くする。renderScene)。
 const CUBE_VERT = /* glsl */`
-  uniform float uSizePx;      // 点の基本サイズ(画面上のピクセル数。CSS px)。モデルの大きさや距離に関係なく同じように効く
+  uniform float uSizePx;      // 点の大きさ(画面上のピクセル数。CSS px)。どの端末・距離でも同じ
   uniform float uPxScale;     // CSS px → 描画バッファの px(端末の倍率。VR では解像度に応じた値)
-  uniform float uViewportH;   // 描画バッファの高さ(px)。距離 → 画面上のピクセル数の換算に使う
   uniform float uMaxPx;       // 1点の最大サイズ(描画バッファ px)
-  uniform float uRealW;       // 実寸の点: 点の実際の大きさ(ワールド)。0 = 画面で一定
-  uniform float uNearZ;       // カメラの near(実寸の点を、目の前で小さくして消す)
-  uniform float uDensity; // 0.0〜1.0 (POINT DENSITY: 描画する点の割合)
-  uniform float uTileDens; // このタイルの描く割合(新しいタイルを少しずつ出す・上限を超えた分を遠いタイルほど間引く)
-  uniform float uTileFill; // このタイルの点の間隔(座標の単位)。0 = 隙間を埋めない
-  uniform float uFillOn;   // タイルの隙間を埋める(1 = する)
+  uniform float uDensity; // 0.0〜1.0 (描画する点の割合)
+  uniform float uTileDens; // このタイルの描く割合(新しいタイルを少しずつ出す・真上/正対で細かい段階を減らす)
+  uniform float uLodA;     // 細かい段階の点を距離で減らす: 親の段階が細かくなる距離(座標の単位)。0 = 減らさない
+  uniform float uMorphK;   // 減らし方の傾き
+  uniform vec4  uNearF;    // 手前を細かく読む倍率: x=近い範囲(m) y=目の前の倍率 z=遠くの始まり(m) w=遠くの最小
   uniform float uOrtho;   // 1.0=正射投影(真俯瞰), 0.0=透視投影
   uniform float uSliceMode;   // 断面: 0=なし / 1=片側を消す / 2=薄く切る
   uniform vec4  uSlicePlane;  // 断面(ワールド): xyz=法線(消す側を向く)、w=位置
@@ -5972,14 +5965,26 @@ const CUBE_VERT = /* glsl */`
     return fract((p.x + p.y) * p.z);
   }
 
+  // 手前を細かく読む倍率(読み込みと同じ式。lodNearFactor)
+  float nearF(float d) {
+    if (d < uNearF.x) return 1.0 + (uNearF.y - 1.0) * (1.0 - d / uNearF.x);
+    if (d <= uNearF.z) return 1.0;
+    return max(uNearF.w, 1.0 - (1.0 - uNearF.w) * (d - uNearF.z) / uNearF.z);
+  }
+
   void main() {
     vColor = color;
     vEdge = 0.0;
+    vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
 
-    // POINT DENSITY 間引き: 位置ハッシュが密度しきい値を超えたらクリップ外へ飛ばして描画スキップ
-    // (gl_PointSize=0 と併用で確実に描画されない)
-    // 密度100%のときはハッシュ値(0以上1未満)が必ず1未満で間引かれないため、計算自体を省く(結果は同一)。
+    // 描く割合: 全体 × タイル(少しずつ出す等) × 細かい段階をその点の距離で減らす割合
     float dens = uDensity * uTileDens;
+    if (uLodA > 0.0 && uOrtho < 0.5) {
+      float dm = length(mvPos.xyz) / max(length(modelViewMatrix[0].xyz), 1e-12); // 距離(座標の単位)
+      dens *= clamp((uLodA * nearF(dm) / max(dm, 1e-6) - 1.0) * uMorphK, 0.0, 1.0);
+    }
+    // 間引き: 位置ハッシュが割合を超えたらクリップ外へ飛ばして描画スキップ(gl_PointSize=0 と併用で確実に描画されない)
+    // 割合100%のときはハッシュ値(0以上1未満)が必ず1未満で間引かれないため、計算自体を省く(結果は同一)。
     if (dens < 1.0 && hash13(position) >= dens) {
       gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // クリップ空間外
       gl_PointSize = 0.0;
@@ -6006,22 +6011,8 @@ const CUBE_VERT = /* glsl */`
       }
     }
 
-    vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
-    // 基本サイズ: 画面上で常に同じピクセル数(遠くの点も見え、大きなモデルでもスライダーが同じように効く)
-    float px = uSizePx * uPxScale;
-    // 実寸の点(VR): 実際の大きさを遠近で画面の大きさにする。近いほど大きく、遠くは基本サイズのまま
-    if (uRealW > 0.0 && uOrtho < 0.5) {
-      float pxPerUnit = uViewportH * 0.5 * projectionMatrix[1][1];
-      px = max(px, uRealW * length(viewMatrix[0].xyz) * pxPerUnit / max(-mvPos.z, 1e-4));
-      px *= smoothstep(uNearZ, uNearZ * 3.0, -mvPos.z);
-    } else if (uFillOn > 0.5 && uTileFill > 0.0) {
-      // タイルの隙間を埋める: そのタイルの点の間隔(間引いた分も含む)を画面の大きさにする(粗いタイルほど点が大きい)
-      float sp = uTileFill * length(modelViewMatrix[0].xyz) / sqrt(max(dens, 0.05));
-      float pxu = uViewportH * 0.5 * projectionMatrix[1][1];
-      // ただし画面で 10 px(CSS)まで(まばらな所が大きな四角だらけにならないように)
-      px = max(px, min(sp * pxu / (uOrtho > 0.5 ? 1.0 : max(-mvPos.z, 1e-4)), 10.0 * uPxScale));
-    }
-    gl_PointSize = clamp(px, 1.0, uMaxPx);
+    // 大きさ: 画面上で常に設定のピクセル数(どの端末・距離でも同じ)
+    gl_PointSize = clamp(uSizePx * uPxScale, 1.0, uMaxPx);
     gl_Position = projectionMatrix * mvPos;
   }
 `;
@@ -6029,69 +6020,42 @@ const CUBE_VERT = /* glsl */`
 const CUBE_FRAG = /* glsl */`
   varying vec3 vColor;
   varying float vEdge;      // 切り口の強調(0〜1)
-  uniform float uShape;     // 点の形: 0=立方体 / 1=丸
+  uniform float uShape;     // 点の形: 0=四角 / 1=丸
   uniform float uColorMode; // 0=元の色 / 1=高さ / 2=白色
 
-  // ワールド固定の光源方向（上やや斜め）
-  const vec3 LIGHT_DIR_WS = normalize(vec3(0.4, 1.0, 0.3));
-
-  // ワールド絶対軸（変化しない）
-  const vec3 WS_RIGHT = vec3(1.0, 0.0, 0.0); // +X
-  const vec3 WS_UP    = vec3(0.0, 1.0, 0.0); // +Y
-
-  // 3面それぞれの明るさ(0.35 + 0.75 × 拡散)は光源も法線も固定なので、
-  // 画素ごとに計算せずコンパイル時の定数にする。
-  const float B_TOP   = 0.35 + 0.75 * max(dot(WS_UP,     LIGHT_DIR_WS), 0.0);
-  const float B_LEFT  = 0.35 + 0.75 * max(dot(-WS_RIGHT, LIGHT_DIR_WS), 0.0);
-  const float B_RIGHT = 0.35 + 0.75 * max(dot(WS_RIGHT,  LIGHT_DIR_WS), 0.0);
-
   void main() {
-    vec2 uv = gl_PointCoord * 2.0 - 1.0; // -1〜1（y下向き正）
-
-    // 白色: 真っ白(陰影は他の色分けと同じ)。切り口の強調は白(白色の時だけ水色)
+    // 白色: 真っ白。切り口の強調は白(白色の時だけ水色)
     bool white = uColorMode > 1.5;
     vec3 col0 = white ? vec3(1.0) : vColor;
     vec3 edgeCol = white ? vec3(0.35, 0.85, 1.0) : vec3(1.0);
     vec3 base = mix(col0, edgeCol, vEdge * 0.9);
 
-    // 丸: 球のような陰影。縁は1画素ぶんなめらかに(アルファ→カバレッジ。MSAA の無い環境では縁で切り捨て)
+    // 丸: 縁は1画素ぶんなめらかに(アルファ→カバレッジ。MSAA の無い描き先では縁で切り捨て)
     if (uShape > 0.5) {
+      vec2 uv = gl_PointCoord * 2.0 - 1.0;
       float r = length(uv);
       float aa = max(fwidth(r), 1e-3);
       float a = 1.0 - smoothstep(1.0 - aa, 1.0, r);
       if (a <= 0.01) discard;
-      vec3 n = vec3(uv.x, -uv.y, sqrt(max(0.0, 1.0 - r * r)));
-      float b = 0.5 + 0.6 * max(dot(n, normalize(vec3(-0.35, 0.6, 0.7))), 0.0);
-      gl_FragColor = vec4(base * b, a);
+      gl_FragColor = vec4(base, a);
       return;
     }
-
-    // スプライトの3領域をワールド絶対軸の3面に固定対応させる。
-    //   上半分(uv.y<-0.15)→+Y面(上面) / 左下(uv.x<0)→-X面(左面) / 右下→+X面(右面)
-    // この対応は固定なのでカメラがどう動いても変わらない。
-    float brightness = (uv.y < -0.15) ? B_TOP : ((uv.x < 0.0) ? B_LEFT : B_RIGHT);
-
-    float ex = abs(uv.x);
-    float ey = abs(uv.y + 0.15);
-    float edge = step(0.90, max(ex, ey));
-    brightness *= mix(1.0, 0.55, edge);
-
-    gl_FragColor = vec4(base * brightness, 1.0);
+    // 四角: 平らな色(陰影は描いた後に画面全体で付ける)
+    gl_FragColor = vec4(base, 1.0);
   }
 `;
 
 // uniform(点サイズ・密度間引き・断面)。全 Points で共有
 const cubeUniforms = {
-  uSizePx:  { value: 2.0 },   // 点の基本サイズ(CSS px)
+  uSizePx:  { value: 2.0 },   // 点の大きさ(CSS px)
   uPxScale: { value: 1.0 },   // CSS px → 描画バッファ px(毎フレーム updatePointUniforms で設定)
-  uViewportH: { value: 1000 },// 描画バッファの高さ(毎フレーム設定)
+  uViewportH: { value: 1000 },// 描画バッファの高さ(毎フレーム設定。1点の最大サイズの計算に使う)
   uMaxPx:   { value: 128.0 }, // 1点の最大サイズ
-  uRealW:   { value: 0.0 },   // 実寸の点の大きさ(ワールド。0 = 画面で一定)
-  uNearZ:   { value: 0.1 },   // カメラの near
   uDensity: { value: 1.0 },
   uTileDens: { value: 1.0 },  // タイルごと(描く直前に入れる)
-  uTileFill: { value: 0.0 },  // タイルごと(描く直前に入れる)
-  uFillOn:  { value: 1.0 },
+  uLodA:    { value: 0.0 },   // タイルごと(描く直前に入れる)
+  uMorphK:  { value: LOD_MORPH_K },
+  uNearF:   { value: new THREE.Vector4(LOD_NEAR_M, LOD_NEAR_BOOST, LOD_FAR_M, LOD_FAR_MIN) },
   uOrtho:   { value: 0.0 },   // 真俯瞰(正射)中は1.0に
   uSliceMode:   { value: 0 },   // 断面(0=なし / 1=片側 / 2=薄く切る)
   uSlicePlane:  { value: new THREE.Vector4(0, 1, 0, 1e9) },
@@ -6100,7 +6064,7 @@ const cubeUniforms = {
   uColorMode:   { value: 0 },   // 色分け(0=元の色 / 1=高さ / 2=白色)
   uHeightRange: { value: new THREE.Vector2(0, 1) },
 
-  uShape:   { value: 0.0 },   // 点の形(0=立方体 / 1=丸)
+  uShape:   { value: 0.0 },   // 点の形(0=四角 / 1=丸)
 };
 
 // 描画解像度の上限を反映する(表示レベルとデバッグ欄の「描画解像度」で決まる)。
@@ -6117,30 +6081,18 @@ renderer.xr.addEventListener('sessionstart', applyRenderScale);
 renderer.xr.addEventListener('sessionend', applyRenderScale);
 
 // ── 点のサイズ ──
-// 点のサイズは「画面上のピクセル数」で指定する。モデルが大きくても遠くても同じように効く。
-// VR では「実寸」: いちばん細かく出ている点の間隔を点の実際の大きさとして遠近で描く(近いほど大きく、目の前の隙間が埋まる)。
-// あわせて、手前ほど細かい階層まで読み、描く点の上限に達した時は遠い所から省く。
-let pointShape = 'cube';     // 点の形('cube' | 'round')
-let tileFillOn = savedSettings.tileFill !== false; // タイルの隙間を埋める(画面で一定の時)
-const vrPts = {
-  mode: savedSettings.vrPtsMode === 'screen' ? 'screen' : 'real', // VR の点の大きさ: 'real' 実寸 / 'screen' 画面で一定
-  k: clampN(Number(savedSettings.vrRealK) || 1, VR_REAL_K_MIN, VR_REAL_K_MAX), // 実寸の倍率
-  onScreen: savedSettings.vrOnScreen === true, // PC・タブレットでも VR と同じ見え方で表示(試す)
-  spacingW: 0,     // いちばん細かく出ている点の間隔(ワールド)
-  nearOn: false,   // 手前を細かく読む(実寸の間)
-  lastScan: -1e9,
-};
-// 実寸の点を使っているか(VR の中、または画面で試している時。真上・正対の間は使わない)
-function vrPtsActive() { return vrPts.mode === 'real' && (renderer.xr.isPresenting || (vrPts.onScreen && !topdownState.active)); }
-// 点のマテリアルは全タイルで共有なので、タイルごとの値(描く割合・隙間を埋める点の間隔)は描く直前に入れる。
+// 点のサイズは「画面上のピクセル数」で指定する。スマホ・タブレット・PC・VR のどれでも、近くでも遠くでも同じ大きさ。
+let pointShape = 'cube';     // 点の形('cube' 四角 | 'round' 丸)
+// 点のマテリアルは全タイルで共有なので、タイルごとの値(描く割合・細かい段階を減らす距離)は描く直前に入れる。
 // 値が前のタイルと同じなら送り直さない
 function pointsBeforeRender(r, scene, cam, geometry, material) {
   const u = material.uniforms;
   if (!u || !u.uTileDens) return;
-  const ud = this.userData, d = ud.tileDens ?? 1, f = ud.fillL || 0;
-  if (u.uTileDens.value !== d || u.uTileFill.value !== f) { u.uTileDens.value = d; u.uTileFill.value = f; material.uniformsNeedUpdate = true; }
+  const ud = this.userData, d = ud.tileDens ?? 1, a = ud.lodA || 0;
+  if (u.uTileDens.value !== d || u.uLodA.value !== a) { u.uTileDens.value = d; u.uLodA.value = a; material.uniformsNeedUpdate = true; }
 }
-function pointsHook(o) { o.onBeforeRender = pointsBeforeRender; }
+// 点群の Points: 描く直前の値を入れる・点だけを描く時のレイヤーに入れる(元のレイヤーにも残す)
+function pointsHook(o) { o.onBeforeRender = pointsBeforeRender; o.layers.enable(PT_LAYER); }
 // 点群の点の間隔の目安(座標の単位)。点が面の上に並んでいると見なし、範囲の箱の表面積の半分 ÷ 点数 の平方根。
 // 全点は走査せず、最大4096点の抜き取りで範囲を求める(読込時に1回だけ)
 function estimatePointSpacing(geometry) {
@@ -6158,21 +6110,6 @@ function estimatePointSpacing(geometry) {
   const area = dx * dy + dy * dz + dz * dx;
   return area > 0 ? Math.sqrt(area / n) : 0;
 }
-// いちばん細かく出ている点の間隔: 表示中の点群の間隔(ワールド)の細かい方から1割の所。
-// 細かくなる時は半分ずつ、粗くなる時は 1割ずつ寄せる(タイルが出入りするたびに点の大きさが揺れないように)
-const _vpScale = new THREE.Vector3(), _vpObjs = [], _vpSp = [];
-function vrPtsScan() {
-  _vpObjs.length = 0; _vpSp.length = 0;
-  collectVisiblePointObjects(_vpObjs);
-  for (const o of _vpObjs) {
-    const s = o.userData.spL;
-    if (s > 0) _vpSp.push(s * _vpScale.setFromMatrixScale(o.matrixWorld).x);
-  }
-  if (!_vpSp.length) return;
-  _vpSp.sort((a, b) => a - b);
-  const v = _vpSp[Math.floor(_vpSp.length * 0.1)];
-  vrPts.spacingW = vrPts.spacingW > 0 ? vrPts.spacingW + (v - vrPts.spacingW) * (v < vrPts.spacingW ? 0.5 : 0.1) : v;
-}
 const _pointDbSize = new THREE.Vector2();
 // 毎フレーム描画の前に呼ぶ(解像度・VR に合わせて uniform を更新)
 function updatePointUniforms() {
@@ -6186,19 +6123,11 @@ function updatePointUniforms() {
     cubeUniforms.uViewportH.value = _pointDbSize.y;
     cubeUniforms.uPxScale.value = renderer.getPixelRatio();
   }
-  // 1点の最大: 画面の高さの8%(40〜96 CSS px)。まばらなモデルに近づいた時も埋まるように
+  // 1点の最大: 画面の高さの8%(40〜96 CSS px)
   const cssH = cubeUniforms.uViewportH.value / cubeUniforms.uPxScale.value;
   cubeUniforms.uMaxPx.value = Math.max(40, Math.min(96, cssH * 0.08)) * cubeUniforms.uPxScale.value;
-  // 実寸の点: 点の間隔は 0.3 秒おきに見直す
-  const on = vrPtsActive();
-  vrPts.nearOn = on;
-  const now = performance.now();
-  if (on && now - vrPts.lastScan > 300) { vrPts.lastScan = now; vrPtsScan(); }
-  const rw = on ? vrPts.spacingW * vrPts.k : 0;
-  if (cubeUniforms.uRealW.value !== rw) cubeUniforms.uRealW.value = rw;
-  if (cubeUniforms.uNearZ.value !== camera.near) cubeUniforms.uNearZ.value = camera.near;
 }
-// タイル読込時(load-model)に呼ぶ: タイルの点群を覚えておく(周りまでの距離の計算用)・読み直しの計測
+// タイル読込時(load-model)に呼ぶ: タイルの点群を覚えておく(周りまでの距離の計算用)・読み直しの計測・描く直前の値
 function registerTileSpacing(tileScene, tile) {
   noteTileLoaded(tile);
   const list = [];
@@ -6215,7 +6144,7 @@ const sharedCubeMaterial = new THREE.ShaderMaterial({
   fragmentShader: CUBE_FRAG,
   vertexColors: true,
   depthWrite: true,
-  alphaToCoverage: true,   // 丸い点の縁をなめらかに(立方体は不透明なので影響なし)
+  alphaToCoverage: true,   // 丸い点の縁をなめらかに(四角は不透明なので影響なし)
 });
 const isSharedCubeMaterial = (m) => m === sharedCubeMaterial;
 
@@ -6234,10 +6163,9 @@ const isSharedCubeMaterial = (m) => m === sharedCubeMaterial;
 //    届くとそのフレームだけ極端に重くなる(VRでは視界がカクッと止まる)。1フレームに初描画する点数に
 //    上限を設け、数フレームに分けて出す。対象は追加型(ADD)のタイルのみ:親タイルは表示されたまま
 //    なので穴は開かず、細部が数フレーム(数十ms)遅れて現れるだけ。読込画面中は分散しない。
-// ③ ポイント予算(任意・既定は無制限)
-//    描画する点の総数に上限を設ける。粗い階層→画面上の誤差が大きいタイルの
-//    順に表示していき、上限に達したら残りの細かいタイル(ADD)を一時的に隠す。
-//    見た目が変わるため既定は無制限。デバッグ欄で選んだ時だけ働く。
+// ③ ポイント予算(描く点の上限。表示レベルごとに標準値)
+//    上限を超えたら、細かい段階の点を「減らし始める距離」を縮める(手前は減らさず、遠くほど多く減らす)。
+//    点が1つも残らないタイルは描かない(pcApplyBudget)。
 const UPLOAD_PTS_PER_FRAME_LOW  = 600_000;    // VR中・スマホ: 1フレームに初描画する点数の上限
 const UPLOAD_PTS_PER_FRAME_HIGH = 2_000_000;  // PC
 const pcVis = {
@@ -6342,17 +6270,16 @@ function pcTick() {
   pcVis.stats.pendingNodes = pcVis.pending.size;
   // ③ ポイント予算
   pcApplyBudget();
-  // ④ タイルごとの値(少しずつ出す・隙間を埋める)
+  // ④ タイルごとの値(少しずつ出す・細かい段階を距離で減らす)
   pcNodeFrame();
 }
 // 新しく出たタイル(ノード)は 0.4 秒かけて点を増やしながら出す(四角くパッと現れないように)。
-// 隙間を埋めるのは、より細かい子が出ていない(その場所でいちばん細かい)タイルだけ
+// あわせて、細かい段階の点を減らす距離(lodA)と、真上・正対の時の描く割合(lodM)を点群に入れる
 const PC_FADE_MS = 400;
 let _pcFrame = 0;
 function pcNodeFrame() {
   _pcFrame++;
-  const now = performance.now(), fillOn = tileFillOn && !vrPtsActive();
-  cubeUniforms.uFillOn.value = fillOn ? 1 : 0;
+  const now = performance.now();
   const fadeOf = (ud) => {
     if (ud.visFrame !== _pcFrame - 1) ud.fade0 = gate.active ? -1e9 : now;
     ud.visFrame = _pcFrame;
@@ -6362,120 +6289,143 @@ function pcNodeFrame() {
     for (const tile of tr.visibleTiles) {
       const n = tile.engineData && tile.engineData.scene;
       if (!n || !n.parent || !n.visible || !tile.__pts) continue;
-      const dens = (n.userData.budDens ?? 1) * fadeOf(n.userData);
-      let leaf = true;
-      if (fillOn) {
-        for (const c of tile.children) {
-          const cn = c.engineData && c.engineData.scene;
-          if (cn && cn.parent && cn.visible && tr.visibleTiles.has(c)) { leaf = false; break; }
-        }
-      }
-      for (const o of tile.__pts) { o.userData.tileDens = dens; o.userData.fillL = fillOn && leaf ? (o.userData.spL || 0) : 0; }
+      const ud = n.userData, dens = (ud.lodM ?? 1) * fadeOf(ud), a = ud.lodA || 0;
+      for (const o of tile.__pts) { o.userData.tileDens = dens; o.userData.lodA = a; }
     }
   }
   for (const inst of localInstances.values()) {
     if (!inst.pc || !inst.root.visible) continue;
-    const shown = inst.pc.shown;
-    for (const nd of shown) {
+    for (const nd of inst.pc.shown) {
       if (!nd.obj) continue;
       const ud = nd.obj.userData;
-      ud.tileDens = fadeOf(ud);
-      let leaf = true;
-      if (fillOn) for (const c of nd.children) if (shown.has(c)) { leaf = false; break; }
-      ud.fillL = fillOn && leaf ? (ud.spL || 0) : 0;
+      ud.tileDens = (ud.lodM ?? 1) * fadeOf(ud);
     }
   }
 }
 
-const _pcList = [];
-const _pcHiddenTiles = new Set();
-// 描く点の上限(ポイント予算): 見えている点が上限を超えたら、まず全体を均一に間引く(最大で半分まで)。
-// それでも超える分は、細かいタイル(追加型)から少しずつ間引き、入りきらないタイルは一時的に描かない。
-// 間引きの割合は 5% 刻み。増やす時は少し余裕ができてから(上限の境目で点がちらつかないように)。
-const AUTO_DENS_FLOOR = 0.5, AUTO_DENS_STEP = 0.05;
-function setAutoDensity(raw, force = false) {
-  let d;
-  if (force) d = Math.min(1, raw);
-  else if (raw >= 1) d = (pointDensity < 1 && raw < 1 + AUTO_DENS_STEP) ? pointDensity : 1;
-  else {
-    d = Math.max(AUTO_DENS_FLOOR, Math.floor(raw / AUTO_DENS_STEP + 1e-9) * AUTO_DENS_STEP);
-    if (d > pointDensity && raw < pointDensity + AUTO_DENS_STEP * 1.5) d = pointDensity;
-  }
-  if (Math.abs(d - pointDensity) < 1e-6) return;
-  pointDensity = d;
-  applyPointDensity();
+// ── 細かい段階の点を、その点の距離で減らす割合(シェーダと同じ式) ──
+// A: 親の段階が細かくなる距離(座標の単位。上限で縮めた後)、d: 点までの距離。A が 0 なら減らさない
+function lodMorph(A, d) {
+  if (!(A > 0)) return 1;
+  const v = (A * lodNearFactor(d) / Math.max(d, 1e-6) - 1) * LOD_MORPH_K;
+  return v <= 0 ? 0 : (v >= 1 ? 1 : v);
 }
-const _pcDens = new Map(), _pcDepthPts = new Map();
+// タイル(ノード)全体で描く割合の見積もり: いちばん近い所・中心・いちばん遠い所の3か所から
+function lodMorphAvg(A, dN, dC, dF) {
+  if (!(A > 0)) return 1;
+  return (lodMorph(A, dN) + 2 * lodMorph(A, dC) + lodMorph(A, dF)) / 4;
+}
+// 真上・正対: 親の画面上の誤差 ÷ 目安(r)から。図全体で同じ
+function lodMorphOrtho(r) {
+  if (!(r > 0)) return 1;
+  const v = (r - 1) * LOD_MORPH_K;
+  return v <= 0 ? 0 : (v >= 1 ? 1 : v);
+}
+// 上限に収まる「減らし始める距離」の倍率 s(1 = 縮めない)。est(s) = その時に描く点の見積もり
+function lodSolveS(est, budget) {
+  if (!(budget > 0)) return 1;
+  if (est(1) <= budget) return 1;
+  let lo = LOD_S_MIN, hi = 1;
+  if (est(lo) > budget) return lo;
+  for (let i = 0; i < 8; i++) { const m = Math.sqrt(lo * hi); if (est(m) > budget) hi = m; else lo = m; }
+  return lo;
+}
+// s の変え方: 減らす時は 1 フレームに 15% まで、増やす時は 3% 以上の余裕ができてから 2% ずつ(上限の境目で点がちらつかないように)。
+// 上限に十分な余裕がある(want = 1)時は 1 フレームに 1 割ずつ 1 まで戻す
+function lodSmoothS(cur, want) {
+  if (want < cur) return Math.max(want, cur * 0.85);
+  if (want >= 1 && cur < 1) return Math.min(1, cur * 1.1);
+  if (want > cur * 1.03) return Math.min(want, cur * 1.02);
+  return cur;
+}
+// 3D Tiles: そのタイルが見えるかを決めている親(外部タイルセットの入口など、必ず細かくするタイルは飛ばす)
+function lodGateTile(tile) {
+  let g = tile.parent;
+  while (g && ((g.internal && g.internal.hasUnrenderableContent) || (g.parent && g.parent.geometricError < g.geometricError))) g = g.parent;
+  return g;
+}
+// 3D Tiles: 今のカメラ(真上・正対の間は正射カメラ)の、画面上の誤差を計算する値
+function lodCamInfo(tr) {
+  const cams = tr.cameras, info = tr.cameraInfo;
+  if (!cams || !info || !cams.length) return null;
+  let i = cams.indexOf(topdownState.active ? orthoCamera : camera);
+  if (i < 0) i = 0;
+  return info[i] || null;
+}
+// 3D Tiles: タイルを包む球(タイル群の座標。読込後は変わらないので1回だけ)
+function lodTileSphere(tile) {
+  if (!tile.__lodS) {
+    const s = new THREE.Sphere();
+    try { tile.engineData.boundingVolume.getSphere(s); } catch { s.radius = -1; }
+    tile.__lodS = s;
+  }
+  return tile.__lodS;
+}
+const lodState = { s: 1, want: 1 };
+const _lodItems = [];
+let _lodItemN = 0;
+function lodEstTiles(s, ortho) {
+  let t = 0;
+  for (let i = 0; i < _lodItemN; i++) {
+    const it = _lodItems[i];
+    t += it.pts * (ortho ? lodMorphOrtho(s * it.A) : lodMorphAvg(s * it.A, it.dN, it.dC, it.dF));
+  }
+  return t;
+}
 function pcApplyBudget() {
   const st = pcVis.stats;
   st.hiddenTiles = 0; st.hiddenPoints = 0; st.shownPoints = 0;
-  if (!pcVis.budget || !tiles) {
-    setAutoDensity(1, true);
-    if (pcVis.budgetHidden.size) {
-      for (const n of pcVis.budgetHidden) { n.userData.pcBudgetHidden = false; pcApplyVisible(n); }
-      pcVis.budgetHidden.clear();
-    }
-    for (const tr of allTileRenderers()) for (const tile of tr.visibleTiles) { const n = tile.engineData && tile.engineData.scene; if (n) n.userData.budDens = 1; }
-    return;
-  }
-  // 3D Tiles が今フレーム表示すると判断したタイルと、その点の合計
-  _pcList.length = 0;
-  let total = 0;
-  for (const tr of allTileRenderers()) for (const tile of tr.visibleTiles) {
-    const n = tile.engineData && tile.engineData.scene;
-    if (n && n.parent) { _pcList.push(tile); total += n.userData.pointCount || 0; }
-  }
-  // ① 均一に間引く割合(実寸の間は間引かず、遠いタイルから省く)
-  if (vrPts.nearOn) setAutoDensity(1, true);
-  else if (total > 0) setAutoDensity(pcVis.budget / total); else setAutoDensity(1, true);
-  // ② 間引いても超える分: 並べた順に点数を積み上げ、上限の前後(上限の ±25%)で描く割合を 1 → 0 へなめらかに減らす。
-  //    0 になった追加型のタイルは描かない(置換型は穴が開くので減らさない)。親より子が多く描かれることはない
-  const limit = pcVis.budget / Math.max(AUTO_DENS_FLOOR, pointDensity);
-  if (vrPts.nearOn) {
-    // 全体の粗い段階: 浅い階層から、合計が上限の3割に収まる所まで(いちばん浅い階層は必ず)
-    _pcDepthPts.clear();
-    let minD = Infinity;
-    for (const t of _pcList) { const dd = t.internal.depth; minD = Math.min(minD, dd); _pcDepthPts.set(dd, (_pcDepthPts.get(dd) || 0) + (t.engineData.scene.userData.pointCount || 0)); }
-    let baseD = minD, acc = 0;
-    for (const dd of [..._pcDepthPts.keys()].sort((x, y) => x - y)) { acc += _pcDepthPts.get(dd); if (dd === minD || acc <= limit * 0.3) baseD = dd; else break; }
-    const dist = (t) => t.traversal.distanceFromCamera || 0;
-    _pcList.sort((a, b) => {
-      const ba = a.internal.depth <= baseD, bb = b.internal.depth <= baseD;
-      if (ba !== bb) return ba ? -1 : 1;
-      if (ba) return a.internal.depth - b.internal.depth;
-      return (dist(a) - dist(b)) || (a.internal.depth - b.internal.depth);
-    });
-  } else {
-    _pcList.sort((a, b) =>
-      (a.internal.depth - b.internal.depth) || ((b.traversal.error || 0) - (a.traversal.error || 0)));
-  }
-  _pcHiddenTiles.clear();
-  _pcDens.clear();
-  const W = limit * 0.25;
-  let used = 0;
-  for (const tile of _pcList) {
-    const n = tile.engineData.scene;
-    const pts = n.userData.pointCount || 0;
-    let f = 1;
-    if (tile.refine === 'ADD') {
-      f = Math.max(0, Math.min(1, (limit + W - (used + pts / 2)) / (2 * W)));
-      const pf = tile.parent ? _pcDens.get(tile.parent) : undefined;
-      if (pf !== undefined) f = Math.min(f, pf);
-      f = Math.round(f * 32) / 32; // 1/32 刻み(少しの動きで描く点が変わり続けないように)
-    }
-    _pcDens.set(tile, f);
-    used += pts;
-    const hide = f <= 0;
-    n.userData.budDens = f;
-    if (hide) { _pcHiddenTiles.add(tile); st.hiddenTiles++; st.hiddenPoints += pts; }
-    else { st.shownPoints += Math.round(pts * f); st.hiddenPoints += Math.round(pts * (1 - f)); }
-    if (hide !== !!n.userData.pcBudgetHidden) {
-      n.userData.pcBudgetHidden = hide;
-      if (hide) pcVis.budgetHidden.add(n); else pcVis.budgetHidden.delete(n);
-      pcApplyVisible(n);
+  const ortho = topdownState.active;
+  // 今フレーム表示するタイルと、細かい段階を減らす距離(または真上・正対の割合)
+  _lodItemN = 0;
+  for (const tr of allTileRenderers()) {
+    const ci = lodCamInfo(tr), et = tr.errorTarget || 1;
+    for (const tile of tr.visibleTiles) {
+      const n = tile.engineData && tile.engineData.scene;
+      if (!n || !n.parent) continue;
+      let it = _lodItems[_lodItemN];
+      if (!it) it = _lodItems[_lodItemN] = { tile: null, n: null, pts: 0, A: 0, dN: 0, dC: 0, dF: 0 };
+      _lodItemN++;
+      it.tile = tile; it.n = n; it.pts = n.userData.pointCount || 0; it.A = 0;
+      const g = tile.parent ? lodGateTile(tile) : null;
+      // 追加型の子だけ(置換型は親が消えるので減らすと穴になる)
+      if (!g || g.refine !== 'ADD' || !ci || !(g.geometricError > 0)) continue;
+      if (ortho) {
+        if (ci.isOrthographic && ci.pixelSize > 0) it.A = g.geometricError / (ci.pixelSize * et);
+      } else if (!ci.isOrthographic && ci.sseDenominator > 0) {
+        const dN = tile.traversal.distanceFromCamera;
+        if (!Number.isFinite(dN)) continue;
+        it.A = g.geometricError / (ci.sseDenominator * et);
+        const sp = lodTileSphere(tile);
+        const dC = sp.radius >= 0 ? sp.center.distanceTo(ci.position) : dN;
+        it.dN = dN; it.dC = Math.max(dN, dC); it.dF = Math.max(dN, dC + Math.max(0, sp.radius));
+      }
     }
   }
-  // 表示対象から外れたノードの「上限で非表示」は解除しておく(再表示時に引きずらないように)
+  // 上限に収まるように「減らし始める距離」を縮める(手前は減らさない)
+  lodState.want = pcVis.budget ? lodSolveS((s) => lodEstTiles(s, ortho), pcVis.budget) : 1;
+  lodState.s = pcVis.budget ? lodSmoothS(lodState.s, lodState.want) : 1;
+  const s = lodState.s;
+  for (let i = 0; i < _lodItemN; i++) {
+    const it = _lodItems[i], ud = it.n.userData;
+    let mMax = 1, mAvg = 1, a = 0;
+    if (it.A > 0) {
+      if (ortho) { mMax = mAvg = lodMorphOrtho(s * it.A); }
+      else { a = s * it.A; mMax = lodMorph(a, it.dN); mAvg = mMax > 0 ? lodMorphAvg(a, it.dN, it.dC, it.dF) : 0; }
+    }
+    ud.lodA = a; ud.lodM = ortho ? mMax : 1; ud.lodAvg = mAvg;
+    // 点が1つも残らないタイルは描かない(頂点の処理も省く)
+    const hide = mMax <= 0;
+    if (hide) { st.hiddenTiles++; st.hiddenPoints += it.pts; }
+    else { st.shownPoints += Math.round(it.pts * mAvg); st.hiddenPoints += Math.round(it.pts * (1 - mAvg)); }
+    if (hide !== !!ud.pcBudgetHidden) {
+      ud.pcBudgetHidden = hide;
+      if (hide) pcVis.budgetHidden.add(it.n); else pcVis.budgetHidden.delete(it.n);
+      pcApplyVisible(it.n);
+    }
+    it.tile = null; it.n = null;
+  }
+  // 表示対象から外れたノードの「描かない」は解除しておく(再表示時に引きずらないように)
   for (const n of pcVis.budgetHidden) {
     if (!n.parent) { n.userData.pcBudgetHidden = false; pcVis.budgetHidden.delete(n); pcApplyVisible(n); }
   }
@@ -6501,22 +6451,23 @@ let _orthoCameraRegistered = false; // 真俯瞰用 orthoCamera を tiles に登
 // ・主データから OVERLAY_MAX_M より遠いものは重ねられない(同時に視界に入らないため)。
 const OVERLAY_MAX_M = 2000;
 const overlayState = { list: [] };
-const VR_NEAR_M = 30, VR_NEAR_BOOST = 3, VR_NEAR_HYST = 1.3, VR_FAR_M = 100, VR_FAR_MIN = 0.6;
-// 実寸の間の、画面上の誤差の見積もりの倍率: 30 m 以内は手前ほど大きく(細かく読む)、100 m より遠くは小さく(粗く読み、手前に回す)
-function vrNearFactor(d) {
-  if (d < VR_NEAR_M) return 1 + (VR_NEAR_BOOST - 1) * (1 - d / VR_NEAR_M);
-  if (d <= VR_FAR_M) return 1;
-  return Math.max(VR_FAR_MIN, 1 - (1 - VR_FAR_MIN) * (d - VR_FAR_M) / VR_FAR_M);
+// 読み込む細かさ: 画面上の誤差の見積もりの倍率。30 m 以内は手前ほど大きく(細かく読む)、100 m より遠くは小さく(粗く読む)。
+// どの端末でも使う(目の前の倍率は端末に合わせる)。真上・正対の間は使わない
+function lodNearFactor(d) {
+  if (d < LOD_NEAR_M) return 1 + (LOD_NEAR_BOOST - 1) * (1 - d / LOD_NEAR_M);
+  if (d <= LOD_FAR_M) return 1;
+  return Math.max(LOD_FAR_MIN, 1 - (1 - LOD_FAR_MIN) * (d - LOD_FAR_M) / LOD_FAR_M);
 }
-function vrNearWrap(t) {
+function lodNearOn() { return !topdownState.active; }
+function lodNearWrap(t) {
   const orig = t.calculateTileViewError.bind(t);
   t.calculateTileViewError = (tile, target) => {
     orig(tile, target);
-    if (!vrPts.nearOn || !target.inView) return;
-    target.error *= vrNearFactor(target.distanceFromCamera);
+    if (!lodNearOn() || !target.inView) return;
+    target.error *= lodNearFactor(target.distanceFromCamera);
     // 前のフレームで細かくしていたタイルは、誤差が 1/1.3 に下がるまで細かくしたまま(境目で出たり消えたりしないように)
     const fc = t.frameCount;
-    if (tile.__nrRef === fc - 1) target.error *= VR_NEAR_HYST;
+    if (tile.__nrRef === fc - 1) target.error *= LOD_NEAR_HYST;
     if (target.error > t.errorTarget) tile.__nrRef = fc;
   };
 }
@@ -6598,7 +6549,7 @@ function overlayAdd(id, { save = true, quiet = false } = {}) {
   const ds = getDataset(id);
   const store = getPreloadStore(id);
   const t = new TilesRenderer(tilesetUrl(id));
-  vrNearWrap(t);
+  lodNearWrap(t);
   t.registerPlugin(new PreloadStorePlugin(store));
   t.registerPlugin(new GLTFExtensionsPlugin({ dracoLoader }));
   if (t.parseQueue) t.parseQueue.maxJobs = 2;
@@ -7696,7 +7647,7 @@ function loadTileset(id, opts = {}) {
 
   console.log(`タイルセット読込中: ${id}`);
   tiles = new TilesRenderer(tilesetUrl(id));
-  vrNearWrap(tiles);
+  lodNearWrap(tiles);
   // 通信は先読みストア経由(保存済みならネットワークを使わない)
   tiles.registerPlugin(new PreloadStorePlugin(preloadJob.store));
   tiles.registerPlugin(new GLTFExtensionsPlugin({ dracoLoader }));
@@ -8289,6 +8240,8 @@ async function warmupGpu() {
     map: dummyTex, transparent: true, opacity: 0.95, depthWrite: true, side: THREE.DoubleSide,
   });
   warm.add(new THREE.Mesh(planeGeo, gsiLike));
+  // 点の陰影
+  { const q = new THREE.Mesh(planeGeo, edl.mat); q.frustumCulled = false; warm.add(q); }
 
   const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 10);
   try {
@@ -8980,9 +8933,10 @@ class CopcSource {
   }
 }
 
-// ── 点群の詳細度表示(画面上で粗い所から細かくし、点数の上限で打ち切る) ──
+// ── 点群の詳細度表示(画面上で粗い所から細かくする。細かい段階の点は距離で減らし、上限を超えたら遠くから減らす) ──
 const _lpFrustum = new THREE.Frustum(), _lpProj = new THREE.Matrix4(), _lpBox = new THREE.Box3();
 const _lpCam = new THREE.Vector3(), _lpScale = new THREE.Vector3();
+const _lpInv = new THREE.Matrix4(), _lpCamL = new THREE.Vector3(), _lpSize = new THREE.Vector3(), _lpCtr = new THREE.Vector3();
 class LocalPointCloud {
   constructor(source, parent) {
     this.src = source; this.parent = parent; this.root = null;
@@ -9007,26 +8961,57 @@ class LocalPointCloud {
     const k = H * 0.5 * cam.projectionMatrix.elements[5];
     const budget = pcVis.budget > 0 ? pcVis.budget : LOCAL_POINT_BUDGET_DEFAULT;
     const target = lodErrorTarget * LOCAL_SSE_PER_TARGET;
+    const near = !isOrtho && lodNearOn();
+    _lpInv.copy(mw).invert();
+    _lpCamL.copy(_lpCam).applyMatrix4(_lpInv); // カメラの位置(このデータの座標)
+    // 見えるか・距離(このデータの座標の単位)・画面上の点の間隔
     const vis = (n) => {
       _lpBox.copy(n.box).applyMatrix4(mw);
       if (!_lpFrustum.intersectsBox(_lpBox)) return false;
-      const d = isOrtho ? 1 : Math.max(0.05, _lpBox.distanceToPoint(_lpCam));
-      n.sse = n.spacing * scaleW * k / d;
-      if (vrPts.nearOn && !isOrtho) n.sse *= vrNearFactor(d / (worldScale || 1)); // 手前を細かく
+      if (isOrtho) { n.sse = n.spacing * scaleW * k; return true; }
+      const d = Math.max(0.05 / Math.max(scaleW, 1e-9), n.box.distanceToPoint(_lpCamL));
+      if (n.lodR === undefined) n.lodR = n.box.getSize(_lpSize).length() / 2;
+      const dc = n.box.getCenter(_lpCtr).distanceTo(_lpCamL);
+      n.dN = d; n.dC = Math.max(d, dc); n.dF = Math.max(d, dc + n.lodR);
+      n.sse = n.spacing * k / d;
+      if (near) n.sse *= lodNearFactor(d); // 手前を細かく
       return true;
     };
-    // 画面上の誤差が大きい順に取り出す(二分ヒープ)
+    // 画面上の誤差が大きい順に取り出す(二分ヒープ)。描く候補は上限の4倍まで
     const heap = [];
     const push = (n) => { heap.push(n); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p].sse >= heap[i].sse) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
     const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = i * 2 + 1, r = l + 1; let m = i; if (l < heap.length && heap[l].sse > heap[m].sse) m = l; if (r < heap.length && heap[r].sse > heap[m].sse) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
-    const selected = [];
-    let pts = 0;
-    if (vis(this.root)) push(this.root);
+    const cand = [];
+    let candPts = 0;
+    if (vis(this.root)) { this.root.lodP = null; push(this.root); }
     while (heap.length) {
       const n = pop();
-      if (pts + n.count > budget && selected.length) break;
-      selected.push(n); pts += n.count;
-      if (n.sse > target) for (const c of n.children) if (vis(c)) push(c);
+      if (candPts + n.count > budget * 4 && cand.length) break;
+      cand.push(n); candPts += n.count;
+      if (n.sse > target) for (const c of n.children) if (vis(c)) { c.lodP = n; push(c); }
+    }
+    // 細かい段階(子)の点を減らす距離: 親の段階が細かくなる距離(真上・正対は 親の点の間隔 ÷ 目安)
+    for (const n of cand) {
+      const p = n.lodP;
+      n.lodAr = p ? (isOrtho ? p.spacing * scaleW * k / target : p.spacing * k / target) : 0;
+    }
+    const est = (s) => { let t = 0; for (const n of cand) t += n.count * (isOrtho ? lodMorphOrtho(s * n.lodAr) : lodMorphAvg(s * n.lodAr, n.dN, n.dC, n.dF)); return t; };
+    this.lodWant = lodSolveS(est, budget);
+    this.lodS = lodSmoothS(this.lodS ?? 1, this.lodWant);
+    const s = this.lodS;
+    // 描くノード: 点が1つでも残るもの(親が描かれないノードは描かない)
+    const selected = [];
+    let pts = 0;
+    for (const n of cand) {
+      n.lodSel = false;
+      if (n.lodP && !n.lodP.lodSel) continue;
+      const a = s * n.lodAr;
+      const mMax = isOrtho ? lodMorphOrtho(a) : lodMorph(a, n.dN);
+      if (!(mMax > 0)) continue;
+      n.lodSel = true;
+      n.lodA = isOrtho ? 0 : a; n.lodM = isOrtho ? mMax : 1;
+      selected.push(n);
+      pts += n.count * (isOrtho || !(a > 0) ? mMax : lodMorphAvg(a, n.dN, n.dC, n.dF));
     }
     const want = new Set(selected);
     for (const n of this.shown) if (!want.has(n)) { this.parent.remove(n.obj); this.shown.delete(n); }
@@ -9035,6 +9020,7 @@ class LocalPointCloud {
       n.lastUsed = this.frame;
       if (n.obj) {
         if (!this.shown.has(n)) { this.parent.add(n.obj); this.shown.add(n); }
+        n.obj.userData.lodA = n.lodA || 0; n.obj.userData.lodM = n.lodM ?? 1;
         shownPts += n.count;
       } else if (!n.loadingP && !n.failed && this.loading < LOCAL_MAX_CONCURRENT_LOADS && requested < 4) {
         requested++;
@@ -9043,7 +9029,7 @@ class LocalPointCloud {
     }
     const pending = selected.some(n => !n.obj && !n.failed);
     this.idleFrames = (pending || this.loading) ? 0 : this.idleFrames + 1;
-    this.stats.nodes = this.shown.size; this.stats.points = shownPts; this.stats.loading = this.loading;
+    this.stats.nodes = this.shown.size; this.stats.points = Math.round(Math.min(shownPts, pts)); this.stats.loading = this.loading;
     // 使っていないノードは、読込済みの点数が上限の2.5倍を超えたら古い順に解放
     let loadedPts = 0; for (const n of this.loaded) loadedPts += n.count;
     if (loadedPts > budget * 2.5) {
@@ -9064,7 +9050,7 @@ class LocalPointCloud {
       const p = new THREE.Points(g, sharedCubeMaterial);
       p.frustumCulled = false;
       p.matrixAutoUpdate = false;
-      p.userData.spL = n.spacing || 0; // 点の間隔(実寸の点・隙間を埋めるのに使う)
+      p.userData.spL = n.spacing || 0; // 点の間隔
       pointsHook(p);
       n.obj = p;
       this.loaded.add(n);
@@ -10423,44 +10409,7 @@ if (sizeNum) {
 function updateSizeSlider() { applyPointUI(pointSize, false); }
 // 初期値: 前回の値。無ければ 1px
 applyPointUI(Number(savedSettings.sizePx) || 1, false, { save: false });
-// VR の点の大きさ(実寸 / 画面で一定)・実寸の倍率・画面で試す
-function vrPtsSyncUi() {
-  document.querySelectorAll('[data-vr-pts]').forEach(b => setAttrIf(b, 'aria-pressed', b.dataset.vrPts === vrPts.mode ? 'true' : 'false'));
-  setHiddenIf(document.getElementById('vr-real-box'), vrPts.mode !== 'real');
-  const sl = document.getElementById('vr-real-k');
-  if (sl && document.activeElement !== sl) sl.value = String(vrPts.k);
-  setTextIf(document.getElementById('vr-real-val'), `×${vrPts.k.toFixed(2)}`);
-  const cb = document.getElementById('vr-on-screen');
-  if (cb) cb.checked = vrPts.onScreen;
-}
-function vrSetRealK(k) {
-  vrPts.k = clampN(Math.round(k * 100) / 100, VR_REAL_K_MIN, VR_REAL_K_MAX);
-  saveSetting('vrRealK', vrPts.k);
-  vrPtsSyncUi();
-}
-function vrSetMode(mode) {
-  vrPts.mode = mode === 'screen' ? 'screen' : 'real';
-  saveSetting('vrPtsMode', vrPts.mode);
-  vrPtsSyncUi();
-}
-function vrSetOnScreen(on) {
-  vrPts.onScreen = !!on;
-  saveSetting('vrOnScreen', vrPts.onScreen);
-  vrPtsSyncUi();
-}
-document.querySelectorAll('[data-vr-pts]').forEach(b => b.addEventListener('click', () => vrSetMode(b.dataset.vrPts)));
-function setTileFill(on) {
-  tileFillOn = !!on;
-  saveSetting('tileFill', tileFillOn);
-  const cb = document.getElementById('tile-fill');
-  if (cb) cb.checked = tileFillOn;
-}
-document.getElementById('tile-fill')?.addEventListener('change', (e) => setTileFill(e.target.checked));
-setTileFill(tileFillOn);
-document.getElementById('vr-real-k')?.addEventListener('input', (e) => vrSetRealK(parseFloat(e.target.value)));
-document.getElementById('vr-on-screen')?.addEventListener('change', (e) => vrSetOnScreen(e.target.checked));
-vrPtsSyncUi();
-// 点の形(立方体/丸)。色分けを切り替えると、その色分けの形(元の色=立方体 / 高さ・白色=丸)になる
+// 点の形(四角/丸)。色分けを切り替えると、その色分けの形(元の色=四角 / 高さ・白色=丸)になる
 function setPointShape(shape, save = false) {
   pointShape = shape === 'round' ? 'round' : 'cube';
   cubeUniforms.uShape.value = pointShape === 'round' ? 1.0 : 0.0;
@@ -10696,7 +10645,7 @@ function applyLevelRuntime(L) {
   lodSlider.value = String(qualityFromErrorTarget(p.et));
   lodVal.textContent = lodSlider.value;
   applyActiveTilesSettings();
-  // 点の割合(間引き)は描く点の上限から自動で決める(pcApplyBudget)
+  // 上限を超えた時の減らし方は pcApplyBudget(遠くの細かい段階の点から)
   setPointBudget(p.budget);
 }
 // それ以外(手でレベルを選んだ時だけ変える)
@@ -10809,7 +10758,7 @@ function renderLevelNow() {
   const txt = `いま ${fmtPoints(levelState.points)} · ${levelState.fps ? Math.round(levelState.fps) : '-'}fps(目標 ${t}fps)`;
   if (el.textContent !== txt) el.textContent = txt;
   const bn = document.getElementById('budget-now');
-  if (bn) { const t2 = pointDensity < 1 ? `いま上限を超えたので ${Math.round(pointDensity * 100)}% に間引き中` : ''; if (bn.textContent !== t2) bn.textContent = t2; }
+  if (bn) { const t2 = lodState.s < 0.999 ? 'いま上限を超えたので遠くの点を減らし中' : ''; if (bn.textContent !== t2) bn.textContent = t2; }
 }
 
 // ── 自動調整(毎フレーム、描画の後に呼ぶ) ──
@@ -11780,7 +11729,7 @@ function showToast(text, ms = 2200) {
     <h3>表示とデータ</h3>
     <dl><dt>表示レベル</dt><dd>1(軽い)〜10(きれい)。「自動」は動きの滑らかさを見て調整します(設定 ⚙ の「表示」)</dd>
     <dt>レベルNで保存 / 完全保存</dt><dd>データの一覧で、そのレベルで見る分 / すべてのタイルを端末に保存(完全保存はオフラインでも全部見られる)。保存中もデータを開けます</dd>
-    <dt>色分け</dt><dd>設定の「表示」で、元の色 / 高さ / 白色(切り替えると点の形も、元の色は立方体・高さと白色は丸に)</dd>
+    <dt>色分け</dt><dd>設定の「表示」で、元の色 / 高さ / 白色(切り替えると点の形も、元の色は四角・高さと白色は丸に)</dd>
     <dt>外形の枠・目盛り</dt><dd>設定の「表示するもの」で、モデルの外形の枠と寸法、高さの目盛りと格子</dd>
     <dt>設定の上のボタン</dt><dd>▶ すべて開く(項目と「個別に調整」をまとめて)・ⓘ(説明)をすべて開く</dd>
     <dt>パネルの ⓘ</dt><dd>計測・断面・自動のパネルと真俯瞰図のバーの見出しの ⓘ で、その説明を開く・閉じる(自動は項目ごとにも)</dd></dl>`;
@@ -11795,7 +11744,7 @@ function showToast(text, ms = 2200) {
     <dl><dt>左スティック</dt><dd>向いている方向に移動(速さは周りまでの距離に合わせて自動)</dd>
     <dt>右スティック ← →</dt><dd>向きを変える</dd>
     <dt>A / B</dt><dd>下降 / 上昇</dd>
-    <dt>X / Y</dt><dd>点を小さく / 大きく(実寸の時は実寸の倍率)</dd>
+    <dt>X / Y</dt><dd>点を小さく / 大きく</dd>
     <dt>右グリップ</dt><dd>握るほど速く(最大5倍)</dd>
     <dt>左グリップ + X / Y</dt><dd>描く点の上限を下げる / 上げる</dd>
     <dt>右スティックを押し込む</dt><dd>自動の視点移動の再生 / 一時停止(VR 中は位置だけ動き、向きは自由)</dd></dl>`;
@@ -13162,7 +13111,7 @@ function noteTopdownBarTop() {
 }
 
 // ── 設定を初期値に戻す(設定パネルの一番下。2回押しで実行) ──
-// 戻す: 表示レベル(端末の標準・自動)と個別の調整、点のサイズ(大きさ・立方体)、
+// 戻す: 表示レベル(端末の標準・自動)と個別の調整、点のサイズ(大きさ・四角・陰影は中)、
 //       表示するもの(点群・説明パネルを表示、地図は非表示と地図の細かい設定)、視点(歩く)、移動の速さ(ふつう)、表示倍率(1.0)、描画解像度の上限
 // 残す: 保存したデータ・重ねて表示・端末の3Dデータ・パネルの開閉
 function resetSettingsToDefaults() {
@@ -13171,11 +13120,10 @@ function resetSettingsToDefaults() {
   setLevel(4, { keepAuto: true });
   setLevelAuto(false);
   applyPointUI(1, false);
-  vrSetMode('real'); vrSetRealK(1); vrSetOnScreen(false); // VR の点は実寸・×1、画面では試さない
-  setTileFill(true);
+  setEdlLevel('mid'); // 点の陰影は中
   const fire = (el, v) => { if (!el || el.value === v) return; el.value = v; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); };
   document.querySelector('[data-look-color="orig"]')?.click(); // 色分けは元の色
-  document.querySelector('[data-point-shape="cube"]')?.click(); // 点の形は立方体
+  document.querySelector('[data-point-shape="cube"]')?.click(); // 点の形は四角
   const press = (id, want) => { const b = document.getElementById(id); if (b && (b.getAttribute('aria-pressed') === 'true') !== want) b.click(); };
   press('model-toggle', true);
   press('annotation-toggle', false);
@@ -14338,7 +14286,7 @@ function sliceSumPos() {
 window.__sliceReady = true;
 
 // ═══════════════ 色分け ═══════════════
-// 元の色 / 高さ(青→赤) / 白色(真っ白。陰影は他と同じ)。切り替えると点の形も 元の色=立方体 / 高さ・白色=丸 にする
+// 元の色 / 高さ(青→赤) / 白色(真っ白。陰影は他と同じ)。切り替えると点の形も 元の色=四角 / 高さ・白色=丸 にする
 const _lookSaved = savedSettings.look || {};
 const lookState = { color: ['orig', 'height', 'glow'].includes(_lookSaved.color) ? _lookSaved.color : 'orig' };
 function lookSave() { saveSetting('look', { color: lookState.color }); }
@@ -14351,7 +14299,7 @@ function applyLookMaterial() {
   }
   cubeUniforms.uColorMode.value = lookState.color === 'glow' ? 2 : (lookState.color === 'height' ? 1 : 0);
 }
-// 色分けごとの点の形(切り替えるたびに): 元の色=立方体 / 高さ・白色=丸
+// 色分けごとの点の形(切り替えるたびに): 元の色=四角 / 高さ・白色=丸
 const lookDefaultShape = (color) => (color === 'orig' ? 'cube' : 'round');
 // 高さの範囲(モデルの下端〜上端)。モデルが変わった・動いた時に合わせる
 let _lookRangeAt = 0;
@@ -14374,8 +14322,156 @@ function pickOpaqueEnd(s) {
   const m = sharedCubeMaterial;
   m.depthWrite = s.dw; m.transparent = s.tr; m.blending = s.bl;
 }
+// ── 点の陰影(奥行きの差で付ける。設定の「点の陰影」なし / 弱 / 中 / 強) ──
+// ① 点だけを、色と奥行きの画像に描く(点のレイヤー)。
+// ② 画面に: 背景のあと、奥行きの画像の各画素で「周りに自分より手前の点がどれだけあるか」(奥行きの対数の差)を求めて暗くし、
+//    点の奥行きも書く。そのあと点以外(地図・枠・説明パネルなど)を描く(点との前後は奥行きで正しく決まる)。
+// 「なし」の時は今までどおり1回で描く。VR では両目それぞれの範囲に同じ処理がかかる。
+const EDL_STRENGTH = { off: 0, weak: 0.4, mid: 1.0, strong: 2.0 };
+let edlLevel = Object.prototype.hasOwnProperty.call(EDL_STRENGTH, savedSettings.edl) ? savedSettings.edl : 'mid';
+const EDL_FRAG = /* glsl */`
+  uniform sampler2D tColor;
+  uniform sampler2D tDepth;
+  uniform vec2 uInvRes;   // 1 / 画像の大きさ(px)
+  uniform float uP10;     // 投影行列(奥行き → 距離)
+  uniform float uP14;
+  uniform float uOrtho;
+  uniform float uStrength;
+  uniform float uRadius;  // 周りを見る半径(px)
+  uniform float uStep;    // 隣の点までの画面上の間隔の目安(px)= 点の大きさ
+  // 奥行きの値(0〜1)→ 距離の対数
+  float logOf(float d) {
+    float ndc = d * 2.0 - 1.0;
+    float z = uOrtho > 0.5 ? (uP14 - ndc) / uP10 : uP14 / (ndc + uP10);
+    return log2(max(z, 1e-6));
+  }
+  // 奥行き(距離の対数)。x = 値、y = 点があるか
+  vec2 ld(vec2 uv) {
+    float d = texture2D(tDepth, uv).r;
+    return d < 1.0 ? vec2(logOf(d), 1.0) : vec2(0.0);
+  }
+  // なめらかな面の傾き(1 px あたり)の片側: 少し離れた所(点の大きさの 1.5 倍、無ければ 3 倍)の奥行きとの差から。
+  // 点が無ければ -1(分からない)
+  float side(float c, vec2 uv, vec2 dir) {
+    for (int k = 1; k <= 2; k++) {
+      float dist = uStep * 1.5 * float(k) + 1.0;
+      vec2 n = ld(uv + dir * dist * uInvRes);
+      if (n.y > 0.5) return abs(n.x - c) / dist;
+    }
+    return -1.0;
+  }
+  // 片方の向きの傾き: 両側のうち差の小さい側(段差の側は使わない)。どちらも分からなければ -1
+  float axis(float c, vec2 uv, vec2 dir) {
+    float a = side(c, uv, dir), b = side(c, uv, -dir);
+    if (a >= 0.0 && b >= 0.0) return min(a, b);
+    return max(a, b);
+  }
+  void main() {
+    vec2 uv = gl_FragCoord.xy * uInvRes;
+    float d0 = texture2D(tDepth, uv).r;
+    if (d0 >= 1.0) discard; // 点の無い所は背景のまま
+    float c = logOf(d0);
+    // 斜めに見た地面のような「なめらかに奥へ続く面」では、重なった隣の点との差は 面の傾き × 点の大きさ くらいある。
+    // その分は差し引き、それより大きい差(輪郭・段差・凹凸)だけを影にする。周りに点が無く傾きが分からない点は影にしない
+    float gx = axis(c, uv, vec2(1.0, 0.0)), gy = axis(c, uv, vec2(0.0, 1.0));
+    float tau = (gx < 0.0 && gy < 0.0) ? 1e3 : length(vec2(gx < 0.0 ? gy : gx, gy < 0.0 ? gx : gy)) * uStep * 1.6;
+    float sum = 0.0;
+    for (int i = 0; i < EDL_N; i++) {
+      float a = 6.28318530718 * (float(i) + 0.5) / float(EDL_N);
+      vec2 n = ld(uv + vec2(cos(a), sin(a)) * uRadius * uInvRes);
+      if (n.y > 0.5) sum += max(0.0, c - n.x - tau);
+    }
+    float shade = exp(-sum / float(EDL_N) * 300.0 * uStrength);
+    gl_FragColor = vec4(texture2D(tColor, uv).rgb * shade, 1.0);
+    gl_FragDepth = d0;
+  }
+`;
+const edl = {
+  rt: null,
+  size: new THREE.Vector2(),
+  mat: new THREE.ShaderMaterial({
+    uniforms: {
+      tColor: { value: null }, tDepth: { value: null }, uInvRes: { value: new THREE.Vector2(1, 1) },
+      uP10: { value: -1 }, uP14: { value: -0.2 }, uOrtho: { value: 0 }, uStrength: { value: 1 }, uRadius: { value: 1 }, uStep: { value: 2 },
+    },
+    defines: { EDL_N: (isTouchDevice || isVRBrowser) ? 4 : 8 }, // 周りを見る数(スマホ・タブレット・VR 機器は軽く)
+    vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: EDL_FRAG,
+    depthTest: true, depthWrite: true, depthFunc: THREE.AlwaysDepth,
+  }),
+  scene: new THREE.Scene(),
+  frames: 0,
+};
+{
+  const q = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), edl.mat);
+  q.frustumCulled = false;
+  edl.scene.add(q);
+}
+function edlOn() { return (EDL_STRENGTH[edlLevel] || 0) > 0; }
+function edlTarget(w, h) {
+  if (edl.rt && edl.rt.width === w && edl.rt.height === h) return edl.rt;
+  if (edl.rt) { edl.rt.depthTexture?.dispose(); edl.rt.dispose(); }
+  edl.rt = new THREE.WebGLRenderTarget(w, h, {
+    minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, generateMipmaps: false,
+    depthBuffer: true, depthTexture: new THREE.DepthTexture(w, h), samples: 0,
+  });
+  return edl.rt;
+}
 // 画面に描く
-function renderScene(cam) { renderer.render(scene, cam); }
+function renderScene(cam) {
+  if (!edlOn()) { renderer.render(scene, cam); return; }
+  renderer.getDrawingBufferSize(edl.size);
+  const w = Math.max(1, Math.round(edl.size.x)), h = Math.max(1, Math.round(edl.size.y));
+  const rt = edlTarget(w, h);
+  const prev = renderer.getRenderTarget();
+  const mask = cam.layers.mask, ar = renderer.info.autoReset, ac = renderer.autoClear;
+  // ① 点だけ
+  cam.layers.set(PT_LAYER);
+  renderer.setRenderTarget(rt);
+  renderer.render(scene, cam);
+  cam.layers.mask = mask;
+  // ② 背景 + 陰影を付けた点(奥行きも書く) → 点以外
+  const xr = renderer.xr.isPresenting;
+  const pcam = xr ? (renderer.xr.getCamera().cameras[0] || cam) : cam;
+  const P = pcam.projectionMatrix.elements, u = edl.mat.uniforms;
+  u.tColor.value = rt.texture; u.tDepth.value = rt.depthTexture;
+  u.uInvRes.value.set(1 / w, 1 / h);
+  u.uP10.value = P[10]; u.uP14.value = P[14];
+  u.uOrtho.value = cam.isOrthographicCamera ? 1 : 0;
+  u.uStrength.value = EDL_STRENGTH[edlLevel];
+  u.uRadius.value = Math.max(1, cubeUniforms.uPxScale.value); // 画面で約 1 px(CSS)
+  u.uStep.value = Math.max(1, Math.min(cubeUniforms.uMaxPx.value, cubeUniforms.uSizePx.value * cubeUniforms.uPxScale.value));
+  renderer.setRenderTarget(prev);
+  renderer.info.autoReset = false; // 描いた点の数などは 3 回分を合わせる
+  sharedCubeMaterial.visible = false;
+  const bg = scene.background, mwa = scene.matrixWorldAutoUpdate;
+  edl.scene.background = bg;
+  try {
+    renderer.render(edl.scene, cam);
+    // 点以外: 消さずに重ねる(背景が色の時は three.js が毎回消すので、この間だけ背景を外す)。
+    // 位置の計算は①で済んでいるので省く
+    renderer.autoClear = false;
+    scene.background = null;
+    scene.matrixWorldAutoUpdate = false;
+    renderer.render(scene, cam);
+  } finally {
+    scene.background = bg;
+    scene.matrixWorldAutoUpdate = mwa;
+    renderer.autoClear = ac;
+    renderer.info.autoReset = ar;
+    sharedCubeMaterial.visible = true;
+  }
+  edl.frames++;
+}
+function setEdlLevel(v, save = true) {
+  edlLevel = Object.prototype.hasOwnProperty.call(EDL_STRENGTH, v) ? v : 'mid';
+  // なしの間は点を描く画像を持たない(メモリを空ける)
+  if (!edlOn() && edl.rt) { edl.rt.depthTexture?.dispose(); edl.rt.dispose(); edl.rt = null; }
+  document.querySelectorAll('[data-edl]').forEach(b => b.setAttribute('aria-pressed', b.dataset.edl === edlLevel ? 'true' : 'false'));
+  if (save) saveSetting('edl', edlLevel);
+}
+document.querySelectorAll('[data-edl]').forEach(b => b.addEventListener('click', () => setEdlLevel(b.dataset.edl)));
+setEdlLevel(edlLevel, false);
 // 設定の「色分け」
 function syncLookUi() {
   document.querySelectorAll('[data-look-color]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lookColor === lookState.color ? 'true' : 'false'));
@@ -16168,10 +16264,11 @@ function autoSyncUi() {
 testHooks.auto = { autoState, autoPlay, autoPause, autoStop, autoBuild, autoEval, autoRate, autoV, autoModelGeo, autoTourPoints, autoTimeText,
   autoS, autoSOf, autoScrubTo, autoFwdTime, pickDownAt, autoRecStart, autoRecStop, autoRecList, autoRec, autoFocusPts, autoFocusSave, autoLookTarget,
   autoGroundAt, autoLine: () => autoLine, autoIsPP, worldScale: () => worldScale };
-testHooks.tileFx = { fillOn: () => tileFillOn, setFill: setTileFill, nodeVals: () => { const out = []; for (const tr of allTileRenderers()) for (const t of tr.visibleTiles) { const n = t.engineData && t.engineData.scene; if (n && t.__pts) out.push({ uri: t.content && t.content.uri, depth: t.internal.depth, dist: t.traversal.distanceFromCamera, budDens: n.userData.budDens ?? 1, tileDens: t.__pts[0] ? t.__pts[0].userData.tileDens : null, fill: t.__pts[0] ? t.__pts[0].userData.fillL : null, sp: t.__pts[0] ? t.__pts[0].userData.spL : null, hidden: !!n.userData.pcBudgetHidden, visible: n.visible, refine: t.refine, parentUri: t.parent && t.parent.content && t.parent.content.uri }); } return out; } };
+testHooks.lod = { s: () => lodState.s, want: () => lodState.want, nearFactor: lodNearFactor, morph: lodMorph, morphOrtho: lodMorphOrtho, boost: LOD_NEAR_BOOST, morphK: LOD_MORPH_K,
+  nodeVals: () => { const out = []; for (const tr of allTileRenderers()) for (const t of tr.visibleTiles) { const n = t.engineData && t.engineData.scene; if (n && t.__pts) { const o = t.__pts[0]; out.push({ uri: t.content && t.content.uri, depth: t.internal.depth, dist: t.traversal.distanceFromCamera, error: t.traversal.error, ge: t.geometricError, lodA: n.userData.lodA || 0, lodM: n.userData.lodM ?? 1, avg: n.userData.lodAvg ?? 1, tileDens: o ? o.userData.tileDens : null, objLodA: o ? o.userData.lodA : null, hidden: !!n.userData.pcBudgetHidden, visible: n.visible, refine: t.refine, pts: n.userData.pointCount || 0, parentUri: t.parent && t.parent.content && t.parent.content.uri, gateGe: (lodGateTile(t) || {}).geometricError ?? null }); } } return out; },
+  localVals: () => { const out = []; for (const inst of localInstances.values()) { if (!inst.pc) continue; for (const nd of inst.pc.shown) out.push({ depth: nd.depth, count: nd.count, lodA: nd.lodA || 0, lodM: nd.lodM ?? 1, dN: nd.dN, objLodA: nd.obj ? nd.obj.userData.lodA : null, tileDens: nd.obj ? nd.obj.userData.tileDens : null }); out.push({ s: inst.pc.lodS ?? 1, want: inst.pc.lodWant ?? 1, stats: { ...inst.pc.stats } }); } return out; } };
+testHooks.edl = { obj: edl, renderer, level: () => edlLevel, set: setEdlLevel, on: edlOn, frames: () => edl.frames, rt: () => edl.rt ? [edl.rt.width, edl.rt.height] : null, strength: EDL_STRENGTH, n: () => edl.mat.defines.EDL_N, layer: PT_LAYER };
 testHooks.autoPlace = { place: () => autoState.place && { ...autoState.place }, reset: () => autoPlaceAnchor(true) };
-testHooks.vrPts = { state: () => ({ ...vrPts }), active: () => vrPtsActive(), realW: () => cubeUniforms.uRealW.value, setRealK: vrSetRealK,
-  nearFactor: vrNearFactor, scan: () => { vrPtsScan(); return vrPts.spacingW; }, setSpacing: (v) => { vrPts.spacingW = v; } };
 testHooks.len = { lenStops, sliceAheadStops, autoLenStops, faceRotate, faceFlipSide, faceDirNow, layoutRail, isPhoneLandscape, sliceSyncLive };
 
 // ═══════════════ スマホ: ページが拡大されたままにならないように ═══════════════
@@ -16735,7 +16832,7 @@ testHooks.view = { sliceState, sliceRange, sliceSetOn, sliceSetDir, sliceSetPos,
 testHooks.nudge = { placeNudge: () => placeNudgeKey, annNudge: () => annNudgeKey, NUDGE_STEPS, annOrig, annDeletedOrig };
 testHooks.gate = { csvSrcLoad, workChangesCount, csvSourceUsed, vrHudTexts: () => vrLoadHud.texts(), gateActive: () => gate.active, current: () => currentDataset };
 testHooks.csv = { buildAnnotationsCsv, buildDatasetsCsv, annLoadStore, placeLoadStore, annList, removed: () => REMOVED_DATASETS, datasets: () => DATASETS };
-testHooks.pc = { setBudget: (n) => setPointBudget(n), density: () => pointDensity, pcStats: () => pcVis.stats, placeLoadStore, placeIsDirty, buildDatasetsCsv, datasets: () => DATASETS };
+testHooks.pc = { setBudget: (n) => setPointBudget(n), density: () => lodState.s, pcStats: () => pcVis.stats, placeLoadStore, placeIsDirty, buildDatasetsCsv, datasets: () => DATASETS };
 
 // ── 説明パネル表示トグル ──
 (function setupAnnotationToggle() {
@@ -17024,7 +17121,7 @@ function exportTopdownPNG(factor) {
   orthoCamera.top = hh; orthoCamera.bottom = -hh;
   orthoCamera.updateProjectionMatrix();
 
-  renderer.render(scene, orthoCamera);
+  renderScene(orthoCamera);
 
   // --- 2. WebGLのcanvasを2D canvasにコピーし、注記を描き込む ---
   const out = document.createElement('canvas');
@@ -17041,7 +17138,7 @@ function exportTopdownPNG(factor) {
   cubeUniforms.uViewportH.value = savedVh;
   cubeUniforms.uPxScale.value = savedPxScale;
   updateTopdownFrustum();
-  renderer.render(scene, orthoCamera);
+  renderScene(orthoCamera);
 
   // --- 4. PNGダウンロード ---
   out.toBlob((blob) => {
@@ -17270,7 +17367,8 @@ function perfTick() {
     `読み込む細かさ ${qualityFromErrorTarget(lodErrorTarget)}/20(画面上の粗さ ${lodErrorTarget}px まで)`,
     `描く点の上限   ${fmtPoints(pcVis.budget)} · いま描いた点 ${fmtInt(perf.points)}点 · 描画の回数 ${fmtInt(perf.calls)}`,
     ...(pcVis.budget ? [`  上限で描かない ${pcVis.stats.hiddenTiles}タイル(${fmtInt(pcVis.stats.hiddenPoints)}点)` +
-      (pointDensity < 1 ? ` · 間引き ${Math.round(pointDensity * 100)}%` : '')] : []),
+      (lodState.s < 0.999 ? ` · 遠くを減らす距離 ×${lodState.s.toFixed(2)}` : '')] : []),
+    `点の陰影       ${{ off: 'なし', weak: '弱', mid: '中', strong: '強' }[edlLevel]}`,
     t ? `メモリに残す量 ${formatBytes(lruBytes(t))} / ${cacheMaxBytesMB} MB(端末の目安 ${CACHE_DEVICE_MB} MB)` : 'メモリに残す量 -',
     ...(t ? [`  残しているタイル ${fmtInt(lru)}件 / 上限 ${fmtInt(t.lruCache?.maxSize ?? 0)}件 · ${Math.round(CACHE_KEEP_RATIO * 100)}%までは捨てない`] : []),
     `描画解像度     ${xr ? 'VR(VR 機器が決める)' : `${renderer.getPixelRatio().toFixed(2)}倍(端末 ${NATIVE_DPR.toFixed(2)}倍)`}`,

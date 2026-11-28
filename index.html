@@ -2295,6 +2295,8 @@
   
     .fx-mode-grid { grid-template-columns: 1fr 1fr; margin-top: 3px; }
     .fx-sub.off .fx-mode-grid .dbg-btn { pointer-events: none; }
+  
+    #fx-lod-ang-box.off { opacity: 0.45; }
   </style>
 </head>
 <body>
@@ -2422,6 +2424,9 @@
             <div class="fx-sub-head"><span>細かく読む距離</span><span id="fx-near-dist-val" class="cp-mono">1.5 m</span></div>
             <input id="fx-near-dist" type="range" min="1" max="5" step="0.5" value="1.5" aria-label="細かく読む距離(m)">
             <div class="fx-sub-ends"><span>1 m</span><span>5 m</span></div>
+            <div class="fx-sub-head fx-sub-gap"><span>見ている所を探す範囲(半角)</span><span id="fx-near-cone-val" class="cp-mono">2.5°</span></div>
+            <input id="fx-near-cone" type="range" min="1" max="10" step="0.5" value="2.5" aria-label="見ている所を探す範囲(画面の中央からの半角・度)">
+            <div class="fx-sub-ends"><span>1°</span><span>10°</span></div>
             <div class="fx-sub-head fx-sub-gap"><span>近くの点の大きさ(最大)</span><span id="fx-near-size-val" class="cp-mono">2.0 倍</span></div>
             <input id="fx-near-size" type="range" min="1" max="4" step="0.5" value="2" aria-label="近くの点の大きさ(最大。元の大きさの何倍か)">
             <div class="fx-sub-ends"><span>1倍(同じ)</span><span>4倍</span></div>
@@ -2429,6 +2434,16 @@
             <div class="dbg-grid cp-grid fx-mode-grid" role="group" aria-label="点を大きくする基準">
               <button type="button" class="dbg-btn" data-near-sz-mode="gaze" aria-pressed="true" title="見ている所が一番大きく、細かく読む距離の所で元の大きさ(釣り鐘)">見ている所</button>
               <button type="button" class="dbg-btn" data-near-sz-mode="player" aria-pressed="false" title="自分(目)から細かく読む距離の所で元の大きさ、近いほど大きく(距離に反比例)">自分から</button>
+            </div>
+            <div class="fx-sub-head fx-sub-gap"><span>細かく読む基準</span></div>
+            <div class="dbg-grid cp-grid fx-mode-grid" role="group" aria-label="細かく読む基準">
+              <button type="button" class="dbg-btn" data-near-lod-mode="gaze" aria-pressed="true" title="見ている所の周りを細かく読む(見ている所で約2段階、範囲の端で元の細かさ)">見ている所</button>
+              <button type="button" class="dbg-btn" data-near-lod-mode="player" aria-pressed="false" title="自分(目)から、視線の円錐の中を細かく読む(距離と角度の釣り鐘)">自分から</button>
+            </div>
+            <div id="fx-lod-ang-box">
+              <div class="fx-sub-head fx-sub-gap"><span>細かく読む角度(自分から・半角)</span><span id="fx-lod-ang-val" class="cp-mono">30°</span></div>
+              <input id="fx-lod-ang" type="range" min="10" max="60" step="5" value="30" aria-label="自分から細かく読む円錐の半角(度)">
+              <div class="fx-sub-ends"><span>10°</span><span>60°</span></div>
             </div>
           </div>
           <div class="fx-row"><span class="fx-cap">タイルを少しずつ出し入れする</span><button type="button" class="dbg-btn fx-btn" data-fx="fade" aria-pressed="true">オン</button></div>
@@ -2442,6 +2457,12 @@
           <b>見ている所</b>(初期): 見ている所で最大、範囲の端で元の大きさになるよう、釣り鐘の形で滑らかに戻します。
           <b>自分から</b>: 自分(目)からの距離が「細かく読む距離」の所で元の大きさ、それより近いほど距離に反比例して大きくします(距離が半分なら2倍。最大の倍率で止めます)。
           画面上のすき間は近いほど広がるので、それを打ち消す大きさです。どちらの基準でも、働くのは見ている所に近づいている時だけです。
+          「見ている所」は、画面の中央(VR は顔の正面)から「見ている所を探す範囲」(半角 1〜10°、0.5° 刻み。初期 2.5°)の中にある、一番手前の点です。
+          広げるほど、中央から少し外れた近くの物でも働きます。<br>
+          <b>細かく読む基準</b>: <b>見ている所</b>(初期)は、見ている所の周りを細かく読みます。
+          <b>自分から</b>は、自分(目)から「細かく読む距離」以内で、視線から「細かく読む角度」(半角 10〜60°、5° 刻み。初期 30°)の円錐の中を細かく読みます。
+          効きは、目からの距離と視線からの角度の、どちらも釣り鐘の形で(目の近く・視線の正面で約2段階、距離や角度の端で元の細かさ)。
+          視野の外(後ろ側など)はもともと細かく読みません。上限を超えても減らさない範囲も、この基準に合わせます。
           細かさも、見ている所は約2段階・中ほどは約1段階細かく、範囲の端で元の細かさです。
           範囲の中は描く点の上限を超えても減らさず、超えた分は範囲の外の点を遠い順に減らします(見えている点がすべて範囲の中なら減らしません)。
           見ている所は少し遅れて滑らかに追いかけ(基準が「見ている所」の時)、近づいた時・離れた時は 0.4 秒かけて大きさを変えます。
@@ -6040,6 +6061,15 @@ let nearFxM = nearFxClamp(savedSettings.nearFxDist ?? NEAR_FX_DEF); // 細かく
 let nearFxSz = nearSzClamp(savedSettings.nearFxSize ?? NEAR_SZ_DEF); // 近くの点の大きさ(最大。元の大きさの何倍か)
 // 点を大きくする基準: 'gaze' = 見ている所が中心(釣り鐘) / 'player' = 自分(目)からの距離に反比例
 let nearSzMode = savedSettings.nearFxSzMode === 'player' ? 'player' : 'gaze';
+// 見ている所を探す範囲: 画面の中央(VR は顔の正面)からの半角(1〜10°、0.5° 刻み、初期 2.5°)
+const NEAR_CONE_MIN = 1, NEAR_CONE_MAX = 10, NEAR_CONE_STEP = 0.5, NEAR_CONE_DEF = 2.5;
+const stepClamp = (v, mn, mx, st, def) => { const n = Number(v); return Number.isFinite(n) ? Math.max(mn, Math.min(mx, Math.round(n / st) * st)) : def; };
+let nearConeDeg = stepClamp(savedSettings.nearFxCone ?? NEAR_CONE_DEF, NEAR_CONE_MIN, NEAR_CONE_MAX, NEAR_CONE_STEP, NEAR_CONE_DEF);
+// 細かく読む基準: 'gaze' = 見ている所の周り / 'player' = 自分(目)から、視線の円錐の中(距離の釣り鐘 × 角度の釣り鐘)
+let nearLodMode = savedSettings.nearFxLodMode === 'player' ? 'player' : 'gaze';
+// 自分から細かく読む円錐の半角(10〜60°、5° 刻み、初期 30°)
+const NEAR_LANG_MIN = 10, NEAR_LANG_MAX = 60, NEAR_LANG_STEP = 5, NEAR_LANG_DEF = 30;
+let nearLodAng = stepClamp(savedSettings.nearFxLodAng ?? NEAR_LANG_DEF, NEAR_LANG_MIN, NEAR_LANG_MAX, NEAR_LANG_STEP, NEAR_LANG_DEF);
 
 // ── 点の細かさ(どの端末でも共通。点の出し方のトグルで変わる) ──
 // ・読み込み: 画面上の誤差だけで決める。「細かくしたタイルを少し長く保つ」なら、誤差が 1/1.3 に下がるまで細かくしたまま。
@@ -6060,6 +6090,22 @@ const nearFxR = () => nearFxM;        // 細かく読む範囲の半径(m)
 function nearFxBell(t) { return t <= 0 ? 1 : t >= 1 ? 0 : 0.5 * (1 + Math.cos(Math.PI * t)); }
 // 読み込む細かさの倍率(誤差の見積もり): 中心 4倍 → 端 1倍
 const nearFxBoostAt = (d, R) => (d >= R ? 1 : 1 + (NEAR_FX_BOOST - 1) * nearFxBell(d / R));
+// ボリューム(箱など)の中で視線に一番近い所が、目(eye)から見て視線(dir。長さ 1)から何ラジアン離れているか。
+// 視線上の点とボリュームの一番近い所を交互に2回求める(目がボリュームの中・視線が通っていれば 0)。clamp(q, out) = ボリュームの中で q に一番近い点
+const _nfV = new THREE.Vector3(), _nfQ = new THREE.Vector3(), _nfP = new THREE.Vector3();
+function nearFxVolAng(clamp, center, eye, dir) {
+  let s = Math.max(0, _nfV.subVectors(center, eye).dot(dir));
+  for (let i = 0; i < 2; i++) {
+    _nfQ.copy(dir).multiplyScalar(s).add(eye);
+    clamp(_nfQ, _nfP);
+    s = Math.max(0, _nfV.subVectors(_nfP, eye).dot(dir));
+  }
+  _nfV.subVectors(_nfP, eye);
+  const L = _nfV.length();
+  return L < 1e-9 ? 0 : Math.acos(Math.max(-1, Math.min(1, _nfV.dot(dir) / L)));
+}
+// 自分から細かく読む効き: 目からの距離 d(範囲の半径 R)の釣り鐘 × 視線からの角度 a(半角 θ)の釣り鐘
+const nearFxPlayerW = (d, R, a) => (d >= R ? 0 : nearFxBell(d / R) * nearFxBell(a / (nearLodAng * Math.PI / 180)));
 
 // ── 点群シェーダ ──
 // 各点を画面上の正方形(または丸)として、設定の大きさ(画面上のピクセル数)で描く。
@@ -6554,7 +6600,6 @@ function pcApplyBudget() {
   _lodItemN = 0;
   let total = 0, inside = 0;
   for (const tr of allTileRenderers()) {
-    const fx = act ? nearFxLocal(tr) : null, R = nearFxR();
     for (const tile of tr.visibleTiles) {
       const n = tile.engineData && tile.engineData.scene;
       if (!n || !n.parent) continue;
@@ -6564,7 +6609,8 @@ function pcApplyBudget() {
       it.tile = tile; it.n = n; it.pts = n.userData.pointCount || 0; it.bh = false; it.df = 1;
       it.dc = tile.traversal.distanceFromCamera || 0;
       total += it.pts;
-      it.fx = !!fx && tile.engineData.boundingVolume.distanceToPoint(fx) <= R;
+      // 減らさない範囲の中か(細かく読む基準に合わせる)
+      it.fx = act ? (nearFxTileW(tr, tile), _nfIn) : false;
       if (it.fx) inside += it.pts;
     }
   }
@@ -6653,11 +6699,11 @@ function lodNearWrap(t) {
   t.calculateTileViewError = (tile, target) => {
     orig(tile, target);
     if (!lodNearOn() || !target.inView) return;
-    // 手前を細かく読む: 見ている所に近づいた時、その周りのタイルは誤差を 中心 4倍 → 範囲の端 1倍 に見積もる
-    // (タイルの一番近い所の距離で。中心は約2段階・中ほどは約1段階細かく読み、範囲の端で元の細かさ)
+    // 手前を細かく読む: 見ている所に近づいた時、誤差を 1 + 3 × 効き 倍に見積もる(中心は約2段階・中ほどは約1段階細かく、範囲の端で元の細かさ)。
+    // 効きの中心は「細かく読む基準」で、見ている所(その周り) か 自分から(目から、視線の円錐の中) (nearFxTileW)
     if (ptFx.near && nearFx.active) {
-      const f = nearFxLocal(t);
-      if (f) { const R = nearFxR(), d = tile.engineData.boundingVolume.distanceToPoint(f); if (d < R) target.error *= nearFxBoostAt(d, R); }
+      const w = nearFxTileW(t, tile);
+      if (w > 0) target.error *= 1 + (NEAR_FX_BOOST - 1) * w;
     }
     if (!ptFx.hyst) return;
     // 前のフレームで細かくしていたタイルは、誤差が 1/1.3 に下がるまで細かくしたまま(境目で出たり消えたりしないように)
@@ -9130,7 +9176,7 @@ class CopcSource {
 // ── 点群の詳細度表示(画面上で粗い所から細かくする。上限まで。近づいた所は細かく読み、上限でも減らさない) ──
 const _lpFrustum = new THREE.Frustum(), _lpProj = new THREE.Matrix4(), _lpBox = new THREE.Box3();
 const _lpCam = new THREE.Vector3(), _lpScale = new THREE.Vector3();
-const _lpInv = new THREE.Matrix4(), _lpCamL = new THREE.Vector3(), _lpFx = new THREE.Vector3();
+const _lpInv = new THREE.Matrix4(), _lpCamL = new THREE.Vector3(), _lpFx = new THREE.Vector3(), _lpDirL = new THREE.Vector3(), _lpCtr = new THREE.Vector3();
 class LocalPointCloud {
   constructor(source, parent) {
     this.src = source; this.parent = parent; this.root = null;
@@ -9160,8 +9206,9 @@ class LocalPointCloud {
     _lpInv.copy(mw).invert();
     _lpCamL.copy(_lpCam).applyMatrix4(_lpInv); // カメラの位置(このデータの座標)
     // 近づいた所(見ている所)。このデータの座標で
-    const fxOn = near && ptFx.near && nearFx.active;
+    const fxOn = near && ptFx.near && nearFx.active, fxPl = nearLodMode === 'player';
     if (fxOn) _lpFx.copy(nearFx.point).applyMatrix4(_lpInv);
+    if (fxOn && fxPl) _lpDirL.set(0, 0, -1).transformDirection(cam.matrixWorld).transformDirection(_lpInv); // 視線(このデータの座標)
     const fxR = nearFxR() * (worldScale || 1) / Math.max(scaleW, 1e-9);
     // 見えるか・距離(このデータの座標の単位)・画面上の点の間隔
     const vis = (n) => {
@@ -9173,7 +9220,15 @@ class LocalPointCloud {
       n.dN = d;
       n.sse = n.spacing * k / d;
       // 手前を細かく読む: 見ている所の周りは 中心 4倍 → 範囲の端 1倍 に見積もる(範囲の中は先に選び、上限でも減らさない)
-      if (fxOn) { const fd = n.box.distanceToPoint(_lpFx); if (fd <= fxR) { n.fx = true; n.sse *= nearFxBoostAt(fd, fxR); } }
+      if (fxOn && fxPl) {
+        // 自分から: 目からの距離の釣り鐘 × 視線からの角度の釣り鐘
+        const fd = n.box.distanceToPoint(_lpCamL);
+        if (fd < fxR) {
+          const bx = n.box;
+          const w = nearFxPlayerW(fd, fxR, nearFxVolAng((q, out) => bx.clampPoint(q, out), bx.getCenter(_lpCtr), _lpCamL, _lpDirL));
+          if (w > 0) { n.fx = true; n.sse *= 1 + (NEAR_FX_BOOST - 1) * w; }
+        }
+      } else if (fxOn) { const fd = n.box.distanceToPoint(_lpFx); if (fd <= fxR) { n.fx = true; n.sse *= nearFxBoostAt(fd, fxR); } }
       return true;
     };
     // 画面上の誤差が大きい順に取り出す(二分ヒープ)。描く候補は上限まで(近づいた所は上限を超えても入れる)
@@ -11258,7 +11313,7 @@ function collectVisiblePointObjects(out) {
 }
 // 手前を細かく読む: 画面の中央(VR は顔の正面)に見えている面が「細かく読む距離」以内なら、その点の周りを細かく読む
 // (離れたと見なすのは、それより 1 m 遠くなってから)。
-// 表示中の点群から、正面の向き(半角 2.5°の円錐)に入る点を抜き取りで調べ、いちばん手前の点を「見ている所」にする
+// 表示中の点群から、正面の向き(半角は「見ている所を探す範囲」。初期 2.5°)の円錐に入る点を抜き取りで調べ、いちばん手前の点を「見ている所」にする
 const nearFx = { active: false, point: new THREE.Vector3(), dist: Infinity, at: 0, tick: 0, c: new THREE.Vector3(), lv: 0 };
 // 毎フレーム(pcNodeFrame): 点を大きくする中心(c。基準が「見ている所」の時)は見ている所を約 0.3 秒で追いかけ(0.2 秒ごとに調べた点へ跳ねないように)、
 // 大きくする濃さ(lv)は近づいた・離れた時に 0.4 秒かけて出し入れする。真上・正対の間は大きくしない
@@ -11279,7 +11334,6 @@ function nearFxFrame(dt) {
   u.uFocusLv.value = nearFx.lv;
   u.uFocusMode.value = nearSzMode === 'player' ? 1 : 0;
 }
-const NEAR_FX_CONE = Math.tan(2.5 * Math.PI / 180);
 const _fxObjs = [], _fxC = new THREE.Vector3(), _fxDir = new THREE.Vector3(), _fxP = new THREE.Vector3(), _fxV = new THREE.Vector3(),
   _fxS = new THREE.Sphere(), _fxBest = new THREE.Vector3(), _fxInv = new THREE.Matrix4();
 function nearFxSet(on) {
@@ -11295,7 +11349,7 @@ function nearFxTick() {
   camera.updateMatrixWorld();
   const camPos = _fxC.setFromMatrixPosition(camera.matrixWorld);
   _fxDir.set(0, 0, -1).transformDirection(camera.matrixWorld);
-  const ws = worldScale || 1, maxD = nearFxOff() * ws, minTol = 0.03 * ws;
+  const ws = worldScale || 1, maxD = nearFxOff() * ws, minTol = 0.03 * ws, cone = Math.tan(nearConeDeg * Math.PI / 180); // 探す範囲(半角)
   let best = Infinity;
   _fxObjs.length = 0;
   for (const o of collectVisiblePointObjects(_fxObjs)) {
@@ -11306,14 +11360,14 @@ function nearFxTick() {
     const t0 = _fxV.dot(_fxDir);
     if (t0 + _fxS.radius < 0 || _fxV.length() - _fxS.radius > maxD) continue;
     const perp = Math.sqrt(Math.max(0, _fxV.lengthSq() - t0 * t0));
-    if (perp - _fxS.radius > maxD * NEAR_FX_CONE + minTol) continue;
+    if (perp - _fxS.radius > maxD * cone + minTol) continue;
     const n = pos.count, step = Math.max(1, Math.floor(n / 3000)), m = o.matrixWorld;
     for (let i = 0; i < n; i += step) {
       _fxP.fromBufferAttribute(pos, i).applyMatrix4(m);
       _fxV.subVectors(_fxP, camPos);
       const t = _fxV.dot(_fxDir);
       if (t <= 0 || t >= best || t > maxD) continue;
-      const tol = Math.max(minTol, t * NEAR_FX_CONE);
+      const tol = Math.max(minTol, t * cone);
       if (_fxV.lengthSq() - t * t < tol * tol) { best = t; _fxBest.copy(_fxP); }
     }
   }
@@ -11321,6 +11375,49 @@ function nearFxTick() {
   const on = best <= (nearFx.active ? nearFxOff() : nearFxDist()) * ws;
   if (on) nearFx.point.copy(_fxBest);
   if (on !== nearFx.active) nearFxSet(on);
+}
+// 目の位置と視線の向きを、そのタイル群の座標で(1フレームに1回だけ計算する)
+const _nfM = new THREE.Matrix4();
+function nearFxEyeLocal(t) {
+  if (t.__nfEyeF !== _pcFrame) {
+    t.__nfEyeF = _pcFrame;
+    _nfM.copy(t.group.matrixWorld).invert();
+    t.__nfEye = (t.__nfEye || new THREE.Vector3()).setFromMatrixPosition(camera.matrixWorld).applyMatrix4(_nfM);
+    t.__nfDir = (t.__nfDir || new THREE.Vector3()).set(0, 0, -1).transformDirection(camera.matrixWorld).transformDirection(_nfM);
+  }
+  return t;
+}
+// 近づいている間の、そのタイルの効き(0〜1。細かく読む倍率は 1 + 3 × 効き)。_nfIn = 上限を超えても減らさない範囲の中か
+//   見ている所: 見ている所からの距離の釣り鐘(範囲の中 = 半径以内)
+//   自分から  : 目からの距離の釣り鐘 × 視線からの角度の釣り鐘(範囲の中 = 効きがある所。視野の外のタイルはもともと細かく読まない)
+let _nfIn = false;
+function nearFxTileW(t, tile) {
+  _nfIn = false;
+  const bv = tile.engineData.boundingVolume, R = nearFxR();
+  if (nearLodMode === 'player') {
+    nearFxEyeLocal(t);
+    const d = bv.distanceToPoint(t.__nfEye);
+    if (d >= R) return 0;
+    const w = nearFxPlayerW(d, R, nearFxTileAng(tile, bv, t.__nfEye, t.__nfDir));
+    _nfIn = w > 0;
+    return w;
+  }
+  const f = nearFxLocal(t);
+  if (!f) return 0;
+  const d = bv.distanceToPoint(f);
+  _nfIn = d <= R;
+  return d < R ? nearFxBell(d / R) : 0;
+}
+// タイルのバウンディングボリューム(箱・球)の、視線からの角度
+function nearFxTileAng(tile, bv, eye, dir) {
+  if (!tile.__nfC) {
+    const o = bv.obb || bv.regionObb, sp = new THREE.Sphere();
+    tile.__nfC = new THREE.Vector3();
+    if (o) o.box.getCenter(tile.__nfC).applyMatrix4(o.transform); else { bv.getSphere(sp); tile.__nfC.copy(sp.center); }
+    tile.__nfClamp = o ? (q, out) => o.clampPoint(q, out)
+      : (q, out) => { out.subVectors(q, sp.center); const l = out.length(); return l <= sp.radius ? out.copy(q) : out.multiplyScalar(sp.radius / l).add(sp.center); };
+  }
+  return nearFxVolAng(tile.__nfClamp, tile.__nfC, eye, dir);
 }
 // 見ている所を、そのタイル群の座標で(1フレームに1回だけ計算する)
 function nearFxLocal(t) {
@@ -13456,7 +13553,8 @@ function noteTopdownBarTop() {
 }
 
 // ── 設定を初期値に戻す(設定パネルの一番下。2回押しで実行) ──
-// 戻す: 表示レベル(端末の標準・自動)と個別の調整、点のサイズ(大きさ・立方体)、点の出し方(すべてオン・細かく読む距離 1.5 m・近くの点の大きさ 2倍・基準は見ている所)、
+// 戻す: 表示レベル(端末の標準・自動)と個別の調整、点のサイズ(大きさ・立方体)、点の出し方(すべてオン・細かく読む距離 1.5 m・探す範囲 2.5°・近くの点の大きさ 2倍・
+//       大きさも細かさも基準は見ている所・細かく読む角度 30°)、
 //       表示するもの(点群・説明パネルを表示、地図は非表示と地図の細かい設定)、視点(歩く)、移動の速さ(ふつう)、表示倍率(1.0)、描画解像度の上限
 // 残す: 保存したデータ・重ねて表示・端末の3Dデータ・パネルの開閉
 function resetSettingsToDefaults() {
@@ -13469,6 +13567,9 @@ function resetSettingsToDefaults() {
   setNearFxM(NEAR_FX_DEF); // 細かく読む距離は 1.5 m
   setNearFxSize(NEAR_SZ_DEF); // 近くの点の大きさ(最大)は 2倍
   setNearSzMode('gaze'); // 点を大きくする基準は見ている所
+  setNearCone(NEAR_CONE_DEF); // 見ている所を探す範囲は 2.5°
+  setNearLodMode('gaze'); // 細かく読む基準は見ている所
+  setNearLodAng(NEAR_LANG_DEF); // 細かく読む角度(自分から)は 30°
   const fire = (el, v) => { if (!el || el.value === v) return; el.value = v; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); };
   document.querySelector('[data-look-color="orig"]')?.click(); // 色分けは元の色
   document.querySelector('[data-point-shape="cube"]')?.click(); // 点の形は立方体
@@ -14690,6 +14791,23 @@ function setNearFxM(v, save = true) {
   syncNearFxUi();
   if (save) saveSetting('nearFxDist', nearFxM);
 }
+function setNearCone(v, save = true) {
+  nearConeDeg = stepClamp(v, NEAR_CONE_MIN, NEAR_CONE_MAX, NEAR_CONE_STEP, NEAR_CONE_DEF);
+  nearFx.at = 0; // すぐ調べ直す
+  syncNearFxUi();
+  if (save) saveSetting('nearFxCone', nearConeDeg);
+}
+function setNearLodMode(m, save = true) {
+  nearLodMode = m === 'player' ? 'player' : 'gaze';
+  document.querySelectorAll('[data-near-lod-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.nearLodMode === nearLodMode ? 'true' : 'false'));
+  syncNearFxUi();
+  if (save) saveSetting('nearFxLodMode', nearLodMode);
+}
+function setNearLodAng(v, save = true) {
+  nearLodAng = stepClamp(v, NEAR_LANG_MIN, NEAR_LANG_MAX, NEAR_LANG_STEP, NEAR_LANG_DEF);
+  syncNearFxUi();
+  if (save) saveSetting('nearFxLodAng', nearLodAng);
+}
 function setNearSzMode(m, save = true) {
   nearSzMode = m === 'player' ? 'player' : 'gaze';
   document.querySelectorAll('[data-near-sz-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.nearSzMode === nearSzMode ? 'true' : 'false'));
@@ -14713,7 +14831,21 @@ function syncNearFxUi() {
     ss.disabled = !ptFx.near;
   }
   setTextIf(document.getElementById('fx-near-size-val'), nearFxSz === 1 ? '1.0 倍(同じ)' : `${nearFxSz.toFixed(1)} 倍`);
-  document.querySelectorAll('[data-near-sz-mode]').forEach(b => { b.disabled = !ptFx.near; });
+  document.querySelectorAll('[data-near-sz-mode], [data-near-lod-mode]').forEach(b => { b.disabled = !ptFx.near; });
+  const cs = document.getElementById('fx-near-cone');
+  if (cs) {
+    if (document.activeElement !== cs && Number(cs.value) !== nearConeDeg) cs.value = String(nearConeDeg);
+    cs.disabled = !ptFx.near;
+  }
+  setTextIf(document.getElementById('fx-near-cone-val'), `${nearConeDeg.toFixed(1)}°`);
+  const as = document.getElementById('fx-lod-ang');
+  if (as) {
+    if (document.activeElement !== as && Number(as.value) !== nearLodAng) as.value = String(nearLodAng);
+    as.disabled = !ptFx.near || nearLodMode !== 'player';
+  }
+  setTextIf(document.getElementById('fx-lod-ang-val'), `${nearLodAng}°`);
+  const ab = document.getElementById('fx-lod-ang-box');
+  if (ab) ab.classList.toggle('off', nearLodMode !== 'player'); // 角度は「自分から」の時だけ使う
   const row = document.getElementById('fx-near-dist-row');
   if (row) row.classList.toggle('off', !ptFx.near);
 }
@@ -14722,6 +14854,10 @@ document.getElementById('fx-near-dist')?.addEventListener('input', (e) => setNea
 document.getElementById('fx-near-size')?.addEventListener('input', (e) => setNearFxSize(e.target.value));
 document.querySelectorAll('[data-near-sz-mode]').forEach(b => b.addEventListener('click', () => setNearSzMode(b.dataset.nearSzMode)));
 setNearSzMode(nearSzMode, false);
+document.getElementById('fx-near-cone')?.addEventListener('input', (e) => setNearCone(e.target.value));
+document.querySelectorAll('[data-near-lod-mode]').forEach(b => b.addEventListener('click', () => setNearLodMode(b.dataset.nearLodMode)));
+document.getElementById('fx-lod-ang')?.addEventListener('input', (e) => setNearLodAng(e.target.value));
+setNearLodMode(nearLodMode, false);
 for (const k of PT_FX_KEYS) setPtFx(k, ptFx[k], false);
 setNearFxM(nearFxM, false);
 // 設定の「色分け」
@@ -16587,6 +16723,8 @@ testHooks.lod = {
   groupKids: () => allTileRenderers().reduce((a, tr) => a + tr.group.children.length, 0),
   localVals: () => { const out = []; for (const inst of localInstances.values()) { if (!inst.pc) continue; for (const nd of inst.pc.shown) out.push({ depth: nd.depth, count: nd.count, dN: nd.dN, tileDens: nd.obj ? nd.obj.userData.tileDens : null, fadeLv: nd.obj ? nd.obj.userData.fadeLv ?? null : null, fx: !!nd.fx }); out.push({ fading: inst.pc.fading.size, stats: { ...inst.pc.stats } }); } return out; } };
 testHooks.ptFx = { state: () => ({ ...ptFx }), set: setPtFx, keys: PT_FX_KEYS, dist: () => nearFxM, setDist: setNearFxM, size: () => nearFxSz, setSize: setNearFxSize, szMode: () => nearSzMode, setSzMode: setNearSzMode,
+  cone: () => nearConeDeg, setCone: setNearCone, lodMode: () => nearLodMode, setLodMode: setNearLodMode, lodAng: () => nearLodAng, setLodAng: setNearLodAng,
+  tileW: (tile) => { const w = nearFxTileW(tiles, tile); return [w, _nfIn]; }, volAng: nearFxVolAng, playerW: nearFxPlayerW,
   bell: nearFxBell, boostAt: nearFxBoostAt, lv: () => nearFx.lv, center: () => nearFx.c.toArray(), farCut: () => pcVis.stats.farCut, nearAct: () => _pcNearAct, focus: () => ({ active: nearFx.active, dist: nearFx.dist, point: nearFx.point.toArray() }),
   consts: { dist: nearFxDist(), off: nearFxOff(), r: nearFxR(), boost: NEAR_FX_BOOST, fadeMs: PC_FADE_MS, min: NEAR_FX_MIN, max: NEAR_FX_MAX, step: NEAR_FX_STEP, def: NEAR_FX_DEF,
     szMin: NEAR_SZ_MIN, szMax: NEAR_SZ_MAX, szStep: NEAR_SZ_STEP, szDef: NEAR_SZ_DEF, follow: NEAR_FX_FOLLOW } };
@@ -17689,7 +17827,7 @@ function perfTick() {
     `描く点の上限   ${fmtPoints(pcVis.budget)} · いま描いた点 ${fmtInt(perf.points)}点 · 描画の回数 ${fmtInt(perf.calls)}`,
     ...(pcVis.budget ? [`  上限で描かない ${pcVis.stats.hiddenTiles}タイル(${fmtInt(pcVis.stats.hiddenPoints)}点)` +
       (pointDensity < 1 ? ` · 間引き ${Math.round(pointDensity * 100)}%` : '')] : []),
-    `点の出し方     ${PT_FX_KEYS.filter(k => ptFx[k]).map(k => ({ near: `手前を細かく(${nearFxM.toFixed(1)} m・点 ${nearFxSz.toFixed(1)}倍・${nearSzMode === 'player' ? '自分から' : '見ている所'})`, fade: '少しずつ出し入れ', hyst: '長く保つ' })[k]).join('・') || 'すべてオフ'}` +
+    `点の出し方     ${PT_FX_KEYS.filter(k => ptFx[k]).map(k => ({ near: `手前を細かく(${nearFxM.toFixed(1)} m・探す ${nearConeDeg.toFixed(1)}°・点 ${nearFxSz.toFixed(1)}倍 ${nearSzMode === 'player' ? '自分から' : '見ている所'}・細かさ ${nearLodMode === 'player' ? `自分から ${nearLodAng}°` : '見ている所'})`, fade: '少しずつ出し入れ', hyst: '長く保つ' })[k]).join('・') || 'すべてオフ'}` +
       (ptFx.near ? (nearFx.active ? ` · 見ている所 ${nearFx.dist.toFixed(1)} m を細かく読み中` : '') : '') + (pcFadeOut.size ? ` · 消える途中 ${pcFadeOut.size}タイル` : '') +
       (pcVis.stats.farCut > 0 ? ` · 遠くを減らす ${fmtInt(Math.round(pcVis.stats.farCut))}点` : ''),
     t ? `メモリに残す量 ${formatBytes(lruBytes(t))} / ${cacheMaxBytesMB} MB(端末の目安 ${CACHE_DEVICE_MB} MB)` : 'メモリに残す量 -',

@@ -341,7 +341,7 @@
     }
 
     /* 説明パネル表示トグルボタン。ON(表示中)はシアン枠、OFF(非表示)はグレー枠。 */
-    #annotation-toggle, #topdown-toggle, #gsi-toggle, #gsi-solid-toggle, #slice-toggle, #model-toggle, #td-gsi-solid-toggle {
+    #annotation-toggle, #topdown-toggle, #gsi-toggle, #gsi-solid-toggle, #model-toggle, #td-gsi-solid-toggle {
       width: 260px;
       padding: 8px;
       background: transparent;
@@ -355,12 +355,12 @@
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    #annotation-toggle[aria-pressed="true"], #topdown-toggle[aria-pressed="true"], #gsi-toggle[aria-pressed="true"], #gsi-solid-toggle[aria-pressed="true"], #slice-toggle[aria-pressed="true"], #model-toggle[aria-pressed="true"], #td-gsi-solid-toggle[aria-pressed="true"] {
+    #annotation-toggle[aria-pressed="true"], #topdown-toggle[aria-pressed="true"], #gsi-toggle[aria-pressed="true"], #gsi-solid-toggle[aria-pressed="true"], #model-toggle[aria-pressed="true"], #td-gsi-solid-toggle[aria-pressed="true"] {
       background: rgba(0,200,255,0.12);
       border-color: #00c8ff;
       color: #00c8ff;
     }
-    #annotation-toggle[aria-pressed="false"], #topdown-toggle[aria-pressed="false"], #gsi-toggle[aria-pressed="false"], #gsi-solid-toggle[aria-pressed="false"], #slice-toggle[aria-pressed="false"], #model-toggle[aria-pressed="false"], #td-gsi-solid-toggle[aria-pressed="false"] {
+    #annotation-toggle[aria-pressed="false"], #topdown-toggle[aria-pressed="false"], #gsi-toggle[aria-pressed="false"], #gsi-solid-toggle[aria-pressed="false"], #model-toggle[aria-pressed="false"], #td-gsi-solid-toggle[aria-pressed="false"] {
       background: transparent;
       border-color: rgba(160,180,195,0.5);
       color: rgba(160,180,195,0.8);
@@ -482,7 +482,6 @@
     body.touch #controls-body #topdown-toggle,
     body.touch #controls-body #gsi-toggle,
     body.touch #controls-body #gsi-solid-toggle,
-    body.touch #controls-body #slice-toggle,
     body.touch #controls-body #model-toggle,
     body.touch #controls-body #td-gsi-solid-toggle {
       width: 140px;
@@ -829,7 +828,6 @@
     body.touch #controls-body .cp-body #preload-info,
     body.touch #controls-body .cp-body #gsi-solid-toggle,
     body.touch #controls-body .cp-body #topdown-toggle,
-    body.touch #controls-body .cp-body #slice-toggle,
     body.touch #controls-body .cp-body #td-gsi-solid-toggle,
     body.touch #controls-body .cp-body #export-png-btn {
       width: 100% !important; max-width: none !important; box-sizing: border-box;
@@ -1224,7 +1222,8 @@
     body.touch #preload-chip { bottom: 244px; }
   
     /* ── 端末の3Dデータ ── */
-    .local-empty { width: 260px; margin-top: 8px; font-size: 11px; color: rgba(200,221,232,0.6); }
+    .local-empty { width: 260px; margin-top: 8px; font-size: 11px; line-height: 1.5; color: rgba(200,221,232,0.7); word-break: auto-phrase; }
+    .local-empty .nw { white-space: nowrap; }
     #local-list { width: 260px; margin-top: 8px; max-height: 300px; overflow-y: auto; scrollbar-width: thin; }
     .local-item {
       margin-top: 8px; padding: 8px 8px 8px;
@@ -1238,7 +1237,7 @@
     .local-item .dbg-grid { width: 100%; }
     .local-item .dbg-btn { font-size: 11px; padding: 6px 2px; }
     .local-item .dbg-btn:disabled { opacity: 0.35; cursor: default; }
-    body.touch #local-list, body.touch .local-empty { width: 220px; max-width: calc(100vw - 48px); }
+    body.touch #controls-body .cp-body #local-list, body.touch #controls-body .cp-body .local-empty { width: 100% !important; max-width: none; box-sizing: border-box; }
     .dataset-btn.local { border-style: dashed; border-color: rgba(255,210,74,0.6); color: #ffd24a; }
     .dataset-btn.local.active { background: rgba(255,210,74,0.2); color: #fff; }
 
@@ -1353,7 +1352,20 @@
     body.touch #level-group .lv-row, body.touch .lv-detail { width: 220px; max-width: calc(100vw - 64px); }
 
     /* ── 起動画面: データの選択 ── */
-    #boot-screen.choosing .boot-card { width: min(780px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; position: relative; }
+    #boot-screen.choosing {
+      padding: max(28px, calc(env(safe-area-inset-top) + 16px)) 16px max(28px, calc(env(safe-area-inset-bottom) + 16px));
+    }
+    #boot-screen.choosing .boot-card {
+      width: min(780px, 100%); max-height: 100%; display: flex; flex-direction: column; overflow: hidden; padding: 0; position: relative; box-sizing: border-box;
+    }
+    #boot-screen.choosing .boot-head {
+      flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 12px 18px 10px; border-bottom: 1px solid rgba(0,200,255,0.2);
+    }
+    #boot-screen.choosing .boot-head-txt { flex: 1; min-width: 0; }
+    #boot-screen.choosing .boot-kicker { margin-bottom: 2px; }
+    #boot-screen.choosing .boot-title { margin: 0; font-size: 17px; }
+    #boot-screen.choosing #chooser { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 18px 20px; }
+    #boot-screen.choosing .ch-close { position: static; flex: 0 0 auto; width: auto; height: auto; padding: 0 2px; border: none; font-size: 20px; line-height: 1; }
     #boot-screen.choosing .boot-steps, #boot-screen.choosing .boot-bar, #boot-screen.choosing .boot-foot,
     #boot-screen.choosing .boot-note, #boot-screen.choosing #boot-start, #boot-screen.choosing #boot-skip { display: none !important; }
     #chooser[hidden] { display: none; }
@@ -1639,7 +1651,7 @@
       border-radius: 4px; font: bold 12px sans-serif; cursor: pointer; white-space: nowrap; touch-action: manipulation;
     }
     .tdb-btn[aria-pressed="true"] { background: rgba(0,200,255,0.3); color: #fff; border-color: #00c8ff; }
-    /* ID 指定のボタン規則(#slice-toggle など)より優先させる */
+    /* ID 指定のボタン規則より優先させる */
     #topdown-bar .tdb-btn {
       width: auto; padding: 6px 10px; font-size: 12px; letter-spacing: 0; border-radius: 4px;
       background: transparent; color: #00c8ff; border-color: rgba(0,200,255,0.45);
@@ -2005,7 +2017,6 @@
 
     /* 移動の速さのボタンは「歩く」の時だけ押せる(場所はいつも空けておく)。設定の「移動の速さ」は「歩く」の時だけ */
     #tool-rail #speed-cycle:disabled { opacity: 0.28; cursor: default; }
-    body:not(.nav-walk) #speed-group, body.topdown-open #speed-group { display: none; }
     /* 断面: 右端の列のボタンは、断面がある間は光らせる */
     #tool-rail #cut-btn.on { border-color: #ffd24a; color: #ffd24a; box-shadow: inset 0 0 0 1px rgba(255,210,74,0.5); }
     #tool-rail #cut-btn.on[aria-pressed="true"] { background: rgba(255,210,74,0.25); color: #fff; }
@@ -2241,13 +2252,44 @@
     .cp-check { display: flex; align-items: flex-start; gap: 6px; margin-top: 8px; font-size: 12px; color: #c8e0ec; cursor: pointer; line-height: 1.4; max-width: 260px; }
     .cp-check input { flex: 0 0 auto; margin: 2px 0 0; }
     .cp-check span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
-      .edl-grid { grid-template-columns: repeat(4, 1fr); }
-      .fx-list { display: flex; flex-direction: column; gap: 6px; max-width: 260px; }
-    .fx-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    /* 点の出し方: オン / オフのボタンは右の枠に寄せる(行を横いっぱいに) */
+    #fx-group { margin-top: 4px; }
+    #controls .cp-body #fx-group .ctrl-label { width: auto; }
+    .fx-list { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+    .fx-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
     .fx-cap { font-size: 12px; color: #c8e0ec; min-width: 0; }
     .fx-now { display: block; font-size: 11px; color: #7dffb0; }
     .fx-now:empty { display: none; }
-    .fx-btn { flex: 0 0 auto; min-width: 56px; }
+    .fx-btn { flex: 0 0 auto; min-width: 56px; margin-left: auto; }
+    .fx-sub { margin: -2px 0 4px 10px; padding-left: 8px; border-left: 2px solid rgba(0,200,255,0.15); }
+    .fx-sub.off { opacity: 0.45; }
+    .fx-sub-head { display: flex; justify-content: space-between; font-size: 11px; color: #c8e0ec; }
+    .fx-sub input[type="range"] { display: block; width: 100%; margin: 2px 0 0; accent-color: #00c8ff; box-sizing: border-box; }
+    #controls .cp-body .fx-sub input[type="range"] { width: 100% !important; }
+    .fx-sub-ends { display: flex; justify-content: space-between; font-size: 10px; color: rgba(200,221,232,0.55); }
+  
+    /* 右の列: 押せない時は薄く(真上・正対の間の「断面」、断面の向きで使えない「真上」「正対」) */
+    #tool-rail .tr-btn:disabled { opacity: 0.28; cursor: default; }
+  
+    /* ── ボタンの文字の太さ(役割でそろえる) ──
+       太字: 右の列・画面上のボタン(切り替え)と、主な操作(.btn-main・再生/止める・開く・体験を開始・切っている/いない)。
+       普通: 選ぶボタン(向き・色分け・速さ・計測の種類など)・オン / オフ・その他の操作。断面パネルと真上・正対のバーの向きのボタンも普通 */
+    .dbg-btn, .tdb-btn, #topdown-bar .tdb-btn, #export-scale, .m-tool, .cut-b, .cut-b.nudge,
+    #annotation-toggle, #topdown-toggle, #gsi-toggle, #gsi-solid-toggle, #model-toggle, #td-gsi-solid-toggle,
+    #struct-box-toggle, #struct-grid-toggle { font-weight: normal; }
+    .dbg-btn.btn-main, .cut-b.btn-main, .btn-main { font-weight: bold; }
+  
+    /* 自動: 経路を直接直す */
+    .auto-edit-row { flex-wrap: wrap; align-items: center; gap: 2px 8px; }
+    .auto-edit-chk { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #c8e0ec; cursor: pointer; white-space: nowrap; }
+    .auto-edit-chk input { margin: 0; accent-color: #ffd24a; }
+    .auto-edit-row.on .auto-edit-chk { color: #ffd24a; }
+    #auto-edit-hint { flex-basis: 100%; }
+    #auto-edit-hint:empty { display: none; }
+  
+    /* 設定パネルの説明: 語の途中で行が変わりにくく(対応するブラウザだけ) */
+    #info-local { word-break: auto-phrase; }
+    #info-local .nw { white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -2330,7 +2372,7 @@
           回線が遅い・通信量を抑えたい時は、まずここを下げると効果的です。
         </div>
       </div>
-      <!-- 描く点の上限(ポイント予算)。超えたら全体を均一に間引き、それでも超える分は細かいタイルから省く(点の出し方で、遠くから減らすも選べる) -->
+      <!-- 描く点の上限(ポイント予算)。超えたら全体を均一に間引き、それでも超える分は細かいタイルから省く(近づいた所は減らさない) -->
       <div class="ctrl-group">
         <div class="ctrl-label">
           <span>描く点の上限</span>
@@ -2340,8 +2382,8 @@
         <div class="cp-valrow"><span id="budget-val">300万点</span><span id="budget-now" class="cp-hint"></span></div>
         <div id="info-budget" class="ctrl-info-body" hidden>
           1回の描画で描く点の数の上限です(ポイント予算)。見えている点が上限を超えると、まず全体を均一に間引き(最大で半分まで)、
-          それでも超える分は、細かいタイルから一時的に描かないようにします(「点の出し方」の「上限を超えたら遠くから減らす」をオンにすると、
-          手前は減らさず遠くの点から減らします)。読み込んだデータは残るので、上限を上げるとすぐ元に戻ります。
+          それでも超える分は、細かいタイルから一時的に描かないようにします(「手前を細かく読む」で近づいた所は減らしません)。
+          読み込んだデータは残るので、上限を上げるとすぐ元に戻ります。
           通信量とメモリは変わらず、描画の重さだけが減ります。表示レベルごとに標準の上限があり、自動の時はレベルに合わせて変わります。
         </div>
       </div>
@@ -2360,6 +2402,31 @@
           読み直さずにすみますが、メモリを多く使います。上限の90%までは捨てずに残します。<br>
           初期値は、表示レベルの必要量と、この端末のメモリから決めた量(約<span id="cache-device-mb">-</span> MB)の大きい方です。
           タイルの枚数の上限は自動で決めます。スマホで増やしすぎると、ページが落ちることがあります。
+        </div>
+      </div>
+      <!-- 点の出し方(それぞれオン / オフ。初期はすべてオン) -->
+      <div class="ctrl-group" id="fx-group">
+        <div class="ctrl-label">
+          <span>点の出し方</span>
+          <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-fx" aria-label="点の出し方の説明">ⓘ</button>
+        </div>
+        <div class="fx-list">
+          <div class="fx-row"><span class="fx-cap">手前を細かく読む<span id="fx-near-now" class="fx-now"></span></span><button type="button" class="dbg-btn fx-btn" data-fx="near" aria-pressed="true">オン</button></div>
+          <div class="fx-sub" id="fx-near-dist-row">
+            <div class="fx-sub-head"><span>細かく読む距離</span><span id="fx-near-dist-val" class="cp-mono">3.0 m</span></div>
+            <input id="fx-near-dist" type="range" min="1" max="5" step="0.5" value="3" aria-label="細かく読む距離(m)">
+            <div class="fx-sub-ends"><span>1 m</span><span>5 m</span></div>
+          </div>
+          <div class="fx-row"><span class="fx-cap">タイルを少しずつ出し入れする</span><button type="button" class="dbg-btn fx-btn" data-fx="fade" aria-pressed="true">オン</button></div>
+          <div class="fx-row"><span class="fx-cap">細かくしたタイルを少し長く保つ</span><button type="button" class="dbg-btn fx-btn" data-fx="hyst" aria-pressed="true">オン</button></div>
+        </div>
+        <div id="info-fx" class="ctrl-info-body" hidden>
+          初期はすべてオンです。<br>
+          <b>手前を細かく読む</b>: 画面の中央(VR は顔の正面)に見えている面に「細かく読む距離」(1〜5 m、0.5 m 刻み。初期 3 m)まで近づくと、
+          その周り(同じ距離の範囲)を約2段階細かいところまで読み込み、描く点の上限を超えても減らしません(彫刻などを近くで見る時に)。
+          それより 1 m 離れると元に戻ります。ふつうに立って見ている時は変わりません。真上・正対の間は使いません。<br>
+          <b>タイルを少しずつ出し入れする</b>: タイル(データの区切り)が出る時も消える時も、0.4 秒かけて点を増やしたり減らしたりします(パッと現れたり消えたりしないように)。<br>
+          <b>細かくしたタイルを少し長く保つ</b>: 一度細かくした所は、少し離れても細かいままにします。境目でタイルが出たり消えたりしにくくなりますが、メモリに残すタイルは少し増えます。
         </div>
       </div>
     </div>
@@ -2384,7 +2451,7 @@
       </div>
     </div>
 
-    <!-- 点のサイズ: 大きさ(画面px)・点の形・奥行きの陰影 -->
+    <!-- 点のサイズ: 大きさ(画面px)・点の形 -->
     <div id="size-row" class="ctrl-group">
       <div class="ctrl-label">
         <span>点のサイズ</span>
@@ -2400,46 +2467,11 @@
         <button type="button" class="dbg-btn" data-point-shape="cube" aria-pressed="true">立方体</button>
         <button type="button" class="dbg-btn" data-point-shape="round" aria-pressed="false">丸</button>
       </div>
-      <div class="cp-sublabel">奥行きの陰影</div>
-      <div class="dbg-grid cp-grid edl-grid">
-        <button type="button" class="dbg-btn" data-edl="off" aria-pressed="true">なし</button>
-        <button type="button" class="dbg-btn" data-edl="weak" aria-pressed="false">弱</button>
-        <button type="button" class="dbg-btn" data-edl="mid" aria-pressed="false">中</button>
-        <button type="button" class="dbg-btn" data-edl="strong" aria-pressed="false">強</button>
-      </div>
       <div id="info-size" class="ctrl-info-body" hidden>
         <b>大きさ</b>: すべての点を、画面上の同じピクセル数で描きます。スマホ・タブレット・PC・VR のどれでも、近くでも遠くでも同じ大きさです。
         点の間に隙間が目立つ時は大きくしてください(点群のすぐ近くでは、データの点の間隔が画面上で広くなるので隙間が見えます)。<br>
         <b>点の形</b>: 立方体は陰影で面の向きが分かりやすく、丸はなめらかに見えます。色分けを切り替えると、元の色は立方体、高さ・白色は丸になります。<br>
-        <b>奥行きの陰影</b>: 立方体・丸の陰影に加えて、手前の点との奥行きの差がある所(輪郭・段差・凹凸)を暗くします。
-        「強」ほど濃くなります。初期は「なし」(描く処理が1回で済むので軽い)です。<br>
         VR では X / Y ボタンで大きさを変えられます。
-      </div>
-    </div>
-
-    <!-- 点の出し方(それぞれオン / オフ。初期はすべてオフ) -->
-    <div class="ctrl-group" id="fx-group">
-      <div class="ctrl-label">
-        <span>点の出し方</span>
-        <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-fx" aria-label="点の出し方の説明">ⓘ</button>
-      </div>
-      <div class="fx-list">
-        <div class="fx-row"><span class="fx-cap">手前を細かく読む<span id="fx-near-now" class="fx-now"></span></span><button type="button" class="dbg-btn fx-btn" data-fx="near" aria-pressed="false">オフ</button></div>
-        <div class="fx-row"><span class="fx-cap">タイルの境目を和らげる</span><button type="button" class="dbg-btn fx-btn" data-fx="seam" aria-pressed="false">オフ</button></div>
-        <div class="fx-row"><span class="fx-cap">上限を超えたら遠くから減らす</span><button type="button" class="dbg-btn fx-btn" data-fx="far" aria-pressed="false">オフ</button></div>
-        <div class="fx-row"><span class="fx-cap">新しいタイルを少しずつ出す</span><button type="button" class="dbg-btn fx-btn" data-fx="fade" aria-pressed="false">オフ</button></div>
-        <div class="fx-row"><span class="fx-cap">細かくしたタイルを少し長く保つ</span><button type="button" class="dbg-btn fx-btn" data-fx="hyst" aria-pressed="false">オフ</button></div>
-      </div>
-      <div id="info-fx" class="ctrl-info-body" hidden>
-        初期はすべてオフ(これまでの見え方)です。<br>
-        <b>手前を細かく読む</b>: 画面の中央(VR は顔の正面)に見えている面に 5 m 以内まで近づくと、その周り(半径 5 m)を約2段階細かいところまで読み込み、
-        描く点の上限を超えても減らしません(彫刻などを近くで見る時に)。ふつうに立って見ている時は変わりません。真上・正対の間は使いません。<br>
-        <b>タイルの境目を和らげる</b>: 細かい段階の点を、粗い段階に切り替わる距離の手前の狭い範囲で、その点までの距離に応じて少しずつ減らします。
-        タイル(データの区切り)の境目で細かさが急に変わりにくくなります。<br>
-        <b>上限を超えたら遠くから減らす</b>: 描く点の上限を超えた時、手前の点は減らさず、遠くの細かい段階の点から減らします。
-        オフの時は、全体を均一に間引き(最大で半分)、それでも超える分は細かいタイルを丸ごと描かないようにします。<br>
-        <b>新しいタイルを少しずつ出す</b>: 新しく読み込んだタイルを 0.4 秒かけて出します(パッと現れないように)。<br>
-        <b>細かくしたタイルを少し長く保つ</b>: 一度細かくした所は、少し離れても細かいままにします。境目でタイルが出たり消えたりしにくくなりますが、メモリに残すタイルは少し増えます。
       </div>
     </div>
 
@@ -2481,7 +2513,7 @@
   <!-- ════════ 移動・視点 ════════ -->
   <section class="cp-sec" data-sec="move">
     <button type="button" class="cp-head" aria-expanded="true">
-      <span class="cp-title">移動・視点</span><span class="cp-sub">回す/歩く/真上・移動の速さ(歩く)・表示倍率</span><span class="cp-chev">▾</span>
+      <span class="cp-title">移動・視点</span><span class="cp-sub">回す/歩く/真上/正対・表示倍率</span><span class="cp-chev">▾</span>
     </button>
     <div class="cp-body">
     <div class="ctrl-group">
@@ -2498,28 +2530,12 @@
       <div id="info-nav" class="ctrl-info-body" hidden>
         <b>歩く</b>: 一人称で歩き回ります。建物の中や街並みを見るのに向いています。<br>
         <b>回す</b>: つかんだ所を中心に、模型を手に取って回すようにモデルを回して見ます。全体を見るのに向いています(最初はこちら)。<br>
-        <b>真上</b>: 真上から見下ろした地図のような表示(真俯瞰図)。切り替えるとモデル全体が入るように表示します。表示範囲・全体・断面・画像保存などは画面下のバーで操作します。VR 中は使えません。<br>
-        <b>正対</b>: 今向いている方角を、真横から遠近なしで見る図(立面図)。下のバーの「断面」で、その向きの縦の面で切れます(断面パネルで東西の面・南北の面・今の方角を切っている時は、その断面のまま)。2本指のひねり(PC は右ドラッグ・← →)で向きが回ります。VR 中は使えません。<br>
+        <b>真上</b>: 真上から見下ろした地図のような表示(真俯瞰図)。切り替えるとモデル全体が入るように表示します。表示範囲・全体・断面の高さ・画像保存などは画面下のバーで操作します。VR 中は使えません。<br>
+        <b>正対</b>: 今向いている方角を、真横から遠近なしで見る図(立面図)。下のバーの「断面の位置」で、その向きの縦の面で切れます(断面パネルで東西の面・南北の面・今の方角を切っている時は、その断面のまま)。2本指のひねり(PC は右ドラッグ・← →)で向きが回ります。VR 中は使えません。<br>
+        断面を切っている時は、真上は水平の断面の時だけ、正対は東西の面・南北の面・今の方角の断面の時だけ選べます。<br>
+        <b>移動の速さ</b>(歩く): 右端の列の一番下のボタンで 遅く→ふつう→速く を切り替えます。<br>
         見上げ・見下ろしている時は、左上の「水平」で目線を水平に戻せます。<br>
         どちらもダブルクリック(ダブルタップ)でその地点へ移動します。キーや指の操作は「操作ガイド」をご覧ください。
-      </div>
-    </div>
-    <div class="ctrl-group" id="speed-group">
-      <div class="ctrl-label">
-        <span>移動の速さ(歩く)</span>
-        <button type="button" class="ctrl-info" aria-expanded="false" aria-controls="info-speed" aria-label="移動の速さの説明">ⓘ</button>
-        <span class="speed-readout cp-val"></span>
-      </div>
-      <div class="dbg-grid cols-3 cp-grid">
-        <button type="button" class="dbg-btn" data-speed="slow" aria-pressed="false">遅く</button>
-        <button type="button" class="dbg-btn" data-speed="normal" aria-pressed="true">ふつう</button>
-        <button type="button" class="dbg-btn" data-speed="fast" aria-pressed="false">速く</button>
-      </div>
-      <div id="info-speed" class="ctrl-info-body" hidden>
-        速さは周りの点群までの距離に合わせて自動で変わります(壁の近くはゆっくり、ひらけた所や上空では速く)。
-        「遅く」「速く」はその全体を 0.3倍・3倍にします。右の数字は今の速さ(秒速)です。右端の列の一番下の速さボタン(押すごとに 遅く→ふつう→速く)でも切り替えられます。<br>
-        「歩く」の時だけ使います(回す・真上はつかんで動かす操作なので、速さの切り替えはありません)。<br>
-        PC では Shift を押している間ゆっくり、VR では右グリップを握るほど速くなります。
       </div>
     </div>
     <div class="ctrl-group">
@@ -2569,9 +2585,9 @@
       <input type="file" id="local-file-input" multiple hidden
         accept=".las,.laz,.copc,.ply,.xyz,.txt,.pts,.csv,.asc,.pcd,.obj,.mtl,.gltf,.glb,.bin,.stl,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tga,.ktx2">
       <input type="file" id="local-dir-input" webkitdirectory multiple hidden>
-      <div id="local-list" class="local-empty">今のデータに重ねている端末の3Dデータはありません</div>
+      <div id="local-list" class="local-empty">今のデータに重ねている<span class="nw">端末の3Dデータ</span>はありません。</div>
       <div id="info-local" class="ctrl-info-body" hidden>
-        今のデータに重ねている、手元の点群(LAS / LAZ / COPC / PLY / XYZ / PCD)と3Dモデル(OBJ+MTL+画像 / glTF / GLB / STL)です。
+        今のデータに重ねている、手元の点群(<span class="nw">LAS / LAZ / COPC / PLY / XYZ / PCD</span>)と3Dモデル(<span class="nw">OBJ+MTL+画像 / glTF / GLB / STL</span>)です。
         <b>位置合わせ</b>で位置を直し、<b>外す</b>で重ねるのをやめます。<br>
         取り込み・開く・重ねる・削除は「データの一覧」の「端末の3Dデータ」で行います(画面へのドラッグ&ドロップでも取り込めます)。
         ファイルはこの端末の中だけで処理され、外部には送られません。<br>
@@ -2685,23 +2701,27 @@
       真上から遠近なしで見下ろした図(真俯瞰図)です。地図のように、どこでも同じ縮尺で見られます(縮尺はバーの右上の線)。<br>
       <b>表示範囲</b>: 画面の短い辺に入る長さ(m)。スライダーか数字で。<b>全体</b>: モデル全体が入るように戻します。<br>
       <b>北を上に</b>: 北を画面の上に(OFF: 真上にした時に向いていた方向が上)。左の方位磁針を押しても切り替わります。<br>
-      <b>断面</b>: オンにすると、決めた高さより下だけを表示します(断面パネルと同じ断面)。高さは <b>断面の高さ</b> のスライダーで(PC は ↑↓ キーでも)。
-      断面パネルで水平に切っている時は、その断面のまま始まります。それ以外の断面は真上の間だけ切らず、元の視点に戻ると元に戻ります。<br>
+      <b>断面の高さ</b>: スライダーを右の端(一番上)から左へ動かすと、その高さより下だけを表示します(断面パネルと同じ断面。PC は切っている時 ↑↓ キーでも)。
+      右の端に戻すと切りません。断面パネルで水平に切っている時は、その断面のまま始まります。ここで切った断面は、「回す」「歩く」に戻っても残ります。<br>
       <b>地図: 平面 / 立体</b>: 地図を重ねている時の起伏の有無。<br>
       <b>2倍 / 4倍・画像保存</b>: 今の図を PNG 画像で保存します。2倍・4倍は画像の精細さで、画面の縦横それぞれ2倍・4倍の画素数で描きます
       (例: 1280×720 の画面なら 4倍で 5120×2880)。4倍は細部まで拡大して見られますが、保存に時間とメモリがかかります。縮尺・方位・出典も入ります。<br>
-      計測もできます。× か「回す」「歩く」で元の視点に戻ります。VR 中は使えません。
+      計測もできます。× か「回す」「歩く」で元の視点に戻ります。VR 中は使えません。<br>
+      真上・正対の間は、右の列の「断面」は押せません(断面はこのバーのスライダーで)。断面を切っている時、「真上」は水平の断面の時だけ、
+      「正対」は東西の面・南北の面・今の方角の断面の時だけ押せます。
     </div>
     <div data-td-info="face" hidden>
       真横から遠近なしで見た図(立面図)です。初めは今向いている方角を見ます。<br>
       <b>方位磁針</b>: 見ている方角(上が見ている向き)。押すと裏側から見ます(片側を消す断面の時は、反対側の半分の切り口)。<br>
       <b>表示範囲・全体</b>: 真俯瞰図と同じです(縮尺はバーの右上の線)。<br>
       <b>東西の面 / 南北の面 / 今の方角</b>: 見る向きを選び直します(東西の面 = 東西に伸びる面を正面から)。2本指をひねる(PC は右ドラッグ・← →)と、画面の中央を中心に向きが回ります。<br>
-      <b>断面</b>: 見ている向きの縦の面でモデルを切ります(断面パネルと同じ断面)。オンにすると <b>断面の位置</b> で面を前後に動かせます(PC は ↑↓ キーでも)。
-      断面パネルで東西の面・南北の面・今の方角を切っている時は、その断面のまま始まります。<br>
+      <b>断面の位置</b>: スライダーを右の端(一番手前)から左へ動かすと、見ている向きの縦の面でその位置より手前を消して切り口を見ます(断面パネルと同じ断面。PC は切っている時 ↑↓ キーでも)。
+      右の端に戻すと切りません。断面パネルで東西の面・南北の面・今の方角を切っている時は、その断面のまま始まります。ここで切った断面は、「回す」「歩く」に戻っても残ります。<br>
       <b>2倍 / 4倍・画像保存</b>: 今の図を PNG 画像で保存します。2倍・4倍は画像の精細さで、画面の縦横それぞれ2倍・4倍の画素数で描きます
       (例: 1280×720 の画面なら 4倍で 5120×2880)。4倍は細部まで拡大して見られますが、保存に時間とメモリがかかります。縮尺・方位・出典も入ります。<br>
-      計測もできます。× か「回す」「歩く」で元の視点に戻ります(真上・正対の間だけ切らなかった断面は元に戻ります)。「真上」で真俯瞰図に切り替わります。
+      計測もできます。× か「回す」「歩く」で元の視点に戻ります。断面が無い時は「真上」で真俯瞰図に切り替わります。<br>
+      真上・正対の間は、右の列の「断面」は押せません(断面はこのバーのスライダーで)。断面を切っている時、「真上」は水平の断面の時だけ、
+      「正対」は東西の面・南北の面・今の方角の断面の時だけ押せます。
     </div>
   </div>
   <div class="tdb-body">
@@ -2718,17 +2738,16 @@
         <button type="button" class="tdb-btn" data-td-dir="ns" aria-pressed="false" title="南北に伸びる縦の面">南北の面</button>
         <button type="button" class="tdb-btn" data-td-dir="view" aria-pressed="false" title="今見ている方角の縦の面">今の方角</button>
       </span>
-      <button type="button" class="tdb-btn" id="slice-toggle" aria-pressed="false" title="断面(断面パネルと同じ断面)。真上: 決めた高さより下だけを表示 / 正対: 見ている向きの縦の面で切る">断面</button>
       <button type="button" class="tdb-btn" id="td-gsi-solid-toggle" aria-pressed="false" hidden title="地図の起伏の有無">地図: 平面</button>
       <span class="tdb-export">
         <select id="export-scale" aria-label="保存する画像の精細さ"><option value="2">2倍</option><option value="4" selected>4倍</option></select>
         <button type="button" class="tdb-btn" id="export-png-btn" title="今の真俯瞰図を高解像度のPNG画像で保存(縮尺・方位・出典入り)">画像保存</button>
       </span>
     </div>
-    <div class="tdb-slice" id="slice-row" hidden>
+    <div class="tdb-slice" id="slice-row">
       <span class="tdb-lab">断面の高さ</span>
-      <input id="slice-slider" type="range" min="0" max="1000" step="1" value="500" aria-label="断面の高さ">
-      <span class="tdb-val"><span id="slice-val">0.0</span> m</span>
+      <input id="slice-slider" type="range" min="0" max="1000" step="1" value="1000" aria-label="断面の高さ(右の端は切らない)">
+      <span class="tdb-val" id="slice-val">切らない</span>
     </div>
   </div>
 </div>
@@ -2824,9 +2843,13 @@
      データセット切替時も同じ画面を使い、完了すると自動で閉じる。 -->
 <div id="boot-screen" role="dialog" aria-modal="true" aria-labelledby="boot-title">
   <div class="boot-card">
-    <div class="boot-kicker" id="boot-kicker">3D TILES VR VIEWER</div>
-    <div class="boot-title" id="boot-title">準備しています</div>
-    <button type="button" id="chooser-close" class="ch-close" hidden aria-label="閉じる">×</button>
+    <div class="boot-head">
+      <div class="boot-head-txt">
+        <div class="boot-kicker" id="boot-kicker">3D TILES VR VIEWER</div>
+        <div class="boot-title" id="boot-title">準備しています</div>
+      </div>
+      <button type="button" id="chooser-close" class="ch-close" hidden aria-label="閉じる" title="閉じる">×</button>
+    </div>
     <div id="chooser" hidden>
       <div class="ch-level">
         <div class="ch-level-head">
@@ -3146,7 +3169,12 @@
       <b>円弧の往復</b>: 今いる側を中心に「円弧」の角度ずつ左右へ。<b>直線</b>: 「視線に並行」はモデルの中央を通って今の方角へ、手前の端から奥の端までまっすぐ(大きさ 0.50 でちょうど端から端)。「視線に直角」はモデルの前を左右に。
       <b>降下・上昇</b>: モデルの真上 ⇄ 今いる側の地上の目線(高さ 1.6 m)。着陸のように、下りきる手前で前へ水平に進みます。<b>引き</b>: モデルの正面のすぐ前 ⇄ 後ろの上へ下がって全体。どれも端で折り返します。<br>
       <b>横・奥行き・高さ</b>: 経路の形を、見る人から見た左右・前後(見る人からモデルの中央へ)・上下に伸ばし縮めします(真ん中が ×1)。経路ごとに意味のあるものだけ出ます。<br>
-      <b>位置</b>: 経路を、今の向きから見て左右・前後・上下に、モデルの大きさの 5% ずつずらします(再生中も)。「戻す」で元の位置。データを切り替えると戻ります。<br>
+      <b>位置</b>: 経路を、今の向きから見て左右・前後・上下に、モデルの大きさの 5% ずつずらし、⟲ ⟳ で上から見て左回り・右回りに 15° ずつ回します
+      (長押しで続けて。再生中も)。「戻す」で元の位置・向き。データを切り替えると戻ります。<br>
+      <b>経路を直接直す</b>: チェックを入れている間は、画面の操作で経路を直します(経路の線はいつも表示)。
+      PC: ドラッグ = 前後左右・ホイール = 大きさ・右ドラッグの左右 = 回転・右ドラッグの上下 = 高さ。
+      スマホ・タブレット: 1本指でなぞる = 前後左右・ピンチ = 大きさ・2本指でひねる = 回転・2本指で上下 = 高さ。
+      チェックを外すと、いつもどおりモデルを動かしたり回したりします(パネルを閉じても外れます)。<br>
       <b>置き方</b>: 経路は、パネルを開いた時・経路を選んだ時の向き(今いる側・今の方角)で置き、モデルを回して確かめても動きません。▶ 再生はその経路で動きます。「今の向きに合わせ直す」で、今の向きで置き直します。<br>
       <b>★の巡回</b>: ★(視点のブックマーク)を順に巡ります(2件以上)。<b>記録</b>: 自分で動かした視点を記録して、そのまま再生します。<b>断面と一緒</b>: 断面を端から端へ動かしながら正面から見ます。
     </div>
@@ -3221,15 +3249,23 @@
       <div class="cut-row auto-off-row" id="auto-off-row" hidden><span class="cut-k">位置</span>
         <div class="auto-off">
           <div class="cut-seg auto-off-btns" role="group" aria-label="経路の位置をずらす">
-            <button type="button" class="cut-b" data-auto-nudge="x:-1" title="今の向きから見て左へずらす">左</button>
+            <button type="button" class="cut-b" data-auto-nudge="x:-1" title="今の向きから見て左へずらす(長押しで続けて)">左</button>
             <button type="button" class="cut-b" data-auto-nudge="x:1" title="今の向きから見て右へずらす">右</button>
             <button type="button" class="cut-b" data-auto-nudge="z:1" title="今の向きから見て前(奥)へずらす">前</button>
             <button type="button" class="cut-b" data-auto-nudge="z:-1" title="今の向きから見て後ろ(手前)へずらす">後</button>
             <button type="button" class="cut-b" data-auto-nudge="y:1" title="上へずらす">上</button>
             <button type="button" class="cut-b" data-auto-nudge="y:-1" title="下へずらす">下</button>
           </div>
-          <div class="auto-off-st"><span class="cut-val" id="auto-off-val">ずらしなし</span><button type="button" class="cut-b" id="auto-off-reset" title="ずらす前の位置に戻す">戻す</button></div>
+          <div class="cut-seg auto-off-btns" role="group" aria-label="経路を回す">
+            <button type="button" class="cut-b" data-auto-rot="1" title="上から見て左回りに 15° 回す(長押しで続けて)">⟲ 左へ 15°</button>
+            <button type="button" class="cut-b" data-auto-rot="-1" title="上から見て右回りに 15° 回す(長押しで続けて)">右へ 15° ⟳</button>
+          </div>
+          <div class="auto-off-st"><span class="cut-val" id="auto-off-val">ずらしなし</span><button type="button" class="cut-b" id="auto-off-reset" title="ずらす・回す前の位置に戻す">戻す</button></div>
         </div>
+      </div>
+      <div class="cut-row auto-edit-row" id="auto-edit-row" hidden>
+        <label class="auto-edit-chk"><input type="checkbox" id="auto-edit"> 経路を直接直す</label>
+        <span class="cut-hint" id="auto-edit-hint"></span>
       </div>
       <div class="cut-row" id="auto-tour-row" hidden><span class="cut-hint" id="auto-tour-info"></span></div>
       <div class="cut-row" id="auto-dwell-row" hidden><span class="cut-k">★で止まる</span>
@@ -3447,7 +3483,7 @@
     <div id="fd-body"></div>
     <div class="fd-actions">
       <button type="button" class="dbg-btn" id="fd-cancel">やめる</button>
-      <button type="button" class="dbg-btn fd-primary" id="fd-ok">保存を始める</button>
+      <button type="button" class="dbg-btn fd-primary btn-main" id="fd-ok">保存を始める</button>
     </div>
   </div>
 </div>
@@ -3507,7 +3543,7 @@
     </div>
     <div class="imp-actions">
       <button type="button" id="imp-cancel" class="dbg-btn">キャンセル</button>
-      <button type="button" id="imp-go" class="dbg-btn" aria-pressed="true">取り込む</button>
+      <button type="button" id="imp-go" class="dbg-btn btn-main" aria-pressed="true">取り込む</button>
     </div>
   </div>
 </div>
@@ -3545,7 +3581,7 @@
   <div class="dbg-grid cols-3">
     <button type="button" class="dbg-btn" id="ap-camera">この視点を初期位置に</button>
     <button type="button" class="dbg-btn warn" id="ap-cancel">元に戻す</button>
-    <button type="button" class="dbg-btn" id="ap-save" aria-pressed="true">保存して終了</button>
+    <button type="button" class="dbg-btn btn-main" id="ap-save" aria-pressed="true">保存して終了</button>
   </div>
 </div>
 
@@ -5054,20 +5090,32 @@ function enterTopdown(view = 'top') {
   syncNavUi();
 }
 
-// 真上のバーの「断面」の行(位置のスライダー)を今の断面にそろえる
+// 真上・正対のバーの「断面の高さ / 断面の位置」のスライダー(いつも出す)。右の端(真上は一番上・正対は一番手前)では切らない。
+// 正対: スライダーの右を手前にする向き(-1 なら位置の小さい方が手前)
+const _sbN = new THREE.Vector3();
+function sliceBarSign() {
+  if (!(topdownState.active && topdownState.view === 'face') || !sliceState.on) return 1;
+  return sliceNormal(sliceState.dir, _sbN).dot(topdownState.faceDir) < 0 ? -1 : 1;
+}
 function updateSlicePanel() {
   const row = document.getElementById('slice-row');
-  const tb = document.getElementById('slice-toggle');
-  setAttrIf(tb, 'aria-pressed', sliceState.on ? 'true' : 'false');
   if (!row) return;
-  const on = topdownState.active && sliceState.on;
-  setHiddenIf(row, !on);
-  if (!on) return;
-  const r = sliceRange();
-  setTextIf(row.querySelector('.tdb-lab'), sliceState.dir === 'h' && topdownState.view !== 'face' ? '断面の高さ' : '断面の位置');
-  setTextIf(document.getElementById('slice-val'), (sliceState.pos - r.min).toFixed(1));
+  setHiddenIf(row, !topdownState.active);
+  if (!topdownState.active) return;
+  const face = topdownState.view === 'face';
+  setTextIf(row.querySelector('.tdb-lab'), face ? '断面の位置' : '断面の高さ');
   const sl = document.getElementById('slice-slider');
-  if (sl && document.activeElement !== sl) { const v = String(Math.round((sliceState.pos - r.min) / Math.max(1e-6, r.max - r.min) * 1000)); if (sl.value !== v) sl.value = v; }
+  if (sl) setAttrIf(sl, 'aria-label', face ? '断面の位置(右の端は一番手前で、切らない)' : '断面の高さ(右の端は一番上で、切らない)');
+  let v = 1000, txt = '切らない';
+  if (sliceState.on) {
+    const r = sliceRange(), span = Math.max(1e-6, r.max - r.min);
+    let f = Math.max(0, Math.min(1, (sliceState.pos - r.min) / span));
+    if (sliceBarSign() < 0) f = 1 - f;
+    v = Math.round(f * 1000);
+    txt = face ? `手前から ${((1 - f) * span).toFixed(1)} m` : `下から ${(sliceState.pos - r.min).toFixed(1)} m`;
+  }
+  setTextIf(document.getElementById('slice-val'), txt);
+  if (sl && document.activeElement !== sl && sl.value !== String(v)) sl.value = String(v);
 }
 
 // 真俯瞰モードを抜ける(通常の一人称視点へ)
@@ -5947,49 +5995,42 @@ function applyPointDensity() {
   cubeUniforms.uDensity.value = pointDensity;
 }
 
-// ── 点の出し方(設定の「点の出し方」。それぞれオン / オフ、初期はすべてオフ) ──
-//   near : 手前を細かく読む(見ている所に近づいた時だけ、その周りを細かく読み、上限でも減らさない)
-//   seam : タイルの境目を和らげる(細かい段階の点を、消える距離の手前の狭い範囲で距離に応じて減らす)
-//   far  : 上限を超えたら遠くから減らす(オフ: 全体を均一に間引き、足りなければ細かいタイルを丸ごと描かない)
-//   fade : 新しいタイルを 0.4 秒かけて少しずつ出す
+// ── 点の出し方(設定の「細かさ・点の上限などを個別に調整」の中。それぞれオン / オフ、初期はすべてオン) ──
+//   near : 手前を細かく読む(見ている所に近づいた時だけ、その周りを細かく読み、上限でも減らさない)。距離は 1〜5 m(0.5 m 刻み、初期 3 m)
+//   fade : タイルを少しずつ出し入れする(出る時も消える時も 0.4 秒かけて)
 //   hyst : 細かくしたタイルを少し長く保つ(誤差が 1/1.3 に下がるまで)
-const PT_FX_KEYS = ['near', 'seam', 'far', 'fade', 'hyst'];
-const ptFx = (() => { const sv = savedSettings.ptFx || {}; const o = {}; for (const k of PT_FX_KEYS) o[k] = sv[k] === true; return o; })();
+const PT_FX_KEYS = ['near', 'fade', 'hyst'];
+const ptFx = (() => { const sv = savedSettings.ptFx2 || {}; const o = {}; for (const k of PT_FX_KEYS) o[k] = sv[k] !== false; return o; })();
+const NEAR_FX_MIN = 1, NEAR_FX_MAX = 5, NEAR_FX_STEP = 0.5, NEAR_FX_DEF = 3;
+function nearFxClamp(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return NEAR_FX_DEF;
+  return Math.max(NEAR_FX_MIN, Math.min(NEAR_FX_MAX, Math.round(n / NEAR_FX_STEP) * NEAR_FX_STEP));
+}
+let nearFxM = nearFxClamp(savedSettings.nearFxM ?? NEAR_FX_DEF); // 細かく読む距離(m)
 
 // ── 点の細かさ(どの端末でも共通。点の出し方のトグルで変わる) ──
 // ・読み込み: 画面上の誤差だけで決める。「細かくしたタイルを少し長く保つ」なら、誤差が 1/1.3 に下がるまで細かくしたまま。
 //   「手前を細かく読む」なら、見ている所に近づいた時だけ、その周りの誤差を 4倍に見積もる(約2段階細かく読む。nearFx)。
-//   距離で倍率を掛ける読み方(LOD_NEAR_ON)は使わない。
-// ・「タイルの境目を和らげる」: 細かい段階(追加型の子)の点を、その子が消える距離(親の段階が細かくなる距離。
-//   長く保つ時は × 1.3)の手前の狭い範囲だけで、その点の距離に応じて少しずつ減らす。タイルごとではなく点ごとに決める。
-// ・描く点の上限を超えた時: 「遠くから減らす」なら、この「減らし始める距離」を縮める(手前は減らさず、遠くほど多く減らす)。
-//   オフなら全体を均一に間引き(最大で半分)、それでも超える分は細かいタイルを丸ごと描かない。
-// ・真上・正対(正射)は距離が無いので、図全体を同じ細かさにする。
-const LOD_NEAR_ON = false; // 手前を細かく・遠くを粗く読む(今は使わない)
-const LOD_NEAR_M = 30, LOD_FAR_M = 100, LOD_FAR_MIN = 0.6, LOD_NEAR_HYST = 1.3;
-const LOD_NEAR_BOOST = (isTouchDevice && !isVRBrowser) ? 2 : 3; // 目の前の倍率(LOD_NEAR_ON の時。スマホ・タブレットは控えめ)
-// 子の点が 0 になる距離 = 親が細かくなる距離 × (長く保つ時は 1.3)。子が消える距離と同じ
-const lodMorphEnd = () => (ptFx.hyst ? LOD_NEAR_HYST : 1);
-// 近づいた所を細かく読む: 画面の中央に見えている面がこの距離(m)以内なら、その周り NEAR_FX_R(m)の誤差を NEAR_FX_BOOST 倍に見積もる
-const NEAR_FX_DIST = 5, NEAR_FX_OFF = 6, NEAR_FX_R = 5, NEAR_FX_BOOST = 4;
-const LOD_MORPH_K = 6;   // 減らし方の傾き(0 になる距離の 6/7 より手前は全部の点)
-const LOD_S_MIN = 0.001; // 上限で「減らし始める距離」を縮める下限
-// 点だけを描く時のレイヤー(点の陰影は、点を別の画像に描いてから付ける)
-const PT_LAYER = 10;
+// ・描く点の上限を超えた時は、全体を均一に間引き(最大で半分)、それでも超える分は細かいタイルを丸ごと描かない(近づいた所は減らさない)。
+// ・読み込んだ点は、上限の間引き以外ではすべて描く(真上・正対も同じ)。
+const LOD_NEAR_HYST = 1.3;
+// 近づいた所を細かく読む: 画面の中央に見えている面が「細かく読む距離」以内なら、その周り(半径も同じ距離)の誤差を NEAR_FX_BOOST 倍に見積もる。
+// 離れたと見なすのは、それより 1 m 遠くなってから
+const NEAR_FX_BOOST = 4;
+const nearFxDist = () => nearFxM;     // 近づいたと見なす距離(m)
+const nearFxOff = () => nearFxM + 1;  // 離れたと見なす距離(m)
+const nearFxR = () => nearFxM;        // 細かく読む範囲の半径(m)
 
 // ── 点群シェーダ ──
 // 各点を画面上の正方形(または丸)として、設定の大きさ(画面上のピクセル数)で描く。
 // 立方体はワールド固定の3面(上・左・右)の明るさと暗い縁、丸は球のような陰影。
-// 設定の「奥行きの陰影」を選ぶと、描いた後に画面全体で、手前の点との奥行きの差がある所をさらに暗くする(renderScene)。
 const CUBE_VERT = /* glsl */`
   uniform float uSizePx;      // 点の大きさ(画面上のピクセル数。CSS px)。どの端末・距離でも同じ
   uniform float uPxScale;     // CSS px → 描画バッファの px(端末の倍率。VR では解像度に応じた値)
   uniform float uMaxPx;       // 1点の最大サイズ(描画バッファ px)
   uniform float uDensity; // 0.0〜1.0 (描画する点の割合)
-  uniform float uTileDens; // このタイルの描く割合(新しいタイルを少しずつ出す・真上/正対で細かい段階を減らす)
-  uniform float uLodA;     // 細かい段階の点を距離で減らす: 親の段階が細かくなる距離(座標の単位)。0 = 減らさない
-  uniform float uMorphK;   // 減らし方の傾き
-  uniform vec4  uNearF;    // 手前を細かく読む倍率: x=近い範囲(m) y=目の前の倍率 z=遠くの始まり(m) w=遠くの最小
+  uniform float uTileDens; // このタイルの描く割合(タイルを少しずつ出し入れする・近づいた所は間引いた分を戻す)
   uniform float uOrtho;   // 1.0=正射投影(真俯瞰), 0.0=透視投影
   uniform float uSliceMode;   // 断面: 0=なし / 1=片側を消す / 2=薄く切る
   uniform vec4  uSlicePlane;  // 断面(ワールド): xyz=法線(消す側を向く)、w=位置
@@ -6017,24 +6058,13 @@ const CUBE_VERT = /* glsl */`
     return fract((p.x + p.y) * p.z);
   }
 
-  // 手前を細かく読む倍率(読み込みと同じ式。lodNearFactor)
-  float nearF(float d) {
-    if (d < uNearF.x) return 1.0 + (uNearF.y - 1.0) * (1.0 - d / uNearF.x);
-    if (d <= uNearF.z) return 1.0;
-    return max(uNearF.w, 1.0 - (1.0 - uNearF.w) * (d - uNearF.z) / uNearF.z);
-  }
-
   void main() {
     vColor = color;
     vEdge = 0.0;
     vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
 
-    // 描く割合: 全体 × タイル(少しずつ出す等) × 細かい段階をその点の距離で減らす割合
+    // 描く割合: 全体(上限を超えた時の間引き) × タイル(少しずつ出し入れする等)
     float dens = uDensity * uTileDens;
-    if (uLodA > 0.0 && uOrtho < 0.5) {
-      float dm = length(mvPos.xyz) / max(length(modelViewMatrix[0].xyz), 1e-12); // 距離(座標の単位)
-      dens *= clamp((uLodA * nearF(dm) / max(dm, 1e-6) - 1.0) * uMorphK, 0.0, 1.0);
-    }
     // 間引き: 位置ハッシュが割合を超えたらクリップ外へ飛ばして描画スキップ(gl_PointSize=0 と併用で確実に描画されない)
     // 割合100%のときはハッシュ値(0以上1未満)が必ず1未満で間引かれないため、計算自体を省く(結果は同一)。
     if (dens < 1.0 && hash13(position) >= dens) {
@@ -6131,9 +6161,6 @@ const cubeUniforms = {
   uMaxPx:   { value: 128.0 }, // 1点の最大サイズ
   uDensity: { value: 1.0 },
   uTileDens: { value: 1.0 },  // タイルごと(描く直前に入れる)
-  uLodA:    { value: 0.0 },   // タイルごと(描く直前に入れる)
-  uMorphK:  { value: LOD_MORPH_K },
-  uNearF:   { value: LOD_NEAR_ON ? new THREE.Vector4(LOD_NEAR_M, LOD_NEAR_BOOST, LOD_FAR_M, LOD_FAR_MIN) : new THREE.Vector4(LOD_NEAR_M, 1, LOD_FAR_M, 1) },
   uOrtho:   { value: 0.0 },   // 真俯瞰(正射)中は1.0に
   uSliceMode:   { value: 0 },   // 断面(0=なし / 1=片側 / 2=薄く切る)
   uSlicePlane:  { value: new THREE.Vector4(0, 1, 0, 1e9) },
@@ -6161,16 +6188,16 @@ renderer.xr.addEventListener('sessionend', applyRenderScale);
 // ── 点のサイズ ──
 // 点のサイズは「画面上のピクセル数」で指定する。スマホ・タブレット・PC・VR のどれでも、近くでも遠くでも同じ大きさ。
 let pointShape = 'cube';     // 点の形('cube' 立方体 | 'round' 丸)
-// 点のマテリアルは全タイルで共有なので、タイルごとの値(描く割合・細かい段階を減らす距離)は描く直前に入れる。
+// 点のマテリアルは全タイルで共有なので、タイルごとの値(描く割合)は描く直前に入れる。
 // 値が前のタイルと同じなら送り直さない
 function pointsBeforeRender(r, scene, cam, geometry, material) {
   const u = material.uniforms;
   if (!u || !u.uTileDens) return;
-  const ud = this.userData, d = ud.tileDens ?? 1, a = ud.lodA || 0;
-  if (u.uTileDens.value !== d || u.uLodA.value !== a) { u.uTileDens.value = d; u.uLodA.value = a; material.uniformsNeedUpdate = true; }
+  const d = this.userData.tileDens ?? 1;
+  if (u.uTileDens.value !== d) { u.uTileDens.value = d; material.uniformsNeedUpdate = true; }
 }
-// 点群の Points: 描く直前の値を入れる・点だけを描く時のレイヤーに入れる(元のレイヤーにも残す)
-function pointsHook(o) { o.onBeforeRender = pointsBeforeRender; o.layers.enable(PT_LAYER); }
+// 点群の Points: 描く直前の値を入れる
+function pointsHook(o) { o.onBeforeRender = pointsBeforeRender; }
 // 点群の点の間隔の目安(座標の単位)。点が面の上に並んでいると見なし、範囲の箱の表面積の半分 ÷ 点数 の平方根。
 // 全点は走査せず、最大4096点の抜き取りで範囲を求める(読込時に1回だけ)
 function estimatePointSpacing(geometry) {
@@ -6263,7 +6290,9 @@ function pcCountPoints(root) {
   return n;
 }
 function pcApplyVisible(node) {
-  node.visible = !node.userData.pcPending && !node.userData.pcBudgetHidden;
+  const ud = node.userData;
+  // 上限で描かなくなったノードも、少しずつ出し入れする間は薄くしながら描く(pcNodeFrame)
+  node.visible = !ud.pcPending && (!ud.pcBudgetHidden || pcFadeKeep(node));
 }
 
 // obj の座標系 → root の親(=タイル群グループ)の座標系 への変換行列
@@ -6348,109 +6377,77 @@ function pcTick() {
   pcVis.stats.pendingNodes = pcVis.pending.size;
   // ③ ポイント予算
   pcApplyBudget();
-  // ④ タイルごとの値(少しずつ出す・細かい段階を距離で減らす)
+  // ④ タイルごとの値(少しずつ出し入れする・近づいた所は間引いた分を戻す)
   pcNodeFrame();
 }
-// 「新しいタイルを少しずつ出す」なら、新しく出たタイル(ノード)は 0.4 秒かけて点を増やしながら出す(四角くパッと現れないように)。
-// あわせて、細かい段階の点を減らす距離(lodA)と、真上・正対の時の描く割合(lodM)、
-// 上限で均一に間引いた分を近づいた所では戻す割合(densC)を点群に入れる
+// 「タイルを少しずつ出し入れする」なら、新しく出たタイル(ノード)は 0.4 秒かけて点を増やしながら出し、
+// 表示から外れたタイル(細かい段階に替わった・離れた・上限で描かなくなった)は 0.4 秒かけて点を減らしてから外す(パッと現れたり消えたりしないように)。
+// あわせて、上限で均一に間引いた分を近づいた所では戻す割合(densC)を点群に入れる
 const PC_FADE_MS = 400;
-let _pcFrame = 0;
+let _pcFrame = 0, _pcFadeAt = 0;
+// 3D Tiles: 表示から外れたが、薄くしながらまだ描いているタイル(タイルの scene → { tile, tr })
+const pcFadeOut = new Map();
+// 出し入れの濃さ(0〜1)を target へ近づける。前のフレームに描いていなかったノードは 0 から
+function pcFadeLv(ud, target, dt) {
+  const tracked = ud.fadeFrame === _pcFrame - 1 || ud.fadeFrame === _pcFrame;
+  ud.fadeFrame = _pcFrame;
+  if (!ptFx.fade || gate.active) return (ud.fadeLv = target);
+  const lv = tracked ? (ud.fadeLv ?? 0) : 0, st = dt / PC_FADE_MS;
+  return (ud.fadeLv = target > lv ? Math.min(target, lv + st) : Math.max(target, lv - st));
+}
+// 外す時に、薄くしながら残すか(描いている途中のノードだけ)
+function pcFadeKeep(node) {
+  if (!node || !ptFx.fade || gate.active) return false;
+  const ud = node.userData;
+  return (ud.fadeLv || 0) > 0 && (ud.fadeFrame === _pcFrame || ud.fadeFrame === _pcFrame - 1);
+}
+// 3D Tiles: タイルを表示から外す時、少しずつ出し入れするならグループに残して薄くしてから外す。
+// 消える途中でまた表示になったら、その濃さから戻す。メモリから捨てる時(dispose)は three.js 側がすぐ外す
+function pcFadeWrap(t) {
+  const orig = t.setTileVisible.bind(t);
+  t.setTileVisible = (tile, vis) => {
+    const sc = tile.engineData && tile.engineData.scene;
+    if (vis) { if (sc) pcFadeOut.delete(sc); orig(tile, true); return; }
+    const keep = !!sc && sc.parent === t.group && sc.visible && !!tile.__pts && pcFadeKeep(sc);
+    orig(tile, false);
+    if (keep) { t.group.add(sc); pcFadeOut.set(sc, { tile, tr: t }); }
+  };
+}
+// 少しずつ出し入れするのをやめた時: 消える途中のものをすぐ外す
+function pcFadeFlush() {
+  for (const sc of pcFadeOut.keys()) if (sc.parent) sc.parent.remove(sc);
+  pcFadeOut.clear();
+  for (const inst of localInstances.values()) if (inst.pc) inst.pc.flushFading();
+}
 function pcNodeFrame() {
   _pcFrame++;
-  const now = performance.now();
-  const fadeOf = (ud) => {
-    if (ud.visFrame !== _pcFrame - 1) ud.fade0 = gate.active ? -1e9 : now;
-    ud.visFrame = _pcFrame;
-    return Math.min(1, (now - ud.fade0) / PC_FADE_MS);
-  };
+  const now = performance.now(), dt = _pcFadeAt ? Math.min(250, now - _pcFadeAt) : 0;
+  _pcFadeAt = now;
   for (const tr of allTileRenderers()) {
     for (const tile of tr.visibleTiles) {
       const n = tile.engineData && tile.engineData.scene;
-      if (!n || !n.parent || !n.visible || !tile.__pts) continue;
-      const ud = n.userData, f = fadeOf(ud), dens = (ud.lodM ?? 1) * (ptFx.fade ? f : 1) * (ud.densC || 1), a = ud.lodA || 0;
-      for (const o of tile.__pts) { o.userData.tileDens = dens; o.userData.lodA = a; }
+      if (!n || !n.parent || !tile.__pts) continue;
+      const ud = n.userData;
+      if (ud.pcPending) continue; // まだ出していない(出したら 0 から)
+      const lv = pcFadeLv(ud, ud.pcBudgetHidden ? 0 : 1, dt);
+      if (n.visible !== lv > 0) n.visible = lv > 0;
+      const dens = lv * (ud.densC || 1);
+      for (const o of tile.__pts) o.userData.tileDens = dens;
     }
   }
+  // 表示から外れたタイル: 薄くしてから外す(捨てられた・別の scene になったものは忘れる)
+  for (const [sc, e] of pcFadeOut) {
+    if (!sc.parent || e.tile.engineData.scene !== sc || !e.tile.__pts) { pcFadeOut.delete(sc); continue; }
+    const ud = sc.userData, lv = pcFadeLv(ud, 0, dt);
+    if (lv <= 0) { pcFadeOut.delete(sc); sc.parent.remove(sc); continue; }
+    const dens = lv * (ud.densC || 1);
+    for (const o of e.tile.__pts) o.userData.tileDens = dens;
+  }
   for (const inst of localInstances.values()) {
-    if (!inst.pc || !inst.root.visible) continue;
-    for (const nd of inst.pc.shown) {
-      if (!nd.obj) continue;
-      const ud = nd.obj.userData, f = fadeOf(ud);
-      ud.tileDens = (ud.lodM ?? 1) * (ptFx.fade ? f : 1) * (ud.densC || 1);
-    }
+    if (inst.pc) inst.pc.fadeFrame(dt);
   }
 }
 
-// ── 細かい段階の点を、その点の距離で減らす割合(シェーダと同じ式) ──
-// A: 子の点が 0 になる距離(座標の単位。親の段階が細かくなる距離 × 1.3、上限で縮めた後)、d: 点までの距離。A が 0 なら減らさない
-function lodMorph(A, d) {
-  if (!(A > 0)) return 1;
-  const v = (A * lodNearFactor(d) / Math.max(d, 1e-6) - 1) * LOD_MORPH_K;
-  return v <= 0 ? 0 : (v >= 1 ? 1 : v);
-}
-// タイル(ノード)全体で描く割合の見積もり: いちばん近い所・中心・いちばん遠い所の3か所から
-function lodMorphAvg(A, dN, dC, dF) {
-  if (!(A > 0)) return 1;
-  return (lodMorph(A, dN) + 2 * lodMorph(A, dC) + lodMorph(A, dF)) / 4;
-}
-// 真上・正対: 親の画面上の誤差 ÷ 目安(r)から。図全体で同じ
-function lodMorphOrtho(r) {
-  if (!(r > 0)) return 1;
-  const v = (r - 1) * LOD_MORPH_K;
-  return v <= 0 ? 0 : (v >= 1 ? 1 : v);
-}
-// 上限に収まる「減らし始める距離」の倍率 s(1 = 縮めない)。est(s) = その時に描く点の見積もり
-function lodSolveS(est, budget) {
-  if (!(budget > 0)) return 1;
-  if (est(1) <= budget) return 1;
-  let lo = LOD_S_MIN, hi = 1;
-  if (est(lo) > budget) return lo;
-  for (let i = 0; i < 8; i++) { const m = Math.sqrt(lo * hi); if (est(m) > budget) hi = m; else lo = m; }
-  return lo;
-}
-// s の変え方: 減らす時は 1 フレームに 15% まで、増やす時は 3% 以上の余裕ができてから 2% ずつ(上限の境目で点がちらつかないように)。
-// 上限に十分な余裕がある(want = 1)時は 1 フレームに 1 割ずつ 1 まで戻す
-function lodSmoothS(cur, want) {
-  if (want < cur) return Math.max(want, cur * 0.85);
-  if (want >= 1 && cur < 1) return Math.min(1, cur * 1.1);
-  if (want > cur * 1.03) return Math.min(want, cur * 1.02);
-  return cur;
-}
-// 3D Tiles: そのタイルが見えるかを決めている親(外部タイルセットの入口など、必ず細かくするタイルは飛ばす)
-function lodGateTile(tile) {
-  let g = tile.parent;
-  while (g && ((g.internal && g.internal.hasUnrenderableContent) || (g.parent && g.parent.geometricError < g.geometricError))) g = g.parent;
-  return g;
-}
-// 3D Tiles: 今のカメラ(真上・正対の間は正射カメラ)の、画面上の誤差を計算する値
-function lodCamInfo(tr) {
-  const cams = tr.cameras, info = tr.cameraInfo;
-  if (!cams || !info || !cams.length) return null;
-  let i = cams.indexOf(topdownState.active ? orthoCamera : camera);
-  if (i < 0) i = 0;
-  return info[i] || null;
-}
-// 3D Tiles: タイルを包む球(タイル群の座標。読込後は変わらないので1回だけ)
-function lodTileSphere(tile) {
-  if (!tile.__lodS) {
-    const s = new THREE.Sphere();
-    try { tile.engineData.boundingVolume.getSphere(s); } catch { s.radius = -1; }
-    tile.__lodS = s;
-  }
-  return tile.__lodS;
-}
-const lodState = { s: 1, want: 1 };
-const _lodItems = [];
-let _lodItemN = 0;
-function lodEstTiles(s, ortho) {
-  let t = 0;
-  for (let i = 0; i < _lodItemN; i++) {
-    const it = _lodItems[i];
-    t += it.pts * (ortho ? lodMorphOrtho(s * it.A) : lodMorphAvg(s * it.A, it.dN, it.dC, it.dF));
-  }
-  return t;
-}
 // 描く点の上限(これまでと同じ): 見えている点が上限を超えたら、まず全体を均一に間引く(最大で半分まで)。
 // 間引きの割合は 5% 刻み。増やす時は少し余裕ができてから(上限の境目で点がちらつかないように)。
 const AUTO_DENS_FLOOR = 0.5, AUTO_DENS_STEP = 0.05;
@@ -6466,58 +6463,33 @@ function setAutoDensity(raw, force = false) {
   pointDensity = d;
   applyPointDensity();
 }
-const _pcOrder = [], _pcHid = new Set();
+const _pcOrder = [], _pcHid = new Set(), _lodItems = [];
+let _lodItemN = 0;
 function pcApplyBudget() {
   const st = pcVis.stats;
   st.hiddenTiles = 0; st.hiddenPoints = 0; st.shownPoints = 0;
-  const ortho = topdownState.active, mEnd = lodMorphEnd();
-  // 今フレーム表示するタイルと、細かい段階を減らす距離(または真上・正対の割合)・近づいた所か
+  const ortho = topdownState.active;
+  // 今フレーム表示するタイルと、近づいた所か
   _lodItemN = 0;
   let total = 0;
   for (const tr of allTileRenderers()) {
-    const ci = lodCamInfo(tr), et = tr.errorTarget || 1;
-    const fx = (!ortho && ptFx.near && nearFx.active) ? nearFxLocal(tr) : null;
+    const fx = (!ortho && ptFx.near && nearFx.active) ? nearFxLocal(tr) : null, R = nearFxR();
     for (const tile of tr.visibleTiles) {
       const n = tile.engineData && tile.engineData.scene;
       if (!n || !n.parent) continue;
       let it = _lodItems[_lodItemN];
-      if (!it) it = _lodItems[_lodItemN] = { tile: null, n: null, pts: 0, A: 0, dN: 0, dC: 0, dF: 0, fx: false, bh: false };
+      if (!it) it = _lodItems[_lodItemN] = { tile: null, n: null, pts: 0, fx: false, bh: false };
       _lodItemN++;
-      it.tile = tile; it.n = n; it.pts = n.userData.pointCount || 0; it.A = 0; it.bh = false;
+      it.tile = tile; it.n = n; it.pts = n.userData.pointCount || 0; it.bh = false;
       total += it.pts;
       // 近づいた所(見ている所の周り)は減らさない
-      it.fx = !!fx && tile.engineData.boundingVolume.distanceToPoint(fx) <= NEAR_FX_R;
-      if (it.fx) continue;
-      const g = tile.parent ? lodGateTile(tile) : null;
-      // 追加型の子だけ(置換型は親が消えるので減らすと穴になる)
-      if (!g || g.refine !== 'ADD' || !ci || !(g.geometricError > 0)) continue;
-      if (ortho) {
-        if (ci.isOrthographic && ci.pixelSize > 0) it.A = g.geometricError / (ci.pixelSize * et);
-      } else if (!ci.isOrthographic && ci.sseDenominator > 0) {
-        const dN = tile.traversal.distanceFromCamera;
-        if (!Number.isFinite(dN)) continue;
-        it.A = g.geometricError / (ci.sseDenominator * et) * mEnd;
-        const sp = lodTileSphere(tile);
-        const dC = sp.radius >= 0 ? sp.center.distanceTo(ci.position) : dN;
-        it.dN = dN; it.dC = Math.max(dN, dC); it.dF = Math.max(dN, dC + Math.max(0, sp.radius));
-      }
+      it.fx = !!fx && tile.engineData.boundingVolume.distanceToPoint(fx) <= R;
     }
   }
-  // 上限を超えた時
-  const far = !!pcVis.budget && ptFx.far, old = !!pcVis.budget && !ptFx.far;
-  if (far) {
-    // 遠くから減らす: 「減らし始める距離」を縮める(手前と近づいた所は減らさない)
-    setAutoDensity(1, true);
-    lodState.want = lodSolveS((s) => lodEstTiles(s, ortho), pcVis.budget);
-    lodState.s = lodSmoothS(lodState.s, lodState.want);
-  } else {
-    lodState.want = 1; lodState.s = 1;
-    if (!old) setAutoDensity(1, true);
-  }
-  if (old) {
-    // これまでと同じ: 全体を均一に間引き、それでも超える分は 粗い階層 → 画面上の誤差が大きい順 に並べ、細かいタイルから描かない。
-    // 近づいた所は先に並べ、描かないことはしない(均一に間引いた分も戻す)
-    if (total > 0) setAutoDensity(pcVis.budget / total); else setAutoDensity(1, true);
+  // 上限を超えた時: 全体を均一に間引き、それでも超える分は 粗い階層 → 画面上の誤差が大きい順 に並べ、細かいタイルから描かない。
+  // 近づいた所は先に並べ、描かないことはしない(均一に間引いた分も戻す)
+  if (pcVis.budget && total > 0) setAutoDensity(pcVis.budget / total); else setAutoDensity(1, true);
+  if (pcVis.budget) {
     const limit = pcVis.budget / Math.max(AUTO_DENS_FLOOR, pointDensity);
     _pcOrder.length = 0;
     for (let i = 0; i < _lodItemN; i++) _pcOrder.push(_lodItems[i]);
@@ -6536,21 +6508,12 @@ function pcApplyBudget() {
     }
     _pcOrder.length = 0;
   }
-  const s = lodState.s, morphOn = ptFx.seam || s < 1;
   for (let i = 0; i < _lodItemN; i++) {
     const it = _lodItems[i], ud = it.n.userData;
-    let mMax = 1, mAvg = 1, a = 0;
-    if (morphOn && it.A > 0) {
-      if (ortho) { mMax = mAvg = lodMorphOrtho(s * it.A); }
-      else { a = s * it.A; mMax = lodMorph(a, it.dN); mAvg = mMax > 0 ? lodMorphAvg(a, it.dN, it.dC, it.dF) : 0; }
-    }
-    ud.lodA = a; ud.lodM = ortho ? mMax : 1; ud.lodAvg = mAvg;
     ud.densC = it.fx && pointDensity < 1 ? 1 / pointDensity : 1;
     ud.nearFx = it.fx;
-    // 上限で描かないタイル・点が1つも残らないタイルは描かない(頂点の処理も省く)
-    const hide = it.bh || mMax <= 0;
-    if (hide) { st.hiddenTiles++; st.hiddenPoints += it.pts; }
-    else { st.shownPoints += Math.round(it.pts * mAvg); st.hiddenPoints += Math.round(it.pts * (1 - mAvg)); }
+    const hide = it.bh;
+    if (hide) { st.hiddenTiles++; st.hiddenPoints += it.pts; } else st.shownPoints += it.pts;
     if (hide !== !!ud.pcBudgetHidden) {
       ud.pcBudgetHidden = hide;
       if (hide) pcVis.budgetHidden.add(it.n); else pcVis.budgetHidden.delete(it.n);
@@ -6584,25 +6547,17 @@ let _orthoCameraRegistered = false; // 真俯瞰用 orthoCamera を tiles に登
 // ・主データから OVERLAY_MAX_M より遠いものは重ねられない(同時に視界に入らないため)。
 const OVERLAY_MAX_M = 2000;
 const overlayState = { list: [] };
-// 読み込む細かさ: 画面上の誤差の見積もりの倍率。30 m 以内は手前ほど大きく(細かく読む)、100 m より遠くは小さく(粗く読む)。
-// LOD_NEAR_ON の時だけ(今は使わず 1)。真上・正対の間も使わない
-function lodNearFactor(d) {
-  if (!LOD_NEAR_ON) return 1;
-  if (d < LOD_NEAR_M) return 1 + (LOD_NEAR_BOOST - 1) * (1 - d / LOD_NEAR_M);
-  if (d <= LOD_FAR_M) return 1;
-  return Math.max(LOD_FAR_MIN, 1 - (1 - LOD_FAR_MIN) * (d - LOD_FAR_M) / LOD_FAR_M);
-}
+// 読み込む細かさ: 見ている所に近づいた時の倍率と、細かくしたタイルを少し長く保つ(真上・正対の間は使わない)
 function lodNearOn() { return !topdownState.active; }
 function lodNearWrap(t) {
   const orig = t.calculateTileViewError.bind(t);
   t.calculateTileViewError = (tile, target) => {
     orig(tile, target);
     if (!lodNearOn() || !target.inView) return;
-    if (LOD_NEAR_ON) target.error *= lodNearFactor(target.distanceFromCamera);
     // 手前を細かく読む: 見ている所に近づいた時、その周りのタイルは誤差を 4倍に見積もる(約2段階細かく読む)
     if (ptFx.near && nearFx.active) {
       const f = nearFxLocal(t);
-      if (f && tile.engineData.boundingVolume.distanceToPoint(f) <= NEAR_FX_R) target.error *= NEAR_FX_BOOST;
+      if (f && tile.engineData.boundingVolume.distanceToPoint(f) <= nearFxR()) target.error *= NEAR_FX_BOOST;
     }
     if (!ptFx.hyst) return;
     // 前のフレームで細かくしていたタイルは、誤差が 1/1.3 に下がるまで細かくしたまま(境目で出たり消えたりしないように)
@@ -6610,6 +6565,7 @@ function lodNearWrap(t) {
     if (tile.__nrRef === fc - 1) target.error *= LOD_NEAR_HYST;
     if (target.error > t.errorTarget) tile.__nrRef = fc;
   };
+  pcFadeWrap(t); // タイルを少しずつ出し入れする
 }
 function allTileRenderers() {
   const a = [];
@@ -8380,8 +8336,6 @@ async function warmupGpu() {
     map: dummyTex, transparent: true, opacity: 0.95, depthWrite: true, side: THREE.DoubleSide,
   });
   warm.add(new THREE.Mesh(planeGeo, gsiLike));
-  // 点の陰影
-  { const q = new THREE.Mesh(planeGeo, edl.mat); q.frustumCulled = false; warm.add(q); }
 
   const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 10);
   try {
@@ -9073,14 +9027,15 @@ class CopcSource {
   }
 }
 
-// ── 点群の詳細度表示(画面上で粗い所から細かくする。細かい段階の点は距離で減らし、上限を超えたら遠くから減らす) ──
+// ── 点群の詳細度表示(画面上で粗い所から細かくする。上限まで。近づいた所は細かく読み、上限でも減らさない) ──
 const _lpFrustum = new THREE.Frustum(), _lpProj = new THREE.Matrix4(), _lpBox = new THREE.Box3();
 const _lpCam = new THREE.Vector3(), _lpScale = new THREE.Vector3();
-const _lpInv = new THREE.Matrix4(), _lpCamL = new THREE.Vector3(), _lpSize = new THREE.Vector3(), _lpCtr = new THREE.Vector3(), _lpFx = new THREE.Vector3();
+const _lpInv = new THREE.Matrix4(), _lpCamL = new THREE.Vector3(), _lpFx = new THREE.Vector3();
 class LocalPointCloud {
   constructor(source, parent) {
     this.src = source; this.parent = parent; this.root = null;
     this.shown = new Set(); this.loaded = new Set(); this.loading = 0; this.frame = 0;
+    this.fading = new Set(); // 表示から外れたが、薄くしながらまだ描いているノード
     this.stats = { nodes: 0, points: 0, loading: 0 };
     this.idleFrames = 0;
   }
@@ -9102,13 +9057,12 @@ class LocalPointCloud {
     const budget = pcVis.budget > 0 ? pcVis.budget : LOCAL_POINT_BUDGET_DEFAULT;
     const target = lodErrorTarget * LOCAL_SSE_PER_TARGET;
     const near = !isOrtho && lodNearOn();
-    const far = ptFx.far, mEnd = lodMorphEnd();
     _lpInv.copy(mw).invert();
     _lpCamL.copy(_lpCam).applyMatrix4(_lpInv); // カメラの位置(このデータの座標)
     // 近づいた所(見ている所)。このデータの座標で
     const fxOn = near && ptFx.near && nearFx.active;
     if (fxOn) _lpFx.copy(nearFx.point).applyMatrix4(_lpInv);
-    const fxR = NEAR_FX_R * (worldScale || 1) / Math.max(scaleW, 1e-9);
+    const fxR = nearFxR() * (worldScale || 1) / Math.max(scaleW, 1e-9);
     // 見えるか・距離(このデータの座標の単位)・画面上の点の間隔
     const vis = (n) => {
       _lpBox.copy(n.box).applyMatrix4(mw);
@@ -9116,27 +9070,22 @@ class LocalPointCloud {
       n.fx = false;
       if (isOrtho) { n.sse = n.spacing * scaleW * k; return true; }
       const d = Math.max(0.05 / Math.max(scaleW, 1e-9), n.box.distanceToPoint(_lpCamL));
-      if (n.lodR === undefined) n.lodR = n.box.getSize(_lpSize).length() / 2;
-      const dc = n.box.getCenter(_lpCtr).distanceTo(_lpCamL);
-      n.dN = d; n.dC = Math.max(d, dc); n.dF = Math.max(d, dc + n.lodR);
+      n.dN = d;
       n.sse = n.spacing * k / d;
-      if (near) n.sse *= lodNearFactor(d);
       // 手前を細かく読む: 見ている所の周りは 4倍に見積もる(約2段階細かく読み、先に選ぶ)
       if (fxOn && n.box.distanceToPoint(_lpFx) <= fxR) { n.fx = true; n.sse *= NEAR_FX_BOOST; }
       return true;
     };
-    // 画面上の誤差が大きい順に取り出す(二分ヒープ)。描く候補は、遠くから減らす時は上限の4倍まで、それ以外は上限まで
-    // (近づいた所は上限を超えても入れる)
+    // 画面上の誤差が大きい順に取り出す(二分ヒープ)。描く候補は上限まで(近づいた所は上限を超えても入れる)
     const heap = [];
     const push = (n) => { heap.push(n); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p].sse >= heap[i].sse) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
     const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = i * 2 + 1, r = l + 1; let m = i; if (l < heap.length && heap[l].sse > heap[m].sse) m = l; if (r < heap.length && heap[r].sse > heap[m].sse) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
     const cand = [];
     let candPts = 0;
-    const cap = far ? budget * 4 : budget;
     if (vis(this.root)) { this.root.lodP = null; push(this.root); }
     while (heap.length) {
       const n = pop();
-      if (candPts + n.count > cap && cand.length && !n.fx) continue;
+      if (candPts + n.count > budget && cand.length && !n.fx) continue;
       cand.push(n); candPts += n.count;
       // 細かくしたノードを少し長く保つ: 画面上の間隔が 1/1.3 に下がるまで細かくしたまま(子が出たり消えたりしないように)
       const hy = ptFx.hyst && n.lodRef === this.frame - 1 ? LOD_NEAR_HYST : 1;
@@ -9145,41 +9094,29 @@ class LocalPointCloud {
         for (const c of n.children) if (vis(c)) { c.lodP = n; push(c); }
       }
     }
-    // 細かい段階(子)の点が 0 になる距離: 親の段階が細かくなる距離(長く保つ時は × 1.3)。真上・正対は 親の点の間隔 ÷ 目安。
-    // 近づいた所は減らさない
-    for (const n of cand) {
-      const p = n.lodP;
-      n.lodAr = p && !n.fx ? (isOrtho ? p.spacing * scaleW * k / target : p.spacing * k / target * mEnd) : 0;
-    }
-    if (far) {
-      const est = (s) => { let t = 0; for (const n of cand) t += n.count * (isOrtho ? lodMorphOrtho(s * n.lodAr) : lodMorphAvg(s * n.lodAr, n.dN, n.dC, n.dF)); return t; };
-      this.lodWant = lodSolveS(est, budget);
-      this.lodS = lodSmoothS(this.lodS ?? 1, this.lodWant);
-    } else { this.lodWant = 1; this.lodS = 1; }
-    const s = this.lodS, morphOn = ptFx.seam || s < 1;
-    // 描くノード: 点が1つでも残るもの(親が描かれないノードは描かない)
+    // 描くノード(親が描かれないノードは描かない)
     const selected = [];
     let pts = 0;
     for (const n of cand) {
       n.lodSel = false;
       if (n.lodP && !n.lodP.lodSel) continue;
-      const a = morphOn ? s * n.lodAr : 0;
-      const mMax = isOrtho ? lodMorphOrtho(a) : lodMorph(a, n.dN);
-      if (!(mMax > 0)) continue;
       n.lodSel = true;
-      n.lodA = isOrtho ? 0 : a; n.lodM = isOrtho ? mMax : 1;
       n.densC = n.fx && pointDensity < 1 ? 1 / pointDensity : 1;
       selected.push(n);
-      pts += n.count * (isOrtho || !(a > 0) ? mMax : lodMorphAvg(a, n.dN, n.dC, n.dF));
+      pts += n.count;
     }
     const want = new Set(selected);
-    for (const n of this.shown) if (!want.has(n)) { this.parent.remove(n.obj); this.shown.delete(n); }
+    // 外れたノード: 少しずつ出し入れするなら、薄くしてから外す(fadeFrame)
+    for (const n of this.shown) if (!want.has(n)) {
+      this.shown.delete(n);
+      if (pcFadeKeep(n.obj)) this.fading.add(n); else this.parent.remove(n.obj);
+    }
     let requested = 0, shownPts = 0;
     for (const n of selected) {
       n.lastUsed = this.frame;
       if (n.obj) {
-        if (!this.shown.has(n)) { this.parent.add(n.obj); this.shown.add(n); }
-        n.obj.userData.lodA = n.lodA || 0; n.obj.userData.lodM = n.lodM ?? 1; n.obj.userData.densC = n.densC || 1;
+        if (!this.shown.has(n)) { this.fading.delete(n); this.parent.add(n.obj); this.shown.add(n); }
+        n.obj.userData.densC = n.densC || 1;
         shownPts += n.count;
       } else if (!n.loadingP && !n.failed && this.loading < LOCAL_MAX_CONCURRENT_LOADS && requested < 4) {
         requested++;
@@ -9222,9 +9159,27 @@ class LocalPointCloud {
       n.loadingP = false;
     }
   }
+  // 毎フレーム(pcNodeFrame): 出し入れの濃さを描く割合に入れる。消え終わったノードを外す
+  fadeFrame(dt) {
+    for (const n of this.shown) {
+      if (!n.obj) continue;
+      const ud = n.obj.userData;
+      if (ud.pcPending) continue;
+      ud.tileDens = pcFadeLv(ud, 1, dt) * (ud.densC || 1);
+    }
+    for (const n of this.fading) {
+      const ud = n.obj ? n.obj.userData : null;
+      const lv = ud ? pcFadeLv(ud, 0, dt) : 0;
+      if (lv <= 0) { if (n.obj) this.parent.remove(n.obj); this.fading.delete(n); } else ud.tileDens = lv * (ud.densC || 1);
+    }
+  }
+  flushFading() {
+    for (const n of this.fading) if (n.obj) this.parent.remove(n.obj);
+    this.fading.clear();
+  }
   unloadNode(n) {
     if (!n.obj) return;
-    if (this.shown.has(n)) { this.parent.remove(n.obj); this.shown.delete(n); }
+    if (this.shown.has(n) || this.fading.has(n)) { this.parent.remove(n.obj); this.shown.delete(n); this.fading.delete(n); }
     pcUnregisterNode(n.obj);
     n.obj.geometry.dispose();
     n.obj = null;
@@ -9932,7 +9887,8 @@ function renderLocalList() {
   const shown = [...localItems.values()].filter(it => localInstances.has(it.id) && it.id !== localStandaloneId);
   if (!shown.length) {
     box.className = 'local-empty';
-    box.textContent = '今のデータに重ねている端末の3Dデータはありません。データの一覧の「端末の3Dデータ」で「重ねる」を押すと重ねられます。';
+    // 「」の中などで行が変わらないように
+    box.innerHTML = '今のデータに重ねている<span class="nw">端末の3Dデータ</span>はありません。<span class="nw">データの一覧</span>の<span class="nw">「端末の3Dデータ」</span>で<span class="nw">「重ねる」</span>を押すと重ねられます。';
     return;
   }
   box.className = '';
@@ -10917,7 +10873,7 @@ function renderLevelNow() {
   const txt = `いま ${fmtPoints(levelState.points)} · ${levelState.fps ? Math.round(levelState.fps) : '-'}fps(目標 ${t}fps)`;
   if (el.textContent !== txt) el.textContent = txt;
   const bn = document.getElementById('budget-now');
-  if (bn) { const t2 = lodState.s < 0.999 ? 'いま上限を超えたので遠くの点を減らし中' : (pointDensity < 1 ? `いま上限を超えたので ${Math.round(pointDensity * 100)}% に間引き中` : ''); if (bn.textContent !== t2) bn.textContent = t2; }
+  if (bn) { const t2 = pointDensity < 1 ? `いま上限を超えたので ${Math.round(pointDensity * 100)}% に間引き中` : ''; if (bn.textContent !== t2) bn.textContent = t2; }
 }
 
 // ── 自動調整(毎フレーム、描画の後に呼ぶ) ──
@@ -11196,7 +11152,8 @@ function collectVisiblePointObjects(out) {
   }
   return out;
 }
-// 手前を細かく読む: 画面の中央(VR は顔の正面)に見えている面が 5 m 以内なら、その点の周りを細かく読む(離れるのは 6 m から)。
+// 手前を細かく読む: 画面の中央(VR は顔の正面)に見えている面が「細かく読む距離」以内なら、その点の周りを細かく読む
+// (離れたと見なすのは、それより 1 m 遠くなってから)。
 // 表示中の点群から、正面の向き(半角 2.5°の円錐)に入る点を抜き取りで調べ、いちばん手前の点を「見ている所」にする
 const nearFx = { active: false, point: new THREE.Vector3(), dist: Infinity, at: 0, tick: 0 };
 const NEAR_FX_CONE = Math.tan(2.5 * Math.PI / 180);
@@ -11215,7 +11172,7 @@ function nearFxTick() {
   camera.updateMatrixWorld();
   const camPos = _fxC.setFromMatrixPosition(camera.matrixWorld);
   _fxDir.set(0, 0, -1).transformDirection(camera.matrixWorld);
-  const ws = worldScale || 1, maxD = NEAR_FX_OFF * ws, minTol = 0.03 * ws;
+  const ws = worldScale || 1, maxD = nearFxOff() * ws, minTol = 0.03 * ws;
   let best = Infinity;
   _fxObjs.length = 0;
   for (const o of collectVisiblePointObjects(_fxObjs)) {
@@ -11238,7 +11195,7 @@ function nearFxTick() {
     }
   }
   nearFx.dist = best / ws;
-  const on = best <= (nearFx.active ? NEAR_FX_OFF : NEAR_FX_DIST) * ws;
+  const on = best <= (nearFx.active ? nearFxOff() : nearFxDist()) * ws;
   if (on) nearFx.point.copy(_fxBest);
   if (on !== nearFx.active) nearFxSet(on);
 }
@@ -11456,6 +11413,7 @@ const navDrag = { id: null, mode: null, x0: 0, y0: 0, x: 0, y: 0, moved: false, 
     try { el.setPointerCapture(e.pointerId); } catch {}
     let mode;
     if (topdownState.active) mode = e.button === 0 ? 'tdpan' : 'tdrot';
+    else if (autoEditActive()) mode = e.button === 0 ? 'apmove' : 'aprot'; // 経路を直接直す
     else if (e.button === 1 || e.button === 2) mode = 'pan';
     else mode = navState.mode === 'orbit' ? 'orbit' : 'look';
     Object.assign(navDrag, { id: e.pointerId, mode, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, moved: false, t0: performance.now(), ref: navState.near, orbiting: false });
@@ -11500,6 +11458,12 @@ const navDrag = { id: null, mode: null, x0: 0, y0: 0, x: 0, y: 0, moved: false, 
       case 'tdrot':
         rotateTopdownHeading(-dx * 0.005);
         break;
+      case 'apmove': // 経路を直接直す: 前後左右
+        if (autoEditActive()) autoEditMove(dx, dy);
+        break;
+      case 'aprot': // 経路を直接直す: 左右で回転・上下で高さ
+        if (autoEditActive()) { if (dx) autoEditRotate(dx * 0.006); if (dy) autoEditHeight(dy); }
+        break;
     }
   });
   const end = (e) => {
@@ -11525,6 +11489,7 @@ const navDrag = { id: null, mode: null, x0: 0, y0: 0, x: 0, y: 0, moved: false, 
       syncTopdownRangeUi();
       return;
     }
+    if (autoEditActive()) { autoEditScale(Math.pow(1.08, -Math.max(-4, Math.min(4, dy / 100)))); return; } // 経路を直接直す: 大きさ
     navWheel(e.clientX, e.clientY, dy);
   }, { passive: false });
 })();
@@ -11600,7 +11565,12 @@ function gestState() {
     let dAng = s.ang - gest.ang;
     if (dAng > Math.PI) dAng -= Math.PI * 2;
     if (dAng < -Math.PI) dAng += Math.PI * 2;
-    if (topdownState.active) {
+    if (autoEditActive()) {
+      // 経路を直接直す: ピンチ = 大きさ・ひねる = 回転(指と同じ向き)・2本指で上下 = 高さ
+      if (Math.abs(ratio - 1) > 0.002) autoEditScale(ratio);
+      if (Math.abs(dAng) > 0.002) autoEditRotate(-dAng);
+      if (sdy) autoEditHeight(sdy);
+    } else if (topdownState.active) {
       if (Math.abs(ratio - 1) > 0.002) {
         setTopdownRange(topdownState.rangeM / ratio);
         syncTopdownRangeUi();
@@ -11643,6 +11613,7 @@ function gestState() {
     } else {
       const hasStick = others.some(o => o.role === 'stick');
       if (topdownState.active) p.role = 'map';
+      else if (autoEditActive()) p.role = 'apmove'; // 経路を直接直す: 前後左右
       else if (navState.mode === 'walk' && !hasStick && e.clientX < window.innerWidth * 0.45) { p.role = 'stick'; stickStart(p); }
       else p.role = navState.mode === 'orbit' ? 'orbit' : 'look';
       touchPtrs.set(p.id, p);
@@ -11668,6 +11639,7 @@ function gestState() {
       case 'look': if (p.moved) { swipeDelta.x += dx; swipeDelta.y += dy; } break;
       case 'orbit': if (p.moved) { navOrbit(-dx * 0.008, -dy * 0.008); navPivotMarker.userData.until = performance.now() + 400; } break;
       case 'map': if (p.moved) { const mPerPx = topdownState.rangeM / Math.min(window.innerWidth, window.innerHeight); moveTopdownCenter(dx * mPerPx, dy * mPerPx); } break;
+      case 'apmove': if (p.moved && autoEditActive()) autoEditMove(dx, dy); break;
       case 'g': gestMove(); break;
     }
     e.preventDefault();
@@ -11709,7 +11681,7 @@ function gestState() {
 function tdbHintText() {
   const face = topdownState.view === 'face';
   if (isTouchDevice) return face ? 'なぞる: 移動 · 2本指: 拡大縮小・ひねると向きを回す · ダブルタップ: 寄る' : 'なぞる: 移動 · 2本指: 拡大縮小・回転 · ダブルタップ: 寄る';
-  return face ? 'ドラッグ/W A S D: 移動 · ホイール: 拡大縮小 · 右ドラッグ/← →: 向きを回す · ↑↓: 断面を前後 · ダブルクリック: 寄る'
+  return face ? 'ドラッグ/W A S D: 移動 · ホイール: 拡大縮小 · 右ドラッグ/← →: 向きを回す · ↑↓: 断面を前後(切っている時) · ダブルクリック: 寄る'
     : 'ドラッグ/W A S D: 移動 · ホイール: 拡大縮小 · 右ドラッグ/← →: 回転 · ダブルクリック: 寄る';
 }
 function syncNavUi() {
@@ -11752,10 +11724,46 @@ function syncNavUi() {
     updateCompass();
   }
   if (window.__sliceReady) { updateSlicePanel(); sliceSyncUi(); }
+  syncNavAvail();
   layoutTopdownBar();
+}
+// 真上・正対 を使えるか: 断面が無い時はどちらも。断面がある時は、真上は水平の時だけ、正対は東西の面・南北の面・今の方角の時だけ
+function navViewAllowed(mode) {
+  if (!window.__sliceReady || !sliceState.on) return true;
+  if (mode === 'top') return sliceState.dir === 'h';
+  if (mode === 'face') return ['ew', 'ns', 'view'].includes(sliceState.dir);
+  return true;
+}
+const NAV_VIEW_LOCKED = {
+  top: '真上(断面を水平に切っている時か、断面が無い時に押せます)',
+  face: '正対(断面を東西の面・南北の面・今の方角で切っている時か、断面が無い時に押せます)',
+};
+// 右の列(と設定パネル)の 真上・正対・断面 を、押せる / 押せない にそろえる。断面は 回す・歩く の時だけ押せる
+function syncNavAvail() {
+  const cur = topdownState.active ? (topdownState.view === 'face' ? 'face' : 'top') : null;
+  document.querySelectorAll('[data-nav-mode="top"], [data-nav-mode="face"]').forEach(b => {
+    const m = b.dataset.navMode, dis = cur !== m && !navViewAllowed(m);
+    if (b.dataset.title0 === undefined) b.dataset.title0 = b.getAttribute('title') || '';
+    setDisabledIf(b, dis);
+    const t = dis ? NAV_VIEW_LOCKED[m] : b.dataset.title0;
+    if (t) setAttrIf(b, 'title', t); else if (b.hasAttribute('title')) b.removeAttribute('title');
+  });
+  const cut = document.getElementById('cut-btn');
+  if (cut) {
+    setDisabledIf(cut, topdownState.active);
+    setAttrIf(cut, 'title', topdownState.active ? '断面(回す・歩くの時に押せます。真上・正対では下のバーのスライダーで切ります)' : '断面(モデルを面で切って中を見る)');
+  }
 }
 // 歩く・回る は一人称の移動の仕方、真上 は真俯瞰図、正対 は縦の断面の断面図(抜けると直前の 歩く/回る に戻る)
 function setNavMode(mode) {
+  if ((mode === 'top' || mode === 'face') && !navViewAllowed(mode) && !(topdownState.active && (topdownState.view === 'face' ? 'face' : 'top') === mode)) {
+    showToast(mode === 'top' ? '真上: 断面を水平以外の向きで切っている間は使えません(断面をやめるか、断面パネルで水平にすると使えます)'
+      : '正対: 断面を東西の面・南北の面・今の方角以外の向きで切っている間は使えません(断面をやめるか、断面パネルで向きを変えると使えます)', 3500);
+    syncNavUi();
+    return;
+  }
+  // 真上・正対の間は断面パネルを閉じる(断面はバーのスライダーで。右の列の「断面」は押せない)
+  if ((mode === 'top' || mode === 'face') && window.__sliceReady) { const cp = document.getElementById('cut-panel'); if (cp && !cp.hidden) cp.hidden = true; }
   if (mode === 'face') {
     if (renderer.xr.isPresenting) { showToast('VR 中は正対は使えません'); syncNavUi(); return; }
     if (!(topdownState.active && topdownState.view === 'face')) {
@@ -11787,8 +11795,8 @@ function setNavMode(mode) {
 document.querySelectorAll('[data-nav-mode]').forEach(b => b.addEventListener('click', () => {
   setNavMode(b.dataset.navMode);
   if (b.dataset.navMode !== 'top' && b.dataset.navMode !== 'face') saveSetting('navModeUser', navState.mode); // 自分で選んだ操作は次回も
-  showToast(topdownState.active && topdownState.view === 'face' ? `正対: 真横から遠近なしで見ています。${isTouchDevice ? '2本指をひねる' : '右ドラッグ・← →'}と向きが回ります。下のバーの「断面」で切れます`
-    : topdownState.active ? '真上: モデル全体が入るように真上から見下ろします。表示範囲・全体・断面・画像保存は下のバーで'
+  showToast(topdownState.active && topdownState.view === 'face' ? `正対: 真横から遠近なしで見ています。${isTouchDevice ? '2本指をひねる' : '右ドラッグ・← →'}と向きが回ります。下のバーの「断面の位置」で切れます`
+    : topdownState.active ? '真上: モデル全体が入るように真上から見下ろします。表示範囲・全体・断面の高さ・画像保存は下のバーで'
     : navState.mode === 'orbit' ? '回す: なぞると触った所を中心にモデルを回します' : '歩く: 一人称で移動します');
 }));
 setNavMode(navState.mode);
@@ -11898,9 +11906,9 @@ function showToast(text, ms = 2200) {
     <dt>右ドラッグ / ← →</dt><dd>向きを回す</dd>
     <dt>ダブルクリック</dt><dd>その地点を中心に拡大</dd>
     <dt>↑ ↓</dt><dd>水平の断面の高さ(断面が ON の時)</dd>
-    <dt>画面下のバー</dt><dd>表示範囲・断面・画像の保存</dd></dl>
+    <dt>画面下のバー</dt><dd>表示範囲・断面の高さ(右の端から動かすと切る)・画像の保存</dd></dl>
     <h3>正対</h3>
-    <dl><dt>正対ボタン</dt><dd>今向いている方角を、真横から遠近なしで見る(立面図)。バーの「断面」で、その向きの縦の面で切る</dd>
+    <dl><dt>正対ボタン</dt><dd>今向いている方角を、真横から遠近なしで見る(立面図)。バーの「断面の位置」を右の端から動かすと、その向きの縦の面で切る</dd>
     <dt>右ドラッグ / ← →</dt><dd>見る向き(断面の向き)を、画面の中央を中心に回す</dd>
     <dt>↑ ↓</dt><dd>断面を前後に動かす(バーの「断面の位置」でも)</dd>
     <dt>方位磁針</dt><dd>見ている方角。押すと裏側から見る</dd></dl>
@@ -11927,9 +11935,9 @@ function showToast(text, ms = 2200) {
     <dt>ピンチ</dt><dd>拡大・縮小</dd>
     <dt>ひねる</dt><dd>向きを回す</dd>
     <dt>ダブルタップ</dt><dd>その地点を中心に拡大</dd>
-    <dt>画面下のバー</dt><dd>表示範囲・断面・画像の保存</dd></dl>
+    <dt>画面下のバー</dt><dd>表示範囲・断面の高さ(右の端から動かすと切る)・画像の保存</dd></dl>
     <h3>正対</h3>
-    <dl><dt>正対ボタン</dt><dd>今向いている方角を、真横から遠近なしで見る(立面図)。バーの「断面」で、その向きの縦の面で切る</dd>
+    <dl><dt>正対ボタン</dt><dd>今向いている方角を、真横から遠近なしで見る(立面図)。バーの「断面の位置」を右の端から動かすと、その向きの縦の面で切る</dd>
     <dt>2本指をひねる</dt><dd>見る向き(断面の向き)を、画面の中央を中心に回す</dd>
     <dt>方位磁針</dt><dd>見ている方角。押すと裏側から見る</dd></dl>
     <h3>計測</h3>
@@ -13100,7 +13108,7 @@ function renderChooserFullAll() {
 // 動作確認用(開発者ツールのコンソールから状態を確認できる)
 testHooks.store = { fullDl, fullDlCancel, fullDlEnqueue, openSaveDialog, resetSettingsToDefaults: () => resetSettingsToDefaults(), tileLoadStats, CACHE_DEVICE_MB, CACHE_DEVICE_TILES, isMovingRecently, cubeUniforms,
   gapFill: () => 0, shape: () => pointShape, levelAutoTick, stopLoop: () => renderer.setAnimationLoop(null) };
-testHooks.nav = { dolly, pitch: () => pitchTarget, pickAt, nav: navState, speed: navMoveSpeed, sceneToW,
+testHooks.nav = { dolly, pitch: () => pitchTarget, pickAt, nav: navState, speed: navMoveSpeed, speedStep: (k) => setSpeedStep(k), speedKey: () => speedStepKey, sceneToW,
   measure: measureState, level: levelState, et: () => lodErrorTarget, budget: () => pcVis.budget, dsInfo };
 
 // ── 描画解像度の上限(デバッグ欄) ──
@@ -13325,7 +13333,7 @@ function noteTopdownBarTop() {
 }
 
 // ── 設定を初期値に戻す(設定パネルの一番下。2回押しで実行) ──
-// 戻す: 表示レベル(端末の標準・自動)と個別の調整、点のサイズ(大きさ・立方体・奥行きの陰影はなし)、点の出し方(すべてオフ)、
+// 戻す: 表示レベル(端末の標準・自動)と個別の調整、点のサイズ(大きさ・立方体)、点の出し方(すべてオン・細かく読む距離 3 m)、
 //       表示するもの(点群・説明パネルを表示、地図は非表示と地図の細かい設定)、視点(歩く)、移動の速さ(ふつう)、表示倍率(1.0)、描画解像度の上限
 // 残す: 保存したデータ・重ねて表示・端末の3Dデータ・パネルの開閉
 function resetSettingsToDefaults() {
@@ -13334,8 +13342,8 @@ function resetSettingsToDefaults() {
   setLevel(4, { keepAuto: true });
   setLevelAuto(false);
   applyPointUI(1, false);
-  setEdlLevel('off'); // 奥行きの陰影はなし
-  for (const k of PT_FX_KEYS) setPtFx(k, false); // 点の出し方はすべてオフ
+  for (const k of PT_FX_KEYS) setPtFx(k, true); // 点の出し方はすべてオン
+  setNearFxM(NEAR_FX_DEF); // 細かく読む距離は 3 m
   const fire = (el, v) => { if (!el || el.value === v) return; el.value = v; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); };
   document.querySelector('[data-look-color="orig"]')?.click(); // 色分けは元の色
   document.querySelector('[data-point-shape="cube"]')?.click(); // 点の形は立方体
@@ -14322,7 +14330,7 @@ function sliceTick(dt) {
 // 真上・正対の間だけ切らない断面(戻ったら元に戻す)
 let sliceSusp = null;
 // 真上・正対に入る時: 断面パネルの断面を引き継ぐのは、真上なら水平、正対なら東西の面・南北の面・今の方角の時だけ。
-// それ以外の断面は、真上・正対の間だけ切らない(バーの「断面」はオフで始まる)
+// それ以外の断面は、真上・正対の間だけ切らない(右の列の 真上・正対 はその時は押せないので、念のため)
 function sliceEnterView(view) {
   if (!sliceState.on) return;
   const keep = view === 'top' ? sliceState.dir === 'h' : ['ew', 'ns', 'view'].includes(sliceState.dir);
@@ -14419,6 +14427,7 @@ function sliceSyncUi() {
   setTextIf($('cut-sum-pos'), sliceSumPos());
   setTextIf($('cut-sum-show'), sliceState.mode === 'slab' ? `薄く切る ${$('cut-thick-val').textContent}` : `片側を消す${sliceState.flip ? '(反転)' : ''}`);
   psecSync(panel, cutSecStore);
+  syncNavAvail();
 }
 // 断面の「位置」の見出しの値
 function sliceSumPos() {
@@ -14433,6 +14442,7 @@ function sliceSumPos() {
   if (!panel || !railBtn) return;
   // 右端の列の「断面」: パネルを開く・閉じる(切っている / 切っていない は変えない)。閉じても断面は残る(列のボタンが光ったまま)
   railBtn.addEventListener('click', () => {
+    if (topdownState.active) return; // 真上・正対の間は押せない(バーのスライダーで切る)
     const open = panel.hidden;
     panel.hidden = !open;
     sliceSyncUi();
@@ -14537,167 +14547,38 @@ function pickOpaqueEnd(s) {
   const m = sharedCubeMaterial;
   m.depthWrite = s.dw; m.transparent = s.tr; m.blending = s.bl;
 }
-// ── 奥行きの陰影(設定の「奥行きの陰影」なし / 弱 / 中 / 強。初期はなし。立方体・丸の陰影に重ねて付ける) ──
-// ① 点だけを、色と奥行きの画像に描く(点のレイヤー)。
-// ② 画面に: 背景のあと、奥行きの画像の各画素で「周りに自分より手前の点がどれだけあるか」(奥行きの対数の差)を求めて暗くし、
-//    点の奥行きも書く。そのあと点以外(地図・枠・説明パネルなど)を描く(点との前後は奥行きで正しく決まる)。
-// 「なし」の時は今までどおり1回で描く。VR では両目それぞれの範囲に同じ処理がかかる。
-const EDL_STRENGTH = { off: 0, weak: 0.4, mid: 1.0, strong: 2.0 };
-let edlLevel = Object.prototype.hasOwnProperty.call(EDL_STRENGTH, savedSettings.edl) ? savedSettings.edl : 'off';
-const EDL_FRAG = /* glsl */`
-  uniform sampler2D tColor;
-  uniform sampler2D tDepth;
-  uniform vec2 uInvRes;   // 1 / 画像の大きさ(px)
-  uniform float uP10;     // 投影行列(奥行き → 距離)
-  uniform float uP14;
-  uniform float uOrtho;
-  uniform float uStrength;
-  uniform float uRadius;  // 周りを見る半径(px)
-  uniform float uStep;    // 隣の点までの画面上の間隔の目安(px)= 点の大きさ
-  // 奥行きの値(0〜1)→ 距離の対数
-  float logOf(float d) {
-    float ndc = d * 2.0 - 1.0;
-    float z = uOrtho > 0.5 ? (uP14 - ndc) / uP10 : uP14 / (ndc + uP10);
-    return log2(max(z, 1e-6));
-  }
-  // 奥行き(距離の対数)。x = 値、y = 点があるか
-  vec2 ld(vec2 uv) {
-    float d = texture2D(tDepth, uv).r;
-    return d < 1.0 ? vec2(logOf(d), 1.0) : vec2(0.0);
-  }
-  // なめらかな面の傾き(1 px あたり)の片側: 少し離れた所(点の大きさの 1.5 倍、無ければ 3 倍)の奥行きとの差から。
-  // 点が無ければ -1(分からない)
-  float side(float c, vec2 uv, vec2 dir) {
-    for (int k = 1; k <= 2; k++) {
-      float dist = uStep * 1.5 * float(k) + 1.0;
-      vec2 n = ld(uv + dir * dist * uInvRes);
-      if (n.y > 0.5) return abs(n.x - c) / dist;
-    }
-    return -1.0;
-  }
-  // 片方の向きの傾き: 両側のうち差の小さい側(段差の側は使わない)。どちらも分からなければ -1
-  float axis(float c, vec2 uv, vec2 dir) {
-    float a = side(c, uv, dir), b = side(c, uv, -dir);
-    if (a >= 0.0 && b >= 0.0) return min(a, b);
-    return max(a, b);
-  }
-  void main() {
-    vec2 uv = gl_FragCoord.xy * uInvRes;
-    float d0 = texture2D(tDepth, uv).r;
-    if (d0 >= 1.0) discard; // 点の無い所は背景のまま
-    float c = logOf(d0);
-    // 斜めに見た地面のような「なめらかに奥へ続く面」では、重なった隣の点との差は 面の傾き × 点の大きさ くらいある。
-    // その分は差し引き、それより大きい差(輪郭・段差・凹凸)だけを影にする。周りに点が無く傾きが分からない点は影にしない
-    float gx = axis(c, uv, vec2(1.0, 0.0)), gy = axis(c, uv, vec2(0.0, 1.0));
-    float tau = (gx < 0.0 && gy < 0.0) ? 1e3 : length(vec2(gx < 0.0 ? gy : gx, gy < 0.0 ? gx : gy)) * uStep * 1.6;
-    float sum = 0.0;
-    for (int i = 0; i < EDL_N; i++) {
-      float a = 6.28318530718 * (float(i) + 0.5) / float(EDL_N);
-      vec2 n = ld(uv + vec2(cos(a), sin(a)) * uRadius * uInvRes);
-      if (n.y > 0.5) sum += max(0.0, c - n.x - tau);
-    }
-    float shade = exp(-sum / float(EDL_N) * 300.0 * uStrength);
-    gl_FragColor = vec4(texture2D(tColor, uv).rgb * shade, 1.0);
-    gl_FragDepth = d0;
-  }
-`;
-const edl = {
-  rt: null,
-  size: new THREE.Vector2(),
-  mat: new THREE.ShaderMaterial({
-    uniforms: {
-      tColor: { value: null }, tDepth: { value: null }, uInvRes: { value: new THREE.Vector2(1, 1) },
-      uP10: { value: -1 }, uP14: { value: -0.2 }, uOrtho: { value: 0 }, uStrength: { value: 1 }, uRadius: { value: 1 }, uStep: { value: 2 },
-    },
-    defines: { EDL_N: (isTouchDevice || isVRBrowser) ? 4 : 8 }, // 周りを見る数(スマホ・タブレット・VR 機器は軽く)
-    vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
-    fragmentShader: EDL_FRAG,
-    depthTest: true, depthWrite: true, depthFunc: THREE.AlwaysDepth,
-  }),
-  scene: new THREE.Scene(),
-  frames: 0,
-};
-{
-  const q = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), edl.mat);
-  q.frustumCulled = false;
-  edl.scene.add(q);
-}
-function edlOn() { return (EDL_STRENGTH[edlLevel] || 0) > 0; }
-function edlTarget(w, h) {
-  if (edl.rt && edl.rt.width === w && edl.rt.height === h) return edl.rt;
-  if (edl.rt) { edl.rt.depthTexture?.dispose(); edl.rt.dispose(); }
-  edl.rt = new THREE.WebGLRenderTarget(w, h, {
-    minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, generateMipmaps: false,
-    depthBuffer: true, depthTexture: new THREE.DepthTexture(w, h), samples: 0,
-  });
-  return edl.rt;
-}
 // 画面に描く
-function renderScene(cam) {
-  if (!edlOn()) { renderer.render(scene, cam); return; }
-  renderer.getDrawingBufferSize(edl.size);
-  const w = Math.max(1, Math.round(edl.size.x)), h = Math.max(1, Math.round(edl.size.y));
-  const rt = edlTarget(w, h);
-  const prev = renderer.getRenderTarget();
-  const mask = cam.layers.mask, ar = renderer.info.autoReset, ac = renderer.autoClear;
-  // ① 点だけ
-  cam.layers.set(PT_LAYER);
-  renderer.setRenderTarget(rt);
-  renderer.render(scene, cam);
-  cam.layers.mask = mask;
-  // ② 背景 + 陰影を付けた点(奥行きも書く) → 点以外
-  const xr = renderer.xr.isPresenting;
-  const pcam = xr ? (renderer.xr.getCamera().cameras[0] || cam) : cam;
-  const P = pcam.projectionMatrix.elements, u = edl.mat.uniforms;
-  u.tColor.value = rt.texture; u.tDepth.value = rt.depthTexture;
-  u.uInvRes.value.set(1 / w, 1 / h);
-  u.uP10.value = P[10]; u.uP14.value = P[14];
-  u.uOrtho.value = cam.isOrthographicCamera ? 1 : 0;
-  u.uStrength.value = EDL_STRENGTH[edlLevel];
-  u.uRadius.value = Math.max(1, cubeUniforms.uPxScale.value); // 画面で約 1 px(CSS)
-  u.uStep.value = Math.max(1, Math.min(cubeUniforms.uMaxPx.value, cubeUniforms.uSizePx.value * cubeUniforms.uPxScale.value));
-  renderer.setRenderTarget(prev);
-  renderer.info.autoReset = false; // 描いた点の数などは 3 回分を合わせる
-  sharedCubeMaterial.visible = false;
-  const bg = scene.background, mwa = scene.matrixWorldAutoUpdate;
-  edl.scene.background = bg;
-  try {
-    renderer.render(edl.scene, cam);
-    // 点以外: 消さずに重ねる(背景が色の時は three.js が毎回消すので、この間だけ背景を外す)。
-    // 位置の計算は①で済んでいるので省く
-    renderer.autoClear = false;
-    scene.background = null;
-    scene.matrixWorldAutoUpdate = false;
-    renderer.render(scene, cam);
-  } finally {
-    scene.background = bg;
-    scene.matrixWorldAutoUpdate = mwa;
-    renderer.autoClear = ac;
-    renderer.info.autoReset = ar;
-    sharedCubeMaterial.visible = true;
-  }
-  edl.frames++;
-}
-function setEdlLevel(v, save = true) {
-  edlLevel = Object.prototype.hasOwnProperty.call(EDL_STRENGTH, v) ? v : 'off';
-  // なしの間は点を描く画像を持たない(メモリを空ける)
-  if (!edlOn() && edl.rt) { edl.rt.depthTexture?.dispose(); edl.rt.dispose(); edl.rt = null; }
-  document.querySelectorAll('[data-edl]').forEach(b => b.setAttribute('aria-pressed', b.dataset.edl === edlLevel ? 'true' : 'false'));
-  if (save) saveSetting('edl', edlLevel);
-}
-document.querySelectorAll('[data-edl]').forEach(b => b.addEventListener('click', () => setEdlLevel(b.dataset.edl)));
-setEdlLevel(edlLevel, false);
-// 点の出し方(オン / オフ)
+function renderScene(cam) { renderer.render(scene, cam); }
+// 点の出し方(オン / オフ)・細かく読む距離
 function setPtFx(key, on, save = true) {
   if (!PT_FX_KEYS.includes(key)) return;
   ptFx[key] = !!on;
   const b = document.querySelector(`[data-fx="${key}"]`);
   if (b) { b.setAttribute('aria-pressed', ptFx[key] ? 'true' : 'false'); b.textContent = ptFx[key] ? 'オン' : 'オフ'; }
-  if (key === 'near' && !on && nearFx.active) nearFxSet(false);
-  if (save) saveSetting('ptFx', { ...ptFx });
+  if (key === 'near') { if (!on && nearFx.active) nearFxSet(false); syncNearFxUi(); }
+  if (key === 'fade' && !on) pcFadeFlush();
+  if (save) saveSetting('ptFx2', { ...ptFx });
+}
+function setNearFxM(v, save = true) {
+  nearFxM = nearFxClamp(v);
+  nearFx.at = 0; // すぐ調べ直す
+  syncNearFxUi();
+  if (save) saveSetting('nearFxM', nearFxM);
+}
+function syncNearFxUi() {
+  const sl = document.getElementById('fx-near-dist');
+  if (sl) {
+    if (document.activeElement !== sl && Number(sl.value) !== nearFxM) sl.value = String(nearFxM);
+    sl.disabled = !ptFx.near;
+  }
+  setTextIf(document.getElementById('fx-near-dist-val'), `${nearFxM.toFixed(1)} m`);
+  const row = document.getElementById('fx-near-dist-row');
+  if (row) row.classList.toggle('off', !ptFx.near);
 }
 document.querySelectorAll('[data-fx]').forEach(b => b.addEventListener('click', () => setPtFx(b.dataset.fx, !ptFx[b.dataset.fx])));
+document.getElementById('fx-near-dist')?.addEventListener('input', (e) => setNearFxM(e.target.value));
 for (const k of PT_FX_KEYS) setPtFx(k, ptFx[k], false);
+setNearFxM(nearFxM, false);
 // 設定の「色分け」
 function syncLookUi() {
   document.querySelectorAll('[data-look-color]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lookColor === lookState.color ? 'true' : 'false'));
@@ -15161,7 +15042,7 @@ const autoState = {
   secOpen: Object.assign({ path: true, look: true, speed: true, play: false, view: false }, _autoSaved.secOpen || {}),
   lineDir: _aOne(_autoSaved.lineDir, ['par', 'perp'], 'par'), // 直線: 視線に並行 / 視線に直角
   sx: autoMulSnap(_autoSaved.sx), sz: autoMulSnap(_autoSaved.sz), sy: autoMulSnap(_autoSaved.sy), // 形の倍率: 横・奥行き・高さ
-  off: { x: 0, y: 0, z: 0, ds: '' }, // 位置のずらし(シーンの単位。データを切り替えたら戻す)
+  off: { x: 0, y: 0, z: 0, r: 0, ds: '' }, // 位置のずらし(シーンの単位)と回転(ラジアン。上から見て左回りが +)。データを切り替えたら戻す
   lookPreGaze: null, // 断面が「視線に追従」の間: 元の視線
   // 動き
   status: 'idle',   // idle / play / pause
@@ -15559,20 +15440,21 @@ function autoBuildGeom(kind, m, anchor, preview) {
     }
     default: return null;
   }
-  // 形の倍率(横 = 見る人から見た左右・奥行き = 見る人からモデルの中央へ・高さ)と、位置のずらし
+  // 形の倍率(横 = 見る人から見た左右・奥行き = 見る人からモデルの中央へ・高さ)と、回転(モデルの中央の周り)・位置のずらし
   const axes = autoScaleAxes(kind, s.lineDir);
   if (axes) {
     autoOffSync();
-    const off = s.off;
+    const off = s.off, rot = off.r || 0, cr = Math.cos(rot), sr = Math.sin(rot);
     const kx = axes.includes('x') ? s.sx : 1, kz = axes.includes('z') ? s.sz : 1, ky = axes.includes('y') ? s.sy : 1;
-    if (kx !== 1 || kz !== 1 || ky !== 1 || off.x || off.y || off.z) {
+    if (kx !== 1 || kz !== 1 || ky !== 1 || off.x || off.y || off.z || rot) {
       const fw = g.fw || new THREE.Vector3(-dH.x, 0, -dH.z), rx = -fw.z, rz = fw.x;
       const yRef = g.yRef != null ? g.yRef : base, Pr = g.P;
       g.P = (t, o) => {
         Pr(t, o);
         const dx = o.x - cx, dz = o.z - cz, h = (dx * rx + dz * rz) * kx, v = (dx * fw.x + dz * fw.z) * kz;
-        o.x = cx + rx * h + fw.x * v + off.x;
-        o.z = cz + rz * h + fw.z * v + off.z;
+        const X = rx * h + fw.x * v, Z = rz * h + fw.z * v;
+        o.x = cx + X * cr + Z * sr + off.x;
+        o.z = cz - X * sr + Z * cr + off.z;
         o.y = yRef + (o.y - yRef) * ky + off.y;
         return o;
       };
@@ -15603,7 +15485,58 @@ function autoScaleAxes(kind, lineDir) {
   }
 }
 // 位置のずらしは、データを切り替えたら戻す
-function autoOffSync() { const o = autoState.off; if (o.ds !== currentDataset) { o.x = 0; o.y = 0; o.z = 0; o.ds = currentDataset; } }
+function autoOffSync() { const o = autoState.off; if (o.ds !== currentDataset) { o.x = 0; o.y = 0; o.z = 0; o.r = 0; o.ds = currentDataset; } }
+// 回転: 上から見て左回りに sign × 15°
+const AUTO_ROT_STEP = 15 * Math.PI / 180;
+function autoRotate(sign) {
+  if (!autoModelGeo()) return;
+  autoOffSync();
+  const o = autoState.off;
+  o.r = autoWrap((o.r || 0) + sign * AUTO_ROT_STEP);
+  if (Math.abs(o.r) < 1e-9) o.r = 0;
+  autoRefresh();
+}
+// ── 経路を直接直す(チェックを入れている間、パネルが開いていて、形を直せる経路の時) ──
+//   PC: 左ドラッグ = 前後左右 / ホイール = 大きさ / 右ドラッグ = 左右で回転・上下で高さ
+//   スマホ・タブレット: 1本指 = 前後左右 / ピンチ = 大きさ / 2本指でひねる = 回転 / 2本指で上下 = 高さ
+// 変えた分は次のフレームでまとめて経路に入れる(autoAfterFrame)
+const autoEdit = { on: false, dirty: false };
+const _aeP = new THREE.Vector3();
+function autoEditActive() {
+  if (!autoEdit.on || gate.active || renderer.xr.isPresenting || topdownState.active) return false;
+  const panel = document.getElementById('auto-panel');
+  return !!panel && !panel.hidden && !!autoScaleAxes(autoState.path, autoState.lineDir);
+}
+// 画面の 1 px が、モデルの中央の所で何 m か(シーンの単位)
+function autoEditMPerPx() {
+  const m = autoModelGeo();
+  camera.updateMatrixWorld();
+  const d = m ? Math.max(m.U * 0.05, _aeP.setFromMatrixPosition(camera.matrixWorld).distanceTo(m.c)) : 10 * (worldScale || 1);
+  const H = Math.max(1, renderer.domElement.clientHeight || window.innerHeight);
+  return 2 * d * Math.tan(THREE.MathUtils.degToRad(camera.fov || 60) / 2) / H;
+}
+// 画面の右へ dx・下へ dy(px)なぞった: 経路を 右・手前 へ(つかんで動かす向き。上へなぞると奥へ)
+function autoEditMove(dx, dy) {
+  autoOffSync();
+  const k = autoEditMPerPx(), o = autoState.off, yaw = dolly.rotation.y, r = dx * k, f = -dy * k;
+  o.x += Math.cos(yaw) * r - Math.sin(yaw) * f;
+  o.z += -Math.sin(yaw) * r - Math.cos(yaw) * f;
+  autoEdit.dirty = true;
+}
+// 上へ dy(px。下へなぞると負)だけ高く
+function autoEditHeight(dy) { autoOffSync(); autoState.off.y += -dy * autoEditMPerPx(); autoEdit.dirty = true; }
+// 上から見て左回りに a(ラジアン)
+function autoEditRotate(a) { autoOffSync(); const o = autoState.off; o.r = autoWrap((o.r || 0) + a); autoEdit.dirty = true; }
+// 大きさを f 倍(0.10〜1.00)
+function autoEditScale(f) { const s = autoState; s.size = Math.max(0.1, Math.min(1, Math.round(s.size * f * 1000) / 1000)); autoEdit.dirty = true; }
+function autoEditSet(on) {
+  autoEdit.on = !!on;
+  const cb = document.getElementById('auto-edit');
+  if (cb && cb.checked !== autoEdit.on) cb.checked = autoEdit.on;
+  if (autoEdit.on) showToast(isTouchDevice ? '経路を直接直す: なぞる = 前後左右・ピンチ = 大きさ・2本指でひねる = 回転・2本指で上下 = 高さ'
+    : '経路を直接直す: ドラッグ = 前後左右・ホイール = 大きさ・右ドラッグ = 左右で回転・上下で高さ', 3500);
+  autoSyncUi();
+}
 // 位置: 今の向きから見て 左右(x)・前後(z)・上下(y) に、モデルの大きさの 5% ずつ
 function autoNudge(axis, sign) {
   const m = autoModelGeo();
@@ -16170,8 +16103,10 @@ function autoAfterFrame(dt) {
   autoRecTick();
   const panel = document.getElementById('auto-panel');
   const open = panel && !panel.hidden;
+  if (autoEdit.dirty) { autoEdit.dirty = false; autoRefresh(); } // 経路を直接直した分
   const g = s.status !== 'idle' && s.geo ? s.geo : (open ? _autoPreview : null);
-  const show = s.lineMode === 'always' ? !!g : s.lineMode === 'stopped' ? !!g && open && s.status !== 'play' : false;
+  const show = autoEditActive() ? !!g // 経路を直接直している間は、いつも線を出す
+    : s.lineMode === 'always' ? !!g : s.lineMode === 'stopped' ? !!g && open && s.status !== 'play' : false;
   if (show) autoLineSet(g);
   autoLine.visible = show && !!_autoLineGeo;
   autoMarkers.visible = !!open && s.look === 'focus';
@@ -16284,6 +16219,11 @@ function autoSyncUi() {
     hide('auto-sx-row', !axes.includes('x')); hide('auto-sz-row', !axes.includes('z')); hide('auto-sy-row', !axes.includes('y'));
     hide('auto-off-row', !axes);
     hide('auto-place-row', !axes);
+    hide('auto-edit-row', !axes);
+    if (autoEdit.on && (panel.hidden || !axes)) { autoEdit.on = false; const cb = $('auto-edit'); if (cb) cb.checked = false; } // パネルを閉じた・直せない経路にした時は外す
+    { const er = $('auto-edit-row'); if (er) er.classList.toggle('on', autoEdit.on); }
+    setTextIf($('auto-edit-hint'), autoEdit.on ? (isTouchDevice ? 'なぞる: 前後左右 · ピンチ: 大きさ · 2本指でひねる: 回転 · 2本指で上下: 高さ'
+      : 'ドラッグ: 前後左右 · ホイール: 大きさ · 右ドラッグ: 左右で回転・上下で高さ') : '');
     setDisabledIf($('auto-replace'), s.status !== 'idle');
     for (const [k, id] of [['sx', 'auto-sx'], ['sz', 'auto-sz'], ['sy', 'auto-sy']]) {
       const el = $(id), iv = String(autoMulIndex(s[k]));
@@ -16291,10 +16231,12 @@ function autoSyncUi() {
       setTextIf($(id + '-val'), `×${s[k].toFixed(2)}`);
     }
     autoOffSync();
-    const o = s.off, ws = worldScale || 1, hz = Math.hypot(o.x, o.z) / ws, vy = o.y / ws;
-    setTextIf($('auto-off-val'), hz < 1e-6 && Math.abs(vy) < 1e-6 ? 'ずらしなし'
-      : [hz >= 1e-6 ? `水平に ${fmtLenM(hz)} m` : '', Math.abs(vy) >= 1e-6 ? `${vy > 0 ? '上' : '下'}へ ${fmtLenM(Math.abs(vy))} m` : ''].filter(Boolean).join('・'));
-    setDisabledIf($('auto-off-reset'), hz < 1e-6 && Math.abs(vy) < 1e-6);
+    const o = s.off, ws = worldScale || 1, hz = Math.hypot(o.x, o.z) / ws, vy = o.y / ws, deg = Math.round((o.r || 0) * 180 / Math.PI);
+    const none = hz < 1e-6 && Math.abs(vy) < 1e-6 && !deg;
+    setTextIf($('auto-off-val'), none ? 'ずらしなし'
+      : [hz >= 1e-6 ? `水平に ${fmtLenM(hz)} m` : '', Math.abs(vy) >= 1e-6 ? `${vy > 0 ? '上' : '下'}へ ${fmtLenM(Math.abs(vy))} m` : '',
+        deg ? `${deg > 0 ? '左' : '右'}回りに ${Math.abs(deg)}°` : ''].filter(Boolean).join('・'));
+    setDisabledIf($('auto-off-reset'), none && !(o.r));
   }
   // 視線ごとの調整
   hide('auto-lead-row', s.look !== 'lead');
@@ -16414,8 +16356,11 @@ function autoSyncUi() {
   for (const [id, key] of [['auto-sx', 'sx'], ['auto-sz', 'sz'], ['auto-sy', 'sy']]) {
     $(id).addEventListener('input', (e) => { s[key] = AUTO_MUL[Math.max(0, Math.min(AUTO_MUL.length - 1, Math.round(Number(e.target.value))))] ?? 1; autoRefresh(); });
   }
-  panel.querySelectorAll('[data-auto-nudge]').forEach(b => b.addEventListener('click', () => { const [k, sg] = b.dataset.autoNudge.split(':'); autoNudge(k, Number(sg)); }));
-  $('auto-off-reset').addEventListener('click', () => { const o = s.off; o.x = 0; o.y = 0; o.z = 0; autoRefresh(); });
+  // 位置・回転: 押すと1回、長押しで続けて
+  setupNudgeButtons(panel, 'data-auto-nudge', (v) => { const [k, sg] = v.split(':'); autoNudge(k, Number(sg)); });
+  setupNudgeButtons(panel, 'data-auto-rot', (v) => autoRotate(Number(v)));
+  $('auto-off-reset').addEventListener('click', () => { const o = s.off; o.x = 0; o.y = 0; o.z = 0; o.r = 0; autoRefresh(); });
+  $('auto-edit').addEventListener('change', (e) => autoEditSet(e.target.checked));
   $('auto-replace').addEventListener('click', () => { autoPlaceAnchor(true); autoRefresh(); showToast('自動: 今の向きで経路を置き直しました'); });
   const bindTg = (id, key) => $(id).addEventListener('click', () => { s[key] = !s[key]; autoRefresh(); });
   bindTg('auto-reverse', 'reverse'); bindTg('auto-home', 'returnHome'); bindTg('auto-curve', 'curveSlow'); bindTg('auto-dist', 'distSlow');
@@ -16489,13 +16434,15 @@ function autoSyncUi() {
 })();
 testHooks.auto = { autoState, autoPlay, autoPause, autoStop, autoBuild, autoEval, autoRate, autoV, autoModelGeo, autoTourPoints, autoTimeText,
   autoS, autoSOf, autoScrubTo, autoFwdTime, pickDownAt, autoRecStart, autoRecStop, autoRecList, autoRec, autoFocusPts, autoFocusSave, autoLookTarget,
-  autoGroundAt, autoLine: () => autoLine, autoIsPP, worldScale: () => worldScale };
-testHooks.lod = { s: () => lodState.s, want: () => lodState.want, nearFactor: lodNearFactor, morph: lodMorph, morphOrtho: lodMorphOrtho, boost: LOD_NEAR_BOOST, nearOn: LOD_NEAR_ON, morphK: LOD_MORPH_K, morphEnd: lodMorphEnd,
-  nodeVals: () => { const out = []; for (const tr of allTileRenderers()) for (const t of tr.visibleTiles) { const n = t.engineData && t.engineData.scene; if (n && t.__pts) { const o = t.__pts[0]; out.push({ uri: t.content && t.content.uri, depth: t.internal.depth, dist: t.traversal.distanceFromCamera, error: t.traversal.error, ge: t.geometricError, lodA: n.userData.lodA || 0, lodM: n.userData.lodM ?? 1, avg: n.userData.lodAvg ?? 1, tileDens: o ? o.userData.tileDens : null, objLodA: o ? o.userData.lodA : null, hidden: !!n.userData.pcBudgetHidden, visible: n.visible, refine: t.refine, pts: n.userData.pointCount || 0, parentUri: t.parent && t.parent.content && t.parent.content.uri, gateGe: (lodGateTile(t) || {}).geometricError ?? null, fx: !!n.userData.nearFx, densC: n.userData.densC || 1, fxD: nearFx.active ? t.engineData.boundingVolume.distanceToPoint(nearFxLocal(tr)) : null }); } } return out; },
-  localVals: () => { const out = []; for (const inst of localInstances.values()) { if (!inst.pc) continue; for (const nd of inst.pc.shown) out.push({ depth: nd.depth, count: nd.count, lodA: nd.lodA || 0, lodM: nd.lodM ?? 1, dN: nd.dN, objLodA: nd.obj ? nd.obj.userData.lodA : null, tileDens: nd.obj ? nd.obj.userData.tileDens : null, fx: !!nd.fx }); out.push({ s: inst.pc.lodS ?? 1, want: inst.pc.lodWant ?? 1, stats: { ...inst.pc.stats } }); } return out; } };
-testHooks.ptFx = { state: () => ({ ...ptFx }), set: setPtFx, keys: PT_FX_KEYS, focus: () => ({ active: nearFx.active, dist: nearFx.dist, point: nearFx.point.toArray() }),
-  consts: { dist: NEAR_FX_DIST, off: NEAR_FX_OFF, r: NEAR_FX_R, boost: NEAR_FX_BOOST } };
-testHooks.edl = { obj: edl, renderer, level: () => edlLevel, set: setEdlLevel, on: edlOn, frames: () => edl.frames, rt: () => edl.rt ? [edl.rt.width, edl.rt.height] : null, strength: EDL_STRENGTH, n: () => edl.mat.defines.EDL_N, layer: PT_LAYER };
+  autoGroundAt, autoLine: () => autoLine, autoIsPP, worldScale: () => worldScale,
+  edit: autoEdit, editActive: autoEditActive, editSet: autoEditSet, rotate: autoRotate, editMove: autoEditMove, editScale: autoEditScale, editRotate: autoEditRotate, editHeight: autoEditHeight };
+testHooks.lod = {
+  nodeVals: () => { const out = []; for (const tr of allTileRenderers()) for (const t of tr.visibleTiles) { const n = t.engineData && t.engineData.scene; if (n && t.__pts) { const o = t.__pts[0]; out.push({ uri: t.content && t.content.uri, depth: t.internal.depth, dist: t.traversal.distanceFromCamera, error: t.traversal.error, ge: t.geometricError, tileDens: o ? o.userData.tileDens : null, hidden: !!n.userData.pcBudgetHidden, visible: n.visible, refine: t.refine, pts: n.userData.pointCount || 0, parentUri: t.parent && t.parent.content && t.parent.content.uri, fx: !!n.userData.nearFx, densC: n.userData.densC || 1, fadeLv: n.userData.fadeLv ?? null, fxD: nearFx.active ? t.engineData.boundingVolume.distanceToPoint(nearFxLocal(tr)) : null }); } } return out; },
+  fadingVals: () => [...pcFadeOut.entries()].map(([sc, e]) => ({ uri: e.tile.content && e.tile.content.uri, fadeLv: sc.userData.fadeLv ?? null, tileDens: e.tile.__pts && e.tile.__pts[0] ? e.tile.__pts[0].userData.tileDens : null, inGroup: sc.parent === e.tr.group, visible: sc.visible })),
+  groupKids: () => allTileRenderers().reduce((a, tr) => a + tr.group.children.length, 0),
+  localVals: () => { const out = []; for (const inst of localInstances.values()) { if (!inst.pc) continue; for (const nd of inst.pc.shown) out.push({ depth: nd.depth, count: nd.count, dN: nd.dN, tileDens: nd.obj ? nd.obj.userData.tileDens : null, fadeLv: nd.obj ? nd.obj.userData.fadeLv ?? null : null, fx: !!nd.fx }); out.push({ fading: inst.pc.fading.size, stats: { ...inst.pc.stats } }); } return out; } };
+testHooks.ptFx = { state: () => ({ ...ptFx }), set: setPtFx, keys: PT_FX_KEYS, dist: () => nearFxM, setDist: setNearFxM, focus: () => ({ active: nearFx.active, dist: nearFx.dist, point: nearFx.point.toArray() }),
+  consts: { dist: nearFxDist(), off: nearFxOff(), r: nearFxR(), boost: NEAR_FX_BOOST, fadeMs: PC_FADE_MS, min: NEAR_FX_MIN, max: NEAR_FX_MAX, step: NEAR_FX_STEP, def: NEAR_FX_DEF } };
 testHooks.autoPlace = { place: () => autoState.place && { ...autoState.place }, reset: () => autoPlaceAnchor(true) };
 testHooks.len = { lenStops, sliceAheadStops, autoLenStops, faceRotate, faceFlipSide, faceDirNow, layoutRail, isPhoneLandscape, sliceSyncLive };
 
@@ -17259,26 +17206,25 @@ function layoutTopdownBar() {
   compass?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); north(); } });
   document.getElementById('td-north')?.addEventListener('click', north);
 
-  // 断面(断面パネルと同じもの): 真上のバーから ON にすると、水平で上を消す(目の高さ)。位置はスライダー(PC は ↑ ↓ キーでも)
-  const sliceBtn = document.getElementById('slice-toggle');
-  sliceBtn?.addEventListener('click', () => {
-    if (!sliceState.on && topdownState.view === 'face') faceSliceOn();
-    else if (!sliceState.on) {
-      if (sliceState.dir !== 'h') { sliceState.dir = 'h'; sliceSavePrefs(); }
-      sliceState.mode = 'cut';
-      sliceSetOn(true);
-    } else {
-      sliceSetOn(false);
-    }
-    updateSlicePanel();
-    layoutTopdownBar();
-  });
+  // 断面(断面パネルと同じもの): スライダーの右の端(真上は一番上・正対は一番手前)では切らない。動かすと切る
+  // (真上は水平で上を消す・正対は見ている向きの縦の面で手前を消す)。断面パネルで始めた断面は、そのまま続ける。
+  // ここで切った断面は、回す・歩くに戻っても残る。位置は PC の ↑ ↓ キーでも動かせる(切っている時)
   const sliceSlider = document.getElementById('slice-slider');
   sliceSlider?.addEventListener('input', () => {
-    const r = sliceRange();
+    if (!topdownState.active) return;
+    const f = parseInt(sliceSlider.value, 10) / 1000;
     sliceState.auto = false;
-    sliceSetPos(r.min + (r.max - r.min) * (parseInt(sliceSlider.value, 10) / 1000));
+    if (f >= 0.999) { if (sliceState.on) sliceSetOn(false); updateSlicePanel(); layoutTopdownBar(); return; }
+    if (!sliceState.on) {
+      sliceState.mode = 'cut';
+      if (topdownState.view === 'face') faceSliceOn();
+      else { if (sliceState.dir !== 'h') sliceState.dir = 'h'; sliceSavePrefs(); sliceSetOn(true); }
+      if (!sliceState.on) { updateSlicePanel(); return; }
+    }
+    const r = sliceRange(), g = sliceBarSign() < 0 ? 1 - f : f;
+    sliceSetPos(r.min + (r.max - r.min) * g);
     updateSlicePanel();
+    layoutTopdownBar();
   });
   // 全体: モデル全体が入るように戻す
   document.getElementById('td-fit')?.addEventListener('click', () => { if (topdownState.active) topdownFit(); });
@@ -17595,10 +17541,9 @@ function perfTick() {
     `読み込む細かさ ${qualityFromErrorTarget(lodErrorTarget)}/20(画面上の粗さ ${lodErrorTarget}px まで)`,
     `描く点の上限   ${fmtPoints(pcVis.budget)} · いま描いた点 ${fmtInt(perf.points)}点 · 描画の回数 ${fmtInt(perf.calls)}`,
     ...(pcVis.budget ? [`  上限で描かない ${pcVis.stats.hiddenTiles}タイル(${fmtInt(pcVis.stats.hiddenPoints)}点)` +
-      (lodState.s < 0.999 ? ` · 遠くを減らす距離 ×${lodState.s.toFixed(2)}` : '') + (pointDensity < 1 ? ` · 間引き ${Math.round(pointDensity * 100)}%` : '')] : []),
-    `点の出し方     ${PT_FX_KEYS.filter(k => ptFx[k]).map(k => ({ near: '手前を細かく', seam: '境目', far: '遠くから減らす', fade: '少しずつ出す', hyst: '長く保つ' })[k]).join('・') || 'すべてオフ'}` +
-      (ptFx.near ? (nearFx.active ? ` · 見ている所 ${nearFx.dist.toFixed(1)} m を細かく読み中` : '') : ''),
-    `奥行きの陰影   ${{ off: 'なし', weak: '弱', mid: '中', strong: '強' }[edlLevel]}`,
+      (pointDensity < 1 ? ` · 間引き ${Math.round(pointDensity * 100)}%` : '')] : []),
+    `点の出し方     ${PT_FX_KEYS.filter(k => ptFx[k]).map(k => ({ near: `手前を細かく(${nearFxM.toFixed(1)} m)`, fade: '少しずつ出し入れ', hyst: '長く保つ' })[k]).join('・') || 'すべてオフ'}` +
+      (ptFx.near ? (nearFx.active ? ` · 見ている所 ${nearFx.dist.toFixed(1)} m を細かく読み中` : '') : '') + (pcFadeOut.size ? ` · 消える途中 ${pcFadeOut.size}タイル` : ''),
     t ? `メモリに残す量 ${formatBytes(lruBytes(t))} / ${cacheMaxBytesMB} MB(端末の目安 ${CACHE_DEVICE_MB} MB)` : 'メモリに残す量 -',
     ...(t ? [`  残しているタイル ${fmtInt(lru)}件 / 上限 ${fmtInt(t.lruCache?.maxSize ?? 0)}件 · ${Math.round(CACHE_KEEP_RATIO * 100)}%までは捨てない`] : []),
     `描画解像度     ${xr ? 'VR(VR 機器が決める)' : `${renderer.getPixelRatio().toFixed(2)}倍(端末 ${NATIVE_DPR.toFixed(2)}倍)`}`,
